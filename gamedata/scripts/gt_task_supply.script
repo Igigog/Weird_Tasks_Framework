@@ -143,7 +143,7 @@ xr_effects.gt_task_supply_finish = function(actor,npc,p)
 		xr_effects.inc_task_stage(a, b, {task_id})
 	end
 	--Goodwill
-	if (is_completed and CACHE and CACHE["task_giver_faction"]) then
+	if (is_completed and CACHE and CACHE["task_giver_faction"]) then -- :/
 		xr_effects.complete_task_inc_goodwill(a, b, {50,CACHE["task_giver_faction"]})
 	else
 		xr_effects.fail_task_dec_goodwill(a, b, {25,CACHE["task_giver_faction"]})

@@ -1,0 +1,175 @@
+;============================================================
+;	Anomaly 1.5.5.0
+;	GhenTuong
+;============================================================
+;bar_visitors_stalker_mechanic
+;============================================================
+[bar_visitors_stalker_mechanic_task_10]
+icon = ui_iconsTotal_mutant
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_visitors_stalker_mechanic_task_10)} true, false
+
+title_functor = gt_task_mutant_text
+descr_functor = gt_task_mutant_text
+job_descr = gt_task_text_mutant_job_descr
+task_complete_descr = gt_task_text_mutant_finish
+
+stage_complete = 1
+status_functor = gt_task_mutant_status
+target_functor = gt_task_mutant_target
+on_job_descr = %=gt_task_mutant_setup(bar_visitors_stalker_mechanic_task_10)%
+
+on_complete = %=gt_task_mutant_finish(bar_visitors_stalker_mechanic_task_10:true))%
+on_fail = %=gt_task_mutant_finish(bar_visitors_stalker_mechanic_task_10:false))%
+condlist_0 = {!task_giver_alive(bar_visitors_stalker_mechanic_task_10)} fail
+;------------------------------------------------
+[bar_visitors_stalker_mechanic_task_11]
+icon = ui_inGame2_Osobiy_zakaz
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_visitors_stalker_mechanic_task_11)} true, false
+
+title_functor = gt_task_supply_text
+descr_functor = gt_task_supply_text
+job_descr = gt_task_text_supply_job_descr
+task_complete_descr = gt_task_text_supply_finish
+
+stage_complete = 1
+status_functor = gt_task_supply_status
+target_functor = gt_task_supply_target
+on_job_descr = %=gt_task_supply_setup(bar_visitors_stalker_mechanic_task_11)%
+
+on_complete = %=gt_task_supply_finish(bar_visitors_stalker_mechanic_task_11:true))%
+on_fail = %=gt_task_supply_finish(bar_visitors_stalker_mechanic_task_11:false))%
+condlist_0 = {!task_giver_alive(bar_visitors_stalker_mechanic_task_11)} fail
+;------------------------------------------------
+[bar_visitors_stalker_mechanic_task_12]
+icon = ui_inGame2_PD_master_boevih_sistem
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_visitors_stalker_mechanic_task_12)} true, false
+
+title_functor = gt_task_heavy_text
+descr_functor = gt_task_heavy_text
+job_descr = gt_task_text_heavy_job_descr
+task_complete_descr = gt_task_text_heavy_finish
+
+stage_complete = 1
+status_functor = gt_task_heavy_status
+target_functor = gt_task_heavy_target
+on_job_descr = %=gt_task_heavy_setup(bar_visitors_stalker_mechanic_task_12)%
+
+on_complete = %=gt_task_heavy_finish(bar_visitors_stalker_mechanic_task_12:true))%
+on_fail = %=gt_task_heavy_finish(bar_visitors_stalker_mechanic_task_12:false))%
+condlist_0 = {!task_giver_alive(bar_visitors_stalker_mechanic_task_12)} fail
+;------------------------------------------------
+[bar_visitors_stalker_mechanic_task_13]
+icon = ui_inGame2_Skat_1
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_visitors_stalker_mechanic_task_13)} true, false
+
+title_functor = gt_task_gunship_text
+descr_functor = gt_task_gunship_text
+job_descr = gt_task_text_gunship_job_descr
+task_complete_descr = gt_task_text_gunship_finish
+
+stage_complete = 1
+status_functor = gt_task_gunship_status
+target_functor = gt_task_gunship_target
+on_job_descr = %=gt_task_gunship_setup(bar_visitors_stalker_mechanic_task_13)%
+
+on_complete = %=gt_task_gunship_finish(bar_visitors_stalker_mechanic_task_13:true))%
+on_fail = %=gt_task_gunship_finish(bar_visitors_stalker_mechanic_task_13:false))%
+condlist_0 = {!task_giver_alive(bar_visitors_stalker_mechanic_task_13)} fail
+;------------------------------------------------
+[bar_visitors_stalker_mechanic_task_14]
+icon = ui_inGame2_Sdelka
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_visitors_stalker_mechanic_task_14)} true, false
+
+title_functor = gt_task_transaction_text
+descr_functor = gt_task_transaction_text
+job_descr = gt_task_text_transaction_job_descr
+task_complete_descr = gt_task_text_transaction_finish
+
+stage_complete = 1
+status_functor = gt_task_transaction_status
+target_functor = gt_task_transaction_target
+on_job_descr = %=gt_task_transaction_setup(bar_visitors_stalker_mechanic_task_14)%
+
+on_complete = %=gt_task_transaction_finish(bar_visitors_stalker_mechanic_task_14:true))%
+on_fail = %=gt_task_transaction_finish(bar_visitors_stalker_mechanic_task_14:false))%
+condlist_0 = {!task_giver_alive(bar_visitors_stalker_mechanic_task_14)} fail
+;============================================================
+;bar_dolg_medic
+;============================================================
+[bar_dolg_medic_task_15]
+icon = ui_inGame2_Kontrakt_s_uchenimi
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_dolg_medic_task_15) =gt_task_artifact_world_precondition()} true, false
+
+title_functor = gt_task_artifact_world_text
+descr_functor = gt_task_artifact_world_text
+job_descr = gt_task_text_artifact_world_job_descr
+task_complete_descr = gt_task_text_artifact_world_finish
+
+stage_complete = 1
+status_functor = gt_task_artifact_world_status
+target_functor = gt_task_artifact_world_target
+on_job_descr = %=gt_task_artifact_world_setup(bar_dolg_medic_task_15)%
+
+on_complete = %=gt_task_artifact_world_finish(bar_dolg_medic_task_15:true))%
+on_fail = %=gt_task_artifact_world_finish(bar_dolg_medic_task_15:false))%
+condlist_0 = {!task_giver_alive(bar_dolg_medic_task_15)} fail
+;------------------------------------------------
+[bar_dolg_medic_task_16]
+icon = ui_inGame2_Kontrakt_s_uchenimi
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_dolg_medic_task_16) =gt_task_artifact_stalker_precondition()} true, false
+
+title_functor = gt_task_artifact_stalker_text
+descr_functor = gt_task_artifact_stalker_text
+job_descr = gt_task_text_artifact_stalker_job_descr
+task_complete_descr = gt_task_text_artifact_stalker_finish
+
+stage_complete = 1
+status_functor = gt_task_artifact_stalker_status
+target_functor = gt_task_artifact_stalker_target
+on_job_descr = %=gt_task_artifact_stalker_setup(bar_dolg_medic_task_16)%
+
+on_complete = %=gt_task_artifact_stalker_finish(bar_dolg_medic_task_16:true))%
+on_fail = %=gt_task_artifact_stalker_finish(bar_dolg_medic_task_16:false))%
+condlist_0 = {!task_giver_alive(bar_dolg_medic_task_16)} fail
+;------------------------------------------------
+[bar_dolg_medic_task_17]
+icon = ui_inGame2_Neizvestnoe_oruzhie
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(bar_dolg_medic_task_17) =gt_task_weapon_precondition()} true, false
+
+title_functor = gt_task_weapon_text
+descr_functor = gt_task_weapon_text
+job_descr = gt_task_text_weapon_job_descr
+task_complete_descr = gt_task_text_weapon_finish
+
+stage_complete = 1
+status_functor = gt_task_weapon_status
+target_functor = gt_task_weapon_target
+on_job_descr = %=gt_task_weapon_setup(bar_dolg_medic_task_17)%
+
+on_complete = %=gt_task_weapon_finish(bar_dolg_medic_task_17:true))%
+on_fail = %=gt_task_weapon_finish(bar_dolg_medic_task_17:false))%
+condlist_0 = {!task_giver_alive(bar_dolg_medic_task_17)} fail

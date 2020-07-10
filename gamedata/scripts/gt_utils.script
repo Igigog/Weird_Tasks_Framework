@@ -1,0 +1,51 @@
+-- There are purely utility functions, not bound with tasks or STALKER
+
+function list_to_set(l)
+	if(l == nil) then return nil end
+	
+	local set = {}
+	for _, v in l do
+		assert(type(v) ~= "table", "list_to_set values mustn't be tables")
+		set[v] = true
+	end
+	return set
+end
+
+function set_to_list(s)
+	if(s == nil) then return nil end
+	
+	local list = {}
+	for v, _ in s do
+		list[#list + 1] = v
+	end
+	return list
+end
+
+function random_table_element(tbl)
+	-- It's preffered to use lists with math.random rather
+	-- than this function bcs this function is slow
+	local keyset = {}
+	for k in pairs(myTable) do
+		table.insert(keyset, k)
+	end
+	-- now you can reliably return a random key
+	random_elem = myTable[keyset[math.random(#keyset)]]
+end
+
+function get_random_items(orig_list, amount)
+	if not orig_list or #orig_list < amount then
+		return nil, "Not enough items"
+	end
+
+	local set = {}
+	local list = {}
+	for i=1, amount do
+		local item = true
+		repeat
+			item = orig_list[math.random(#orig_list)]
+		until not set[item]
+		list[#list + 1] = item
+		set[item] = true
+	end
+	return list
+end

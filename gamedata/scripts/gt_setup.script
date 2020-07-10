@@ -1,0 +1,157 @@
+-- Main setup function for all quests
+
+local function setup_squad(squad_info, smarts, factions)	-- TODO: Custom smarts
+	printf("Igi: setup_squad")
+	local CACHE = {}
+	local smart = smarts[1]
+
+	local amount = squad_info.amount or 1
+	local faction = squad_info["faction"] or false
+	if not faction then
+		faction = factions[squad_info["faction_type"]]
+	end
+	
+	if not faction then
+		printf("Igi: setup_squad: Unable to set faction")
+		return nil, "Unable to set faction"
+	end
+	
+	local squad_name = ""
+	if squad_info.type == "heavy" then
+		squad_name = gt_database.FACTION_TO_HEAVY[faction]
+	elseif squad_info.type == "guard" then
+		squad_name = gt_database.FACTION_TO_GUARD[faction]
+	else
+		printf("Igi: setup_squad: Unknown squad type")
+		return nil, "Unknown squad type"
+	end
+	
+	local squad_data = {["name"] = squad_name, ['faction'] = faction}
+	squad_data.amount = amount
+
+	return squad_data
+end
+
+local function setup_smarts(smarts)  -- check
+	printf("GT: setup_smarts")
+	-- This function returns a smart suitable for a quest
+	local amount = smarts.amount or 1;
+	local nearby_required = smarts.nearby_required or false;
+	local online_required = smarts.online_required or false;
+	
+	local possible_smarts = gt_helper.check_smarts(SIMBOARD.smarts_by_names, nearby_required, online_required)
+	
+	if #possible_smarts < amount then		-- almost imposible case, but let it be
+		printf("Igi: setup_smarts: Not enough smarts available")
+		return nil, "Not enough smarts available"
+	end
+
+	local smarts_list = gt_utils.get_random_items(possible_smarts, amount)
+	return smarts_list
+end
+
+local function setup_package(pkg_info)				-- TODO: Custom smarts
+	local pkgs = {}
+	
+	local pkg_data = gt_database.PACKAGE[pkg_info["package_type"]] or gt_helper.pick_quest_goods(pkg_info.quest_type)
+	local amount = pkg_info["amount"] or gt_database.PACKAGE[pkg_data.package_type].default_amount_package
+	
+	if not pkg_data or not amount then
+		printf("Igi: setup_package: Can't get type of package or amount")
+		return nil, "Can't get type of package"
+	end
+
+	pkg_data.amount = amount
+	return pkg_data
+end
+
+local function setup_item(item_data, factions)
+	printf("Igi: Setup_item")
+	assert(item_data.item_type or item_data.item_list, "Igi: setup_item: No item list given")
+	local TYPE_TO_LIST = {
+		["weapon_lowcost"] = gt_database.WEAPONS_LOWCOST,
+		["weapon_midgame"] = gt_database.WEAPONS_MIDGAME,
+		["weapon_endgame"] = gt_database.WEAPONS_ENDGAME,
+		["weapon_legend"] = gt_database.WEAPONS_LEGEND,
+		["artifact"] = gt_helper.get_artifact_names(),
+	}
+	local item_list = item_data.item_list or TYPE_TO_LIST[item_data.item_type]
+	if not item_list then
+		printf("Igi: setup_item: No item_list")
+		return nil, "No item_list"
+	end
+	
+	if item_data.to_create then
+		printf("TODO")
+	else
+		local item_set = gt_utils.list_to_set(item_list)
+		item_data.enemy_to = item_data.enemy_to or factions[item_data.enemy_to]
+		local args = {
+			["in_npc_inv"] = item_data.in_npc_inv,
+			["in_world"] = item_data.in_world,
+			["only_npc"] = item_data.only_npc,
+			["only_enemies"] = item_data.only_enemies,
+			["enemy_to"] = item_data.enemy_to,
+		}
+		local objects = gt_helper.find_objects_ids(item_set, args)
+	end
+	return gt_utils.get_random_items(objects, item_data.amount)
+end
+
+function setup_quest(args)
+	-- This is generic function that sets everything you need for a quest
+	-- Possible args:
+	-- smarts (table) : {amount (int) - how many smarts to prepare,
+	--					 is_nearby, is_online (bool) - smart attributes}
+	-- squads (table of tables) : {{amount (int),
+	--								faction (string) OR		- can be any faction in game
+	--								faction_type (string) - can be "enemy", "client" or "quest_giver",
+	--								type (string) - can be "guard" or "heavy",
+	--								objective (string) - can be "kill", "save" or "contact"}
+	--								{*squads of another type with the same fields*}}
+	-- packages (table of tables): {{amount (int), default: standart amount for this quest type
+	--								 package_type (string) OR - must be in gt_database.PACKAGE,
+	--								 quest_type (string) - see gt_database.QUEST_TO_POSSIBLE_GOODS},
+	--								{*packages of another types with the same fields*}}
+	-- items (table of tables): {{amount (int),
+	--							  item_type (string) - only "artifact" and "weapon_*lowcost, midgame, endgame or legend*" rn OR
+	--							  item_list (list) 	- search/create random item from list
+	--							  to_create (bool) - TODO, if not create - then find
+	--							  in_npc_inv (bool) - create(search) in npc inventories,
+	--							  only_npc (bool) - create(search) only in npc_inv
+	--							  in_world (bool) - create(search) in world,
+	--							  only_enemies (bool) - create(search) only in enemies inv, if in_npc_inv
+	--							  enemy_to (string) - if only_enemies then faction or "client" or "enemy" or "quest_giver"; default: player
+	--							  npc_to_create (id) - TODO, if create: create in inventory of npc with this id,
+	--							  squad_to_create (int n) - TODO, if create: create in inventory of n-th created squad,
+	--							  smart_to_create (smart) - if create: create in smart},
+	--							 {*items of another types with the same fields*}}
+	CACHE = {}
+	CACHE["smarts"] = setup_smarts(args.smarts)
+	factions = gt_helper.get_faction_setup()
+	
+	if args["squads"] then
+		CACHE["squads"] = {}
+		for _, squad_data in pairs(args.squads) do
+			CACHE.squads[#CACHE.squads + 1] = setup_squad(squad_data, CACHE.smarts, factions)
+		end
+	end
+	
+	if args["packages"] then
+		CACHE["packages"] = {}
+		for _, pkg in pairs(args.packages) do
+			CACHE.packages[#CACHE.packages + 1] = setup_package(pkg)
+		end
+	end
+	
+	if args["items"] then
+		CACHE["items"] = {}
+		for _, item in pairs(args.items) do
+			CACHE.items[#CACHE.items + 1] = setup_item(item)
+		end
+	end
+	
+	return CACHE
+end
+
+

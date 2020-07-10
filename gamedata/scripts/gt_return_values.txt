@@ -1,0 +1,43 @@
+At some point I lost track of all values and attributes of my returning values, so here are info for all classes:
+Data for setup_quest:
+-- smarts (table) : {amount (int) - how many smarts to prepare,
+--					 is_nearby, is_online (bool) - smart attributes}
+-- squads (table of tables) : {{amount (int),
+--								faction (string) OR		- can be any faction in game
+--								faction_type (string) - can be "enemy", "client" or "quest_giver"},
+--								type (string) - can be "guard" or "heavy",
+--								{*squads of another type with the same fields*}}
+-- packages (table of tables): {{amount (int), default: standart amount for this quest type
+--								 package_type (string) OR - must be in gt_database.PACKAGE,
+--								 quest_type (string) - see gt_database.QUEST_TO_POSSIBLE_GOODS},
+--								{*packages of another types with the same fields*}}
+-- items (table of tables): {{amount (int),
+--							  item_type (string) - only "artifact" and "weapon_*lowcost, midgame, endgame or legend*" rn OR
+--							  item_list (list) 	- search/create random item from list
+--							  to_create (bool) - TODO, if not create - then find
+--							  in_npc_inv (bool) - create(search) in npc inventories,
+--							  only_npc (bool) - create(search) only in npc_inv
+--							  in_world (bool) - create(search) in world,
+--							  only_enemies (bool) - create(search) only in enemies inv, if in_npc_inv
+--							  enemy_to (string) - if only_enemies then faction or "client" or "enemy" or "quest_giver"; default: player
+--							  npc_to_create (id) - TODO, if create: create in inventory of npc with this id,
+--							  squad_to_create (int n) - TODO, if create: create in inventory of n-th created squad,
+--							  smart_to_create (smart) - if create: create in smart},
+--							 {*items of another types with the same fields*}}
+
+setup_quest returns:
+CACHE = {
+	"smarts" = {list of smart_names},
+	"squads" = {list of lists of: {name = squad_name, faction = squad_faction}},
+	"packages" = {list of lists of package objects described in gt_database.PACKAGE},
+	"items" = {list of item_name}
+}
+
+create_target returns:
+CACHE = {
+	*CACHE from setup_quest
+	"target" = {
+		"packages" = {list of {id = alife_object_id, section_name = obj:section_name()} },
+		"squads" = {list of {id = alife_object_id, section_name = obj:section_name()} },
+	}
+}

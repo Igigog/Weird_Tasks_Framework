@@ -1,0 +1,450 @@
+-- =============================================================
+--	Quest setters (gt_setter.script)
+--	Anomaly 1.5.5.0
+--	Igigog
+-- =============================================================
+-- Here are functions to prepare quests:
+-- locate an artifact, spawn heli etc.
+-- =============================================================
+
+---<LOCALS>-----------------------------------------------------
+
+local ARTIFACT_NAMES = {}
+
+local function get_artifact_names()						-- check
+	-- creates a set of all artifacts in game
+	if (next(ARTIFACT_NAMES) ~= nil) then return ARTIFACT_NAMES end	-- if set already created: return that set
+	-- if set not created: create, save and return
+	ARTIFACT_NAMES = {}
+	local ini = ini_file("items\\settings\\artefacts.ltx")
+	local n = ini:line_count("artefact_groups")
+	for i=0,n-1 do -- for every artefact group:
+		_, group_id = ini:r_line_ex("artefact_groups",i,"","")  -- write group id
+		if ini:section_exist(group_id) then
+			local m = ini:line_count(group_id)
+			for j=0,m-1 do
+				_, artifact_id = ini:r_line_ex(group_id,j,"","")
+				if artifact_id and ini_sys:section_exist(artifact_id) then
+					ARTIFACT_NAMES[artifact_id] = true -- for every artifact in group: add it's id as key
+					--printf("GhenTuong: load artifact: %s", artifact_id)
+				else
+					printf("GhenTuong: load artifact from artefacts.ltx| incorrect section name: %s", artifact_id)
+				end
+			end
+		end
+	end
+	return ARTIFACT_NAMES
+end
+
+local function get_faction_enemies(faction, --[[optional]] monolith_included) -- check
+	printf("GhenTuong: Start Function| get_faction_enemies")
+	monolith_included = monolith_included or false
+	local enemies_list = {}
+	
+	for enemy_faction in pairs(gt_database.GUARD) do
+		if (game_relations.is_factions_enemies(faction, enemy_faction)) then
+			if (enemy_faction ~= "monolith" or monolith_included) then
+				enemies_list[enemy_faction] = true
+			end
+		end
+	end
+	printf(faction)
+	return enemies_list
+end
+
+local function pick_quest_goods(quest_type) -- check
+	local possible_goods = gt_database.QUEST_TO_POSSIBLE_GOODS[quest_type]
+	local goods_type = possible_goods[math.random(#possible_goods)]
+	local goods = gt_database.PACKAGE_SPAWN_INFO[goods_type]
+	return goods
+end
+
+local function check_smarts(smarts_table, --[[optional]] nearby_required, --[[optional]] online_required) -- check
+	-- This function checks table of smarts for
+	-->	- availability
+	-->	- smart is not a base
+	--> - smart is not in blacklisted_maps
+	--> - (optional) online and on level of player (nearby)
+	-- and returns a table of suitable smarts
+	assert(type(smarts_table) == 'table', 'gt: check_smarts: not a table given')
+	return_table = {}
+	local sim = alife()
+	local gg = game_graph()
+	local actor_level = level.name()
+	
+	for smart_name, smart_data in pairs(smarts_table) do
+		if simulation_objects.available_by_id[smart_data.id] and	-- availability check
+				not simulation_objects.base_smarts[smart_name] then	-- base smart check
+				
+			local smart_level = sim:level_name(gg:vertex(smart_data.m_game_vertex_id):level_id())
+			if not gt_database.BLACKLISTED_MAPS[smart_level] then						-- blacklist check
+	
+				local is_online = smart_data.online
+				printf(is_online)
+				
+				local is_nearby = string.find(simulation_objects.config:r_value(actor_level, "target_maps", 0, ""), smart_level)
+				if (is_nearby or not nearby_required) and (is_online or not online_required) then
+					return_table[#return_table + 1] = smart_name
+				end
+			end
+		end
+	end
+	return return_table
+end
+
+local function get_object_level_id(obj, --[[optional]] alife_obj, --[[optional]] game_graph_obj)
+	-- obj must be alife object
+	if not obj then return nil end
+	-- these are to not run alife() or gg() multiple times
+	alife_obj = alife_obj or alife()
+	game_graph_obj = game_graph_obj or game_graph()
+	
+	local lvl_info_obj = 0
+	if object_in_world(obj) then
+		lvl_info_obj = obj
+	elseif object_in_npc_inventory(obj) then
+		lvl_info_obj = alife_obj:object(obj.parent_id)
+	end
+	
+	local obj_level_id = game_graph_obj:vertex(lvl_info_obj.m_game_vertex_id):level_id()
+	return obj_level_id
+end
+
+local function get_object_level(obj, sim, gg)
+	return sim:level_name(get_object_level_id(object, sim, gg))
+end
+
+local function object_in_world(obj)
+	if not obj then return nil end
+	return obj.parent_id == 65535
+end
+
+local function object_in_npc_inventory(obj)
+	if not obj then return nil end
+	return check_common_npc(obj.parent_id)
+end
+
+local function get_community(character)
+	if not character then return nil end
+	
+	if character == db.actor then
+		return character_community(character)
+	else
+		return alife_character_community(character)
+	end
+end
+
+local function is_online(object, sim, gg)
+	player_level_id = get_object_level_id(db.player, sim, gg)
+	object_level_id = get_object_level_id(object, sim, gg)
+	return player_level_id == object_level_id
+end
+
+local function is_nearby(object, sim, gg)
+	local level = get_object_level(object, sim, gg)
+	local actor_level = level.name()
+	return string.find(simulation_objects.config:r_value(actor_level, "target_maps", 0, ""), level)
+end
+
+local function is_on_blacklisted_map(object, sim, gg)
+	object_lvl = get_object_level(object, sim, gg)
+	if gt_database.BLACKLISTED_MAPS[object_lvl] then return true
+	else return false end
+end
+
+local function has_ending_in_list(object, ending_list)
+	if not ending_list then return nil end
+	
+	for ending in ending_list do
+		if string.find(object:section_name(), ending) then
+			return true end
+	end
+	return false
+end
+
+local function find_objects_ids(name_set, --[[optional]] args) -- gl, check
+	--[[ Well, this big horse shit function finds all objects, which names are in name_set (must be set)
+			Possible args:
+		nearby_required (bool) - search for objects that are on player's level (or i think so...)
+		online_required (bool) - search for objects that are online
+		id_range (list of 2 ints) - search for objects with id in this range
+		possible endings (list of strings) - search for objects which name ends with one of these strings
+		in_world (bool) - search in world									TODO
+		in_npc_inv (bool) - search in npc's inventories
+		only_npc (bool) - search only in npc's inventories					TODO
+		only_enemies (bool) - if in_npc_inv: only in enemies's inventories
+		enemy_to (alife character) - if only_enemies then enemies to this char's fraction 	TODO
+		first_item_only (bool) - return list with first found item id			TODO
+		with_blacklisted_maps (bool) - search in blacklisted maps
+	]]
+	assert(next(name_set) ~= nil, "gt: find_objects_ids: no name set given")
+	assert(args.in_npc_inv or not(only_npc), "gt: find_objects_ids: only_npc but not in_npc_inv")
+	assert(args.only_enemies or not(enemy_to), "gt: find_objects_ids: enemy_to but not only_enemies")
+	id_range = args.id_range or {1, 65534}
+	
+	local sim = alife()
+	local gg = game_graph()
+	local id_list = {}
+	args.enemy_to = args.enemy_to or db.actor
+	local is_enemies = game_relations.is_factions_enemies	-- shortcut
+
+	
+	for id=id_range[1], id_range[2] do
+		local object = sim:object(id)
+		if object then
+			-- THIS IS IT. Argument handler. Killing machine. Use comments to know what's going on
+			if (name_set[object:section_name()] or has_ending_in_list(object, args.possible_endings)) and	-- name check
+					((not args.in_world or not args.in_npc_inv) or				-- all items if args not given OR
+					(args.in_world or not(object_in_world(object))) and			-- in_world items if argument given
+					(args.in_npc_inv or not(object_in_npc_inventory(object)))) and	-- + npc items if argument given
+					(not args.only_npc or object_in_npc_inventory(object)) and		-- - world items if only_npc
+					(not args.only_enemies or is_enemies(get_community(args.enemy_to), get_community(sim:object(object.parent_id)))) and	-- only enemies check
+					(not online_required or is_online(object, sim, gg)) and	-- online check
+					(not nearby_required or is_nearby(object, sim, gg)) and	-- nearby check
+					(with_blacklisted_maps or is_on_blacklisted_map(object, sim, gg))	-- blacklist check
+					then -- then on new string for better git diff if new rule is added (please no)
+				id_list[#id_list + 1] = id
+				if first_item_only then return id_list end	-- I think this is clear
+			end
+		end
+	end
+end
+
+function get_smart_terrain_setup(--[[optional]] nearby_required, --[[optional]] online_required)  -- check
+	-- This function returns a smart suitable for a quest
+	printf("GhenTuong: Start Function| get_smart_terrain_setup")
+	nearby_required = nearby_required or false;
+	online_required = online_required or false;
+	
+	possible_smarts = check_smarts(SIMBOARD.smarts_by_names, nearby_required, online_required)
+	return possible_smarts[math.random(#possible_smarts)]
+end
+
+function get_mutant_data_setup(p)	-- check
+	printf("GhenTuong: Start Function| get_mutant_data_setup")
+	-- This function chooses a random mutant with given rank(ranks)
+	--p == nil, pick all
+	--p[index] == rank, pick this rank.
+
+	local ranks = gt_utility_set.list_to_set(p)		-- ranks are set => easy check if rank in ranks
+	local mutant_list = {}
+	
+	if(ranks == nil) then		-- if no ranks given: return random mutant
+		return gt_utility.random_table_element(gt_database.MUTANT) end
+	
+	for name, data in pairs(gt_database.MUTANT) do
+		if(ranks[data.rank] ~= nil) then	-- if mutant rank in ranks: add mutant to mutant list
+			mutant_list[#mutant_list+1] = name
+		end
+	end
+	
+	local random_mutant_name = mutant_list[math.random(#mutant_list)]
+	local CACHE = gt_database.MUTANT[random_mutant_name]
+	return CACHE
+end
+
+function setup_quest(args)
+	-- This is generic function that sets everything you need for a quest
+	-- Possible args:
+	-- smarts (table) : {amount (int) - how many smarts to prepare,
+	--					 is_nearby, is_online (bool) - smart attributes}
+	-- squads (table of tables) : {{amount (int),
+	--								faction (string) OR		- can be any faction in game
+	--								faction_type (string) - can be "enemy", "client" or "quest_giver"},
+	--								{*squads of another type with the same fields*}}
+	-- packages (table of tables): {{amount (int),
+	--								 package_type (string) OR - must be in gt_database.PACKAGE,
+	--								 quest_type (string) - see gt_database.QUEST_TO_POSSIBLE_GOODS},
+	--								{*packages of another types with the same fields*}}
+	-- items (table of tables): {{amount (int),
+	--							  item_type (string) - TODO,
+	--							  to_create (bool) - TODO, if not create - then find
+	--							  in_npc_inv (bool) - create(search) in npc_inventories
+	--							  in_world (bool) - create(search) in world,
+	--							  npc_to_create (id) - TODO, if create: create in inventory of npc with this id,
+	--							  squad_to_create (int n) - TODO, if create: create in inventory of n-th created squad},
+	--							 {*items of another types with the same fields*}}
+	CACHE = {}
+	CACHE["smarts"] = setup_smarts(args.smarts)
+	factions = get_faction_setup()
+	
+	CACHE["squads"] = {}
+	for squad in args.squads do
+		CACHE.squads[#CACHE.squads + 1] = setup_squad(squad, factions)
+	end
+	
+	CACHE["packages"] = {}
+	for pkg in args.packages do
+		CACHE.packages[#CACHE.packages + 1] = setup_package(pkg)
+	end
+	
+	CACHE["items"] = {}
+	for item in args.items do
+		CACHE.items[#CACHE.items + 1] = setup_item(item)
+	end
+	
+	return CACHE
+
+end
+
+function get_faction_setup(--[[optional]] faction_list)	-- TODO: implement faction_list
+	-- This function returns target character factions for all possible quests
+	-- Quest by himself decides, which character(s) to use
+	printf("GhenTuong: Start Function| get_faction_setup")
+	
+	local faction_list = {
+		["task_giver"] = 'stalker',
+		["client"] = 'stalker',		-- default value is 'stalker', will be changed if possible
+		["enemy"] = 'stalker',
+	}
+	
+	local task_giver = mob_trade.GetTalkingNpc()
+	faction_list["task_giver"] = character_community(task_giver)
+	
+	local player_enemies = get_faction_enemies(character_community(db.actor))
+	local task_giver_enemies = get_faction_enemies(faction_list["task_giver"])
+	
+	-- set enemy - must be enemy for both player and task giver
+	tmp_enemies = {}	
+	for faction in pairs(player_enemies) do					-- search for enemies of both player and task giver
+		if task_giver_enemies[faction] then
+			tmp_enemies[#tmp_enemies + 1] = faction
+		end
+	end
+	if (#tmp_enemies == 0) then printf("GhenTuong: player and task giver doesn't share enemies") end
+	faction_list["enemy"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
+	
+	-- set client - must be enemy for enemy and not enemy with task giver; can be player's faction
+	local enemy_enemies = get_faction_enemies(faction_list["enemy"])
+	tmp_enemies = {}
+	for faction in pairs(enemy_enemies) do
+		if(faction ~= faction_list["task_giver"] and task_giver_enemies[faction] == nil) then
+			tmp_enemies[#tmp_enemies + 1] = faction
+		end
+	end
+	if (#tmp_enemies == 0) then printf("GhenTuong: can't setup client") end
+	faction_list["client"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
+	return faction_list
+end
+
+function get_squad_data_setup(squad_type) -- TODO: faction (?)
+	printf("GhenTuong: Start Function| get_squad_data_setup")
+	if (squad_type == nil) then printf("GhenTuong: Not enough parameter") return end
+	local CACHE = {}
+	CACHE.faction = get_faction_setup().enemy
+	
+	if     (squad_type == "guard") then CACHE.squad = gt_database.GUARD[CACHE.faction]
+	elseif (squad_type == "heavy") then CACHE.squad = gt_database.HEAVY[CACHE.faction]
+	else printf ("GhenTuong: squad_type unefined") end
+	return CACHE
+end
+
+function get_gunship_data_setup() -- check
+	printf("GhenTuong: Start Function| get_gunship_data_setup")
+	local CACHE = {}
+	local gunships = gt_database.GUNSHIPS
+	CACHE.gunship = list[math.random(#list)]
+	CACHE.faction = get_faction_setup().enemy
+	return CACHE
+end
+
+function get_supply_data_setup() -- check
+	printf("GhenTuong: Start Function| get_supply_data_setup")
+	local CACHE = {}
+	CACHE.goods = pick_quest_goods("supply")
+	
+	local faction = get_faction_setup().enemy
+	CACHE.enemy = {
+		squad = gt_database.GUARD[faction],
+		faction = faction,
+	}
+	return CACHE
+end
+
+function get_transaction_data_setup() -- check
+	printf("GhenTuong: Start Function| get_transaction_data_setup")
+	local CACHE = {}
+	-- prepare package for quest
+	printf('4')
+	CACHE.goods = pick_quest_goods("transaction")
+	
+	printf('5')
+	local factions = get_faction_setup()
+	CACHE.enemy = {
+		squad = gt_database.GUARD[factions.enemy],
+		faction = factions.enemy,
+	}
+	CACHE.client = {
+		squad = gt_database.GUARD[factions.client],
+		faction = factions.client,
+	}	
+	return CACHE
+end
+---[[
+function get_artifact_world_data_setup()	-- check
+	printf("GhenTuong: Start Function| get_artifact_world_data_setup")
+	--Find an artifact in world map with its id, section_name, parent_id
+	--Return false if nothing found
+	local CACHE = {}
+	local list = find_objects_ids(get_artifact_names(), true, true)
+	
+	local id = list[math.random(#list)]
+	local artifact = alife():object(id)
+	CACHE.artifact = {
+		id = artifact.id,
+		section_name = artifact:section_name(),
+		parent_id = artifact.parent_id,
+	}
+	CACHE.level = alife():level_name(game_graph():vertex(artifact.m_game_vertex_id):level_id())
+	return CACHE
+end
+
+function get_artifact_stalker_data_setup()	-- check
+	printf("GhenTuong: Start Function| get_artifact_stalker_data_setup")
+	--Find an artifact in a stalker with its id, section_name, parent_id
+	--Enemy with player
+	--Return false if nothing found
+	local CACHE = {}
+	local list = find_objects_ids(get_artifact_names(), true, true, nil, gt_database.ARTIFACT_BOXES_ENDINGS, true, true)
+	
+	if not list then
+		return nil, "gt: artifact_stalker_data: objects not found"
+	end
+	
+	local id = list[math.random(#list)]
+	local artifact = alife():object(id)
+	local npc = alife():object(artifact.parent_id)
+	CACHE.artifact = {
+		id = artifact.id,
+		section_name = artifact:section_name(),
+		parent_id = artifact.parent_id,
+	}
+	CACHE.enemy = {
+		name = npc:character_name(),
+		faction = alife_character_community(npc),
+		level = alife():level_name(game_graph():vertex(npc.m_game_vertex_id):level_id()),
+	}
+	return CACHE
+end
+
+function get_weapon_data_setup()		-- check
+	printf("GhenTuong: Start Function| get_weapon_data_setup")
+	local CACHE = {}
+	
+	local weapons = find_objects_ids(gt_database.WEAPONS_LOWCOST, {in_npc_inv = true, only_enemies = true})
+	
+	local id = list[math.random(#list)]
+	local gun = alife():object(id)
+	local npc = alife():object(gun.parent_id)
+	CACHE.gun = {
+		id = gun.id,
+		section_name = gun:section_name(),
+		parent_id = gun.parent_id,
+	}
+	CACHE.enemy = {
+		name = npc:character_name(),
+		faction = alife_character_community(npc),
+		level = alife():level_name(game_graph():vertex(npc.m_game_vertex_id):level_id()),
+	}
+	return CACHE
+end
