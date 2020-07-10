@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<!-- UI -->
+	<string id="gt_task_text_target">
+		<text>Target</text>
+	</string>
+	<string id="gt_task_text_faction">
+		<text>Faction</text>
+	</string>
+	<string id="gt_task_text_location">
+		<text>Location</text>
+	</string>
+	
+	<!-- Rank -->
+	<string id="gt_task_text_rank">
+		<text>Rank</text>
+	</string>
+	<string id="gt_task_text_rank_s">
+		<text>%c[d_red]S</text>
+	</string>
+	<string id="gt_task_text_rank_a">
+		<text>%c[0,250,250,0]A</text>
+	</string>
+	<string id="gt_task_text_rank_b">
+		<text>%c[d_blue]B</text>
+	</string>
+	<string id="gt_task_text_rank_c">
+		<text>%c[d_green]C</text>
+	</string>
+	
+	<!-- Mutant -->
+	<string id="gt_task_text_zombied">
+		<text>Зомбированный Сталкер</text>
+	</string>
+	<string id="gt_task_text_flesh">
+		<text>Плоть</text>
+	</string>
+	<string id="gt_task_text_boar">
+		<text>Кабан</text>
+	</string>
+	<string id="gt_task_text_snork">
+		<text>Снорк</text>
+	</string>
+	<string id="gt_task_text_psy_dog">
+		<text>Пси собака</text>
+	</string>
+	<string id="gt_task_text_lurker">
+		<text>Люркер</text>
+	</string>
+	<string id="gt_task_text_chimera">
+		<text>Химера</text>
+	</string>
+	<string id="gt_task_text_bloodsucker">
+		<text>Кровосос</text>
+	</string>
+	<string id="gt_task_text_burer">
+		<text>Бюрер</text>
+	</string>
+	<string id="gt_task_text_controller">
+		<text>Контроллёр</text>
+	</string>
+	<string id="gt_task_text_poltergeist">
+		<text>Полтергейст</text>
+	</string>
+	<string id="gt_task_text_gigant">
+		<text>Псевдогигант</text>
+	</string>
+	
+	<!-- Gunship -->
+	<string id="gt_task_text_mi2">
+		<text>Военный Ми-2</text>
+	</string>
+	<string id="gt_task_text_mi24">
+		<text>Военный Ми-24</text>
+	</string>
+	<!-- Package -->
+	<string id="gt_task_text_pda_package">
+		<text>В этой посылке наверное куча полезной всячины, до боли любопытно узнать что там внутри.</text>
+	</string>
+	<string id="gt_task_text_artifact">
+		<text>Артефакт</text>
+	</string>
+	<string id="gt_task_text_weapon">
+		<text>Оружие</text>
+	</string>
+	<string id="gt_task_text_medicine">
+		<text>Медицина</text>
+	</string>
+	<string id="gt_task_text_ammunition">
+		<text>Патроны</text>
+	</string>
+	
+	<!-- Heavy -->
+	<string id="gt_task_text_heavy">
+		<text>Опытный сталкер</text>
+	</string>
+</string_table>

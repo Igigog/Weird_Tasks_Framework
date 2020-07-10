@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<!-- UI -->
+	<string id="gt_task_text_target">
+		<text>Target</text>
+	</string>
+	<string id="gt_task_text_faction">
+		<text>Faction</text>
+	</string>
+	<string id="gt_task_text_location">
+		<text>Location</text>
+	</string>
+	
+	<!-- Rank -->
+	<string id="gt_task_text_rank">
+		<text>Rank</text>
+	</string>
+	<string id="gt_task_text_rank_s">
+		<text>%c[d_red]S</text>
+	</string>
+	<string id="gt_task_text_rank_a">
+		<text>%c[0,250,250,0]A</text>
+	</string>
+	<string id="gt_task_text_rank_b">
+		<text>%c[d_blue]B</text>
+	</string>
+	<string id="gt_task_text_rank_c">
+		<text>%c[d_green]C</text>
+	</string>
+	
+	<!-- Mutant -->
+	<string id="gt_task_text_zombied">
+		<text>Zombified Stalker</text>
+	</string>
+	<string id="gt_task_text_flesh">
+		<text>Flesh</text>
+	</string>
+	<string id="gt_task_text_boar">
+		<text>Boar</text>
+	</string>
+	<string id="gt_task_text_snork">
+		<text>Snork</text>
+	</string>
+	<string id="gt_task_text_psy_dog">
+		<text>Psy Dog</text>
+	</string>
+	<string id="gt_task_text_lurker">
+		<text>Lurker</text>
+	</string>
+	<string id="gt_task_text_chimera">
+		<text>Chimera</text>
+	</string>
+	<string id="gt_task_text_bloodsucker">
+		<text>Bloodsucker</text>
+	</string>
+	<string id="gt_task_text_burer">
+		<text>Burer</text>
+	</string>
+	<string id="gt_task_text_controller">
+		<text>Controller</text>
+	</string>
+	<string id="gt_task_text_poltergeist">
+		<text>Poltergeist</text>
+	</string>
+	<string id="gt_task_text_gigant">
+		<text>Pseudogiant</text>
+	</string>
+	
+	<!-- Gunship -->
+	<string id="gt_task_text_mi2">
+		<text>Mil Mi-2</text>
+	</string>
+	<string id="gt_task_text_mi24">
+		<text>Mil Mi-24</text>
+	</string>
+	<!-- Package -->
+	<string id="gt_task_text_pda_package">
+		<text>This package may contain valuable stuff. I am curious to know what is inside.</text>
+	</string>
+	<string id="gt_task_text_artifact">
+		<text>Artifact</text>
+	</string>
+	<string id="gt_task_text_weapon">
+		<text>Weapon</text>
+	</string>
+	<string id="gt_task_text_medicine">
+		<text>Medicine</text>
+	</string>
+	<string id="gt_task_text_ammunition">
+		<text>Ammunition</text>
+	</string>
+	
+	<!-- Heavy -->
+	<string id="gt_task_text_heavy">
+		<text>High-level Stalker</text>
+	</string>
+</string_table>

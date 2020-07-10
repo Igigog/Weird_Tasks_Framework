@@ -1,0 +1,217 @@
+;============================================================
+;	Anomaly 1.5.5.0
+;	GhenTuong
+;============================================================
+;esc_smart_terrain_5_7_loner_mechanic_stalker
+;============================================================
+[esc_smart_terrain_5_7_loner_mechanic_stalker_task_10]
+icon = ui_iconsTotal_mutant
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(esc_smart_terrain_5_7_loner_mechanic_stalker_task_10)} true, false
+
+title_functor = gt_task_mutant_text
+descr_functor = gt_task_mutant_text
+job_descr = gt_task_text_mutant_job_descr
+task_complete_descr = gt_task_text_mutant_finish
+
+stage_complete = 1
+status_functor = gt_task_mutant_status
+target_functor = gt_task_mutant_target
+on_job_descr = %=gt_task_mutant_setup(esc_smart_terrain_5_7_loner_mechanic_stalker_task_10)%
+
+on_complete = %=gt_task_mutant_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_10:true))%
+on_fail = %=gt_task_mutant_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_10:false))%
+condlist_0 = {!task_giver_alive(esc_smart_terrain_5_7_loner_mechanic_stalker_task_10)} fail
+;------------------------------------------------
+[esc_smart_terrain_5_7_loner_mechanic_stalker_task_11]
+icon = ui_inGame2_Osobiy_zakaz
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(esc_smart_terrain_5_7_loner_mechanic_stalker_task_11)} true, false
+
+title_functor = gt_task_supply_text
+descr_functor = gt_task_supply_text
+job_descr = gt_task_text_supply_job_descr
+task_complete_descr = gt_task_text_supply_finish
+
+stage_complete = 1
+status_functor = gt_task_supply_status
+target_functor = gt_task_supply_target
+on_job_descr = %=gt_task_supply_setup(esc_smart_terrain_5_7_loner_mechanic_stalker_task_11)%
+
+on_complete = %=gt_task_supply_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_11:true))%
+on_fail = %=gt_task_supply_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_11:false))%
+condlist_0 = {!task_giver_alive(esc_smart_terrain_5_7_loner_mechanic_stalker_task_11)} fail
+;------------------------------------------------
+[esc_smart_terrain_5_7_loner_mechanic_stalker_task_12]
+icon = ui_inGame2_PD_master_boevih_sistem
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(esc_smart_terrain_5_7_loner_mechanic_stalker_task_12)} true, false
+
+title_functor = gt_task_heavy_text
+descr_functor = gt_task_heavy_text
+job_descr = gt_task_text_heavy_job_descr
+task_complete_descr = gt_task_text_heavy_finish
+
+stage_complete = 1
+status_functor = gt_task_heavy_status
+target_functor = gt_task_heavy_target
+on_job_descr = %=gt_task_heavy_setup(esc_smart_terrain_5_7_loner_mechanic_stalker_task_12)%
+
+on_complete = %=gt_task_heavy_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_12:true))%
+on_fail = %=gt_task_heavy_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_12:false))%
+condlist_0 = {!task_giver_alive(esc_smart_terrain_5_7_loner_mechanic_stalker_task_12)} fail
+;------------------------------------------------
+[esc_smart_terrain_5_7_loner_mechanic_stalker_task_13]
+icon = ui_inGame2_Skat_1
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(esc_smart_terrain_5_7_loner_mechanic_stalker_task_13)} true, false
+
+title_functor = gt_task_gunship_text
+descr_functor = gt_task_gunship_text
+job_descr = gt_task_text_gunship_job_descr
+task_complete_descr = gt_task_text_gunship_finish
+
+stage_complete = 1
+status_functor = gt_task_gunship_status
+target_functor = gt_task_gunship_target
+on_job_descr = %=gt_task_gunship_setup(esc_smart_terrain_5_7_loner_mechanic_stalker_task_13)%
+
+on_complete = %=gt_task_gunship_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_13:true))%
+on_fail = %=gt_task_gunship_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_13:false))%
+condlist_0 = {!task_giver_alive(esc_smart_terrain_5_7_loner_mechanic_stalker_task_13)} fail
+;------------------------------------------------
+[esc_smart_terrain_5_7_loner_mechanic_stalker_task_14]
+icon = ui_inGame2_Sdelka
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(esc_smart_terrain_5_7_loner_mechanic_stalker_task_14)} true, false
+
+title_functor = gt_task_transaction_text
+descr_functor = gt_task_transaction_text
+job_descr = gt_task_text_transaction_job_descr
+task_complete_descr = gt_task_text_transaction_finish
+
+stage_complete = 1
+status_functor = gt_task_transaction_status
+target_functor = gt_task_transaction_target
+on_job_descr = %=gt_task_transaction_setup(esc_smart_terrain_5_7_loner_mechanic_stalker_task_14)%
+
+on_complete = %=gt_task_transaction_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_14:true))%
+on_fail = %=gt_task_transaction_finish(esc_smart_terrain_5_7_loner_mechanic_stalker_task_14:false))%
+condlist_0 = {!task_giver_alive(esc_smart_terrain_5_7_loner_mechanic_stalker_task_14)} fail
+;============================================================
+;army_south_mechan_mlr
+;============================================================
+[army_south_mechan_mlr_task_10]
+icon = ui_iconsTotal_mutant
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(army_south_mechan_mlr_task_10)} true, false
+
+title_functor = gt_task_mutant_text
+descr_functor = gt_task_mutant_text
+job_descr = gt_task_text_mutant_job_descr
+task_complete_descr = gt_task_text_mutant_finish
+
+stage_complete = 1
+status_functor = gt_task_mutant_status
+target_functor = gt_task_mutant_target
+on_job_descr = %=gt_task_mutant_setup(army_south_mechan_mlr_task_10)%
+
+on_complete = %=gt_task_mutant_finish(army_south_mechan_mlr_task_10:true))%
+on_fail = %=gt_task_mutant_finish(army_south_mechan_mlr_task_10:false))%
+condlist_0 = {!task_giver_alive(army_south_mechan_mlr_task_10)} fail
+;------------------------------------------------
+[army_south_mechan_mlr_task_11]
+icon = ui_inGame2_Osobiy_zakaz
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(army_south_mechan_mlr_task_11)} true, false
+
+title_functor = gt_task_supply_text
+descr_functor = gt_task_supply_text
+job_descr = gt_task_text_supply_job_descr
+task_complete_descr = gt_task_text_supply_finish
+
+stage_complete = 1
+status_functor = gt_task_supply_status
+target_functor = gt_task_supply_target
+on_job_descr = %=gt_task_supply_setup(army_south_mechan_mlr_task_11)%
+
+on_complete = %=gt_task_supply_finish(army_south_mechan_mlr_task_11:true))%
+on_fail = %=gt_task_supply_finish(army_south_mechan_mlr_task_11:false))%
+condlist_0 = {!task_giver_alive(army_south_mechan_mlr_task_11)} fail
+;------------------------------------------------
+[army_south_mechan_mlr_task_12]
+icon = ui_inGame2_PD_master_boevih_sistem
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(army_south_mechan_mlr_task_12)} true, false
+
+title_functor = gt_task_heavy_text
+descr_functor = gt_task_heavy_text
+job_descr = gt_task_text_heavy_job_descr
+task_complete_descr = gt_task_text_heavy_finish
+
+stage_complete = 1
+status_functor = gt_task_heavy_status
+target_functor = gt_task_heavy_target
+on_job_descr = %=gt_task_heavy_setup(army_south_mechan_mlr_task_12)%
+
+on_complete = %=gt_task_heavy_finish(army_south_mechan_mlr_task_12:true))%
+on_fail = %=gt_task_heavy_finish(army_south_mechan_mlr_task_12:false))%
+condlist_0 = {!task_giver_alive(army_south_mechan_mlr_task_12)} fail
+;------------------------------------------------
+[army_south_mechan_mlr_task_13]
+icon = ui_inGame2_Skat_1
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(army_south_mechan_mlr_task_13)} true, false
+
+title_functor = gt_task_gunship_text
+descr_functor = gt_task_gunship_text
+job_descr = gt_task_text_gunship_job_descr
+task_complete_descr = gt_task_text_gunship_finish
+
+stage_complete = 1
+status_functor = gt_task_gunship_status
+target_functor = gt_task_gunship_target
+on_job_descr = %=gt_task_gunship_setup(army_south_mechan_mlr_task_13)%
+
+on_complete = %=gt_task_gunship_finish(army_south_mechan_mlr_task_13:true))%
+on_fail = %=gt_task_gunship_finish(army_south_mechan_mlr_task_13:false))%
+condlist_0 = {!task_giver_alive(army_south_mechan_mlr_task_13)} fail
+;------------------------------------------------
+[army_south_mechan_mlr_task_14]
+icon = ui_inGame2_Sdelka
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=gt_task_precondition_check_max(army_south_mechan_mlr_task_14)} true, false
+
+title_functor = gt_task_transaction_text
+descr_functor = gt_task_transaction_text
+job_descr = gt_task_text_transaction_job_descr
+task_complete_descr = gt_task_text_transaction_finish
+
+stage_complete = 1
+status_functor = gt_task_transaction_status
+target_functor = gt_task_transaction_target
+on_job_descr = %=gt_task_transaction_setup(army_south_mechan_mlr_task_14)%
+
+on_complete = %=gt_task_transaction_finish(army_south_mechan_mlr_task_14:true))%
+on_fail = %=gt_task_transaction_finish(army_south_mechan_mlr_task_14:false))%
+condlist_0 = {!task_giver_alive(army_south_mechan_mlr_task_14)} fail

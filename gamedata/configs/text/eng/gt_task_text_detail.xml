@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<!-- mutant -->
+	<string id="gt_task_text_mutant_title">
+		<text>Eliminate Dangerous Mutants</text>
+	</string>
+	<string id="gt_task_text_mutant_descr">
+		<text>My job is to eliminate mutants in this area.</text>
+	</string>
+	<string id="gt_task_text_mutant_job_descr">
+		<text>Recently some mutants have appeared and are threatening our operations. The commander is seeking someone who can take care of them. Here, take a look.</text>
+	</string>
+	<string id="gt_task_text_mutant_finish">
+		<text>Well done! Well done! Its roars kept ruining my sleep. Here is your reward.</text>
+	</string>
+	<!-- supply -->
+	<string id="gt_task_text_supply_title">
+		<text>Supply chain</text>
+	</string>
+	<string id="gt_task_text_supply_descr">
+		<text>The enemy was transporting supplies but stopped here for some reason. This is a good opportunity to raid them. Those goods might be useful to me or I can bring it to the technician for an extra reward.</text>
+	</string>
+	<string id="gt_task_text_supply_job_descr">
+		<text>Our patrols reported sightings of the enemy's supply goods at this location. For some reason, they haven't brought them to their warehouse yet. Mutant's activity, weather conditions, emission... you name it. Disrupt their supply chain and I'll have something for you. Feel free to keep anything you want. But in case you bring me untouched, you'll get an additional bonus.</text>
+	</string>
+	<string id="gt_task_text_supply_finish">
+		<text>Honest pay for honest work. These things are really good, indeed.</text>
+	</string>
+	<!-- heavy -->
+	<string id="gt_task_text_heavy_title">
+		<text>Neutralize a High-level Stalker</text>
+	</string>
+	<string id="gt_task_text_heavy_descr">
+		<text>I need to neutralize a group of stalkers at this location. Expected high-level weaponry and heavy armours.</text>
+	</string>
+	<string id="gt_task_text_heavy_job_descr">
+		<text>Recently a group of high-level hostile stalkers have settled here. They prevent people from passing by attacking them on sight. We need this threat neutralized so we can continue with our operations. They are heavily equipped, so plan and prepare accordingly.</text>
+	</string>
+	<string id="gt_task_text_heavy_finish">
+		<text>Quite a trouble, huh? I envy the guy who provided them those gears. Such good gears. But you have it done.</text>
+	</string>
+	<!-- gunship -->
+	<string id="gt_task_text_gunship_title">
+		<text>Eliminate Enemy Gunship</text>
+	</string>
+	<string id="gt_task_text_gunship_descr">
+		<text>The job is to take down a gunship. A LMG or RPG should be used to deal max damage to it. Watch out for its machine gun - it is extremely dangerous, so seek some cover.</text>
+	</string>
+	<string id="gt_task_text_gunship_job_descr">
+		<text>A hostile gunship has appeared recently and is disrupting our operations in the area. The commander has deemed it unacceptable, and it needs to be dealt with. You'll get a considerable bonus if you take it down.</text>
+	</string>
+	<string id="gt_task_text_gunship_finish">
+		<text>Good! Those damn gunship engine sound still buzzed in my head. Glad it is down.</text>
+	</string>
+	
+	<!-- transaction -->
+	<string id="gt_task_text_transaction_title">
+		<text>Transaction</text>
+	</string>
+	<string id="gt_task_text_transaction_descr">
+		<text>Those guys were corrupted, betrayed their own faction. My job is to kill them all. They are holding a transaction here, where they can be found and, perhaps, where the good stuff can be found too...</text>
+	</string>
+	<string id="gt_task_text_transaction_job_descr">
+		<text>I got a contract from a friend. They just found out that some of their members have been corrupted. The dudes did many dirty works, even stealing goods and selling to their enemy. They said that those guys will hold a transaction with a squad of their enemy. Thankfully, they share the same enemy with us so we are hired for this trouble. You need to come there, kill the corrupted guys. They didn't mention about their goods. I think you can keep it. No mention about the bad guys either. Treat them the way you want.</text>
+	</string>
+	<string id="gt_task_text_transaction_finish">
+		<text>Good job. They owe me a drink for this one. Here is your share.</text>
+	</string>
+	
+	<!-- artifact_world -->
+	<string id="gt_task_text_artifact_world_title">
+		<text>Artifact Hunting</text>
+	</string>
+	<string id="gt_task_text_artifact_world_descr">
+		<text>Doctor said that an artifact could be found here. Let's try my luck, then.</text>
+	</string>
+	<string id="gt_task_text_artifact_world_job_descr">
+		<text>My measure device just found out sign of an artifact. Why don't you come there and try your luck?</text>
+	</string>
+	<string id="gt_task_text_artifact_world_finish">
+		<text>Nothing. This line will not be shown in the game.</text>
+	</string>
+	
+	<!-- artifact_stalker -->
+	<string id="gt_task_text_artifact_stalker_title">
+		<text>Artifact "Hunting"</text>
+	</string>
+	<string id="gt_task_text_artifact_stalker_descr">
+		<text>Doctor told me this guy had an artifact. He isn't very friendly though...</text>
+	</string>
+	<string id="gt_task_text_artifact_stalker_job_descr">
+		<text>Shh... They said this guy got an artifact. He is, shall we say, not a friend of ours, if you catch my mind...</text>
+	</string>
+	<string id="gt_task_text_artifact_stalker_finish">
+		<text>Nothing. This line will not be shown in the game.</text>
+	</string>
+	
+	<!-- weapon -->
+	<string id="gt_task_text_weapon_title">
+		<text>Good Weapon</text>
+	</string>
+	<string id="gt_task_text_weapon_descr">
+		<text>Have heard of this guy having a pretty good gun. I wonder if it would fit my hand...</text>
+	</string>
+	<string id="gt_task_text_weapon_job_descr">
+		<text>They told me that this guy got a pretty good gun. He is, of course, not very friendly though. Let's see if you can "borrow" it.</text>
+	</string>
+	<string id="gt_task_text_weapon_finish">
+		<text>Nothing. This line will not be shown in the game.</text>
+	</string>
+</string_table>
