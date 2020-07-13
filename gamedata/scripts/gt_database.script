@@ -130,8 +130,6 @@ HEAVY_WEAPON = {
 	[4] = {"wpn_trg","ammo_magnum_300",50},
 }
 
-function get_heavy_weapon_list() return DATABASE_HEAVY_WEAPON end
-
 FACTION_TO_HEAVY = {
 	["stalker"] = "gt_stalker_heavy_stalker",
 	["dolg"] = "gt_stalker_heavy_dolg",

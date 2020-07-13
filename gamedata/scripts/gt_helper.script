@@ -192,14 +192,10 @@ end
 function create_squad_at_smart(squad_data, smart)
 	printf("GhenTuong: Start Function| create_squad_at_smart")
 	local CACHE = {}
-	for x, y in pairs(squad_data) do printf("SQUAD: %s : %s", x, y) end
-	printf("1, %s" , squad_data)
-	printf(squad_data.name)
+	printf("Igi: create_squad: %s", squad_data.name)
 	local squad = alun_utils.create_squad(squad_data.name, smart)
 	squad.stay_time = game.get_game_time()
 	squad.force_online = true
-	printf('2')
-	change_squad_faction(squad.id, squad_data.faction)
 	
 	CACHE.id = squad.id
 	CACHE.section_name = squad:section_name()
@@ -228,13 +224,10 @@ function create_package(package_data, smart)		-- TODO
 	local created_object = alife():create(package_data.package_name, location, smart_data.m_level_vertex_id, smart_data.m_game_vertex_id)
 	if created_object then
 		local data = stpk_utils.get_item_data(created_object)
-		if data then
-			data.visual_name = package_data.visual_name
-			if not (content == "") then
-				data.custom_data = content
-			end
-			stpk_utils.set_item_data(data, created_object)
-		end
+		data.visual_name = package_data.visual_name
+		data.custom_data = content
+		stpk_utils.set_item_data(data, created_object)
+		
 		package_obj_data = {
 			id = created_object.id,
 			section_name = created_object:section_name()
@@ -256,11 +249,11 @@ function create_target(SETUP_CACHE, task_id)
 	for target_type, handler in pairs(handlers) do
 		if SETUP_CACHE[target_type] then
 			target[target_type] = {}
-			for _, target_group in pairs(SETUP_CACHE[target_type]) do
+			for _, target_group_data in pairs(SETUP_CACHE[target_type]) do
 				local group_cache = {}
-				for _, target_data in pairs(target_group) do
+				for i=1, target_group_data.amount do
 					printf("TARGET: %s : %s", _, target_data)
-					local obj_data = handler(target_data, location)
+					local obj_data = handler(target_group_data, location)
 					group_cache[#group_cache + 1] = obj_data
 				end
 				target[target_type][#target[target_type] + 1] = group_cache
@@ -390,17 +383,17 @@ end
 
 function release_squad(squad_data)
 	printf("GhenTuong: Start Function| release_squad")
-	if not (squad_data.id) then printf("GhenTuong: no CACHE.id") return end
-	if not (squad_data.section_name) then printf("GhenTuong: no CACHE.section_name") return end
+	if not (squad_data.id) then printf("GhenTuong: no squad_data.id") return end
+	if not (squad_data.section_name) then printf("GhenTuong: no squad_data.section_name") return end
 	
 	local squad = alife():object(squad_data.id)
 
-	if not (squad) then printf("GhenTuong: %s doesn't exist", CACHE.id) return end
-	if not (squad:clsid() == clsid.online_offline_group_s) then printf("GhenTuong: %s is not an online_offline_group_s", CACHE.id) return end
-	if not (squad:section_name() == CACHE.section_name) then printf("GhenTuong: %s section_name doesn't fit", squad:section_name()) return end
+	if not (squad) then return end
+	if not (squad:clsid() == clsid.online_offline_group_s) then return end
+	if not (squad:section_name() == squad_data.section_name) then return end
 	
 	printf("GhenTuong: release %s", squad:name())
-	safe_release_manager.release(squad)
+	SIMBOARD:remove_squad(squad)
 end
 
 function count_release_loot(list)
@@ -433,6 +426,7 @@ function count_release_loot(list)
 end
 
 function change_squad_faction(squad_id, faction)
+	-- This can be used only on online objects
 	local squad = alife():object(squad_id)
 	for npc in squad:squad_members() do
 		local member = npc and level.object_by_id(npc.id)
@@ -451,11 +445,11 @@ local function check_package_in_world(package_obj, package_data)
 	else return true end
 end
 
-function check_and_mark_packages(pkg_list)
+function update_packages_mark(pkg_list)
 	--Check if packages are in world map and mark(unmark) them in PDA
 	--mark == true. Mark those packages that is still in the world map
 	--True if one of them is still in world map.
-	for index, data in pairs(pkg_list) do
+	for _, data in pairs(pkg_list) do
 		local package_obj = alife():object(data.id)
 		
 		if check_package_in_world(package_obj, data) then
@@ -468,7 +462,6 @@ function check_and_mark_packages(pkg_list)
 			end
 		end
 	end
-	return check
 end
 
 function init_task_cache(task_id, local_cache, global_tasks_cache)
@@ -487,7 +480,7 @@ function package_loot_release(list, condition)
 	--condition is a list of parent_id of the packages. Release if fitted. Must be a list.
 	--condition == nil => only count how many package is in player inventory
 	--AC_ID is player, 65535 is world map
-	if not (list) then return end
+	if not list then return end
 	local count = 0
 	for index, data in pairs(list) do
 		local pick_package = alife():object(data.id)
@@ -506,6 +499,12 @@ function package_loot_release(list, condition)
 		end
 	end
 	--Remove mark
-	local remove_mark = check_package(list, false)
+	local remove_mark = update_packages_mark(list)
 	return count
+end
+
+function reward_quest_money(task_name)
+	local sum_money = gt_database.QUEST_INFO[task_name].reward
+	local money = {tostring(sum_money), tostring(sum_money+1000)}
+	xr_effects.reward_random_money(nil, nil, money)
 end

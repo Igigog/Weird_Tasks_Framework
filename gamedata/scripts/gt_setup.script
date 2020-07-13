@@ -128,12 +128,12 @@ function setup_quest(args)
 	--							 {*items of another types with the same fields*}}
 	CACHE = {}
 	CACHE["smarts"] = setup_smarts(args.smarts)
-	factions = gt_helper.get_faction_setup()
+	CACHE["factions"] = gt_helper.get_faction_setup()
 	
 	if args["squads"] then
 		CACHE["squads"] = {}
 		for _, squad_data in pairs(args.squads) do
-			CACHE.squads[#CACHE.squads + 1] = setup_squad(squad_data, CACHE.smarts, factions)
+			CACHE.squads[#CACHE.squads + 1] = setup_squad(squad_data, CACHE.smarts, CACHE.factions)
 		end
 	end
 	
