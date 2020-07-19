@@ -236,7 +236,7 @@ function create_package(package_data, smart)		-- TODO
 	return package_obj_data
 end
 
-function create_target(SETUP_CACHE, task_id)
+function create_target(SETUP_CACHE)
 	printf("Igi: create_target")
 	local handlers = {
 		["packages"] = create_package,
@@ -254,6 +254,10 @@ function create_target(SETUP_CACHE, task_id)
 				for i=1, target_group_data.amount do
 					printf("TARGET: %s : %s", _, target_data)
 					local obj_data = handler(target_group_data, location)
+					obj_data.custom_args = target_group_data.custom_args
+					if target_group_data.custom_args.pda_target then
+						SETUP_CACHE['pda_target'] = obj_data.id
+					end
 					group_cache[#group_cache + 1] = obj_data
 				end
 				target[target_type][#target[target_type] + 1] = group_cache
@@ -357,8 +361,8 @@ function get_target_descript(postpone_data)
 	return content
 end
 
-function get_postpone_intel(quest_name, target_name, factions, smart_name)
-	local postpone_data = setup_postpone_data(target_name, factions, smart_name)
+function get_postpone_intel(quest_name, targets, factions, smart_name)
+	local postpone_data = setup_postpone_data(targets, factions, smart_name)
 	local postpone_intel = {
 		caption = game.translate_string(gt_database.TEXT_HEADER .. quest_name .. "_title"),
 		text = get_target_descript(postpone_data),		-- data is set in setup_postpone_data
@@ -430,7 +434,7 @@ function change_squad_faction(squad_id, faction)
 	local squad = alife():object(squad_id)
 	for npc in squad:squad_members() do
 		local member = npc and level.object_by_id(npc.id)
-		if (member and not (character_community(member) == faction)) then
+		if member and not (character_community(member) == faction) then
 			printf("GhenTuong: %s| %s => %s", npc.object:name(), character_community(member), faction)
 			member:set_character_community(faction, 0, 0)
 		end
@@ -445,21 +449,17 @@ local function check_package_in_world(package_obj, package_data)
 	else return true end
 end
 
-function update_packages_mark(pkg_list)
-	--Check if packages are in world map and mark(unmark) them in PDA
-	--mark == true. Mark those packages that is still in the world map
-	--True if one of them is still in world map.
-	for _, data in pairs(pkg_list) do
-		local package_obj = alife():object(data.id)
-		
-		if check_package_in_world(package_obj, data) then
-			if (data.id and level.map_has_object_spot(data.id,"treasure_unique") == 0) then
-				level.map_add_object_spot(data.id, "treasure_unique", game.translate_string(gt_database.TEXT_HEADER .. "pda_package"))
-			end
-		else
-			if (data.id and level.map_has_object_spot(data.id,"treasure_unique") == 1) then
-				level.map_remove_object_spot(data.id, "treasure_unique")
-			end
+function update_mark(obj_data, mark_type, unmark)
+	unmark = unmark or false
+	local obj = alife():object(data.id)
+	
+	if check_package_in_world(obj, obj_data) and not unmark then
+		if (obj_data.id and level.map_has_object_spot(obj_data.id, mark_type) == 0) then
+			level.map_add_object_spot(obj_data.id, mark_type, game.translate_string(gt_database.TEXT_HEADER .. mark_type))
+		end
+	elseif not check_package_in_world(obj, obj_data) and unmark then
+		if (obj_data.id and level.map_has_object_spot(obj_data.id, marl_type) == 1) then
+			level.map_remove_object_spot(obj_data.id, mark_type)
 		end
 	end
 end
@@ -474,32 +474,17 @@ function init_task_cache(task_id, local_cache, global_tasks_cache)
 	return local_cache
 end
 
-function package_loot_release(list, condition)
+function release_package(pkg_data)
 	printf("GhenTuong: Start Function| package_loot_release")
-	--Count how many is in player inventory
-	--condition is a list of parent_id of the packages. Release if fitted. Must be a list.
-	--condition == nil => only count how many package is in player inventory
-	--AC_ID is player, 65535 is world map
-	if not list then return end
-	local count = 0
-	for index, data in pairs(list) do
-		local pick_package = alife():object(data.id)
-		if (pick_package and (pick_package:section_name() == data.section_name)) then
-			--Count how many is in player inventory
-			if (pick_package.parent_id == AC_ID) then count = count + 1 end
-			--Release if parent_id is fitted
-			if (condition and (#condition > 0)) then
-				for index, data in pairs(condition) do
-					if (pick_package.parent_id == data) then
-						printf("GhenTuong: release %s| parent_id = %s", pick_package:name(), pick_package.parent_id)
-						safe_release_manager.release(pick_package)
-					end
-				end
-			end
-		end
+	if not pkg_data then return end
+	
+	local pkg = alife():object(pkg_data.id)
+	if (pick_package and (pkg:section_name() == data.section_name)) then
+		printf("GhenTuong: release %s| parent_id = %s", pkg:name(), pkg.parent_id)
+		safe_release_manager.release(pkg)
 	end
 	--Remove mark
-	local remove_mark = update_packages_mark(list)
+	local remove_mark = update_packages_mark({pkg_data})
 	return count
 end
 
@@ -508,3 +493,125 @@ function reward_quest_money(task_name)
 	local money = {tostring(sum_money), tostring(sum_money+1000)}
 	xr_effects.reward_random_money(nil, nil, money)
 end
+
+function release_targets_in_world(target_cache)
+	printf("Igi: release_targets START")
+	local handlers = {
+		'packages' = release_package,
+		'squads' = release_squad,
+	}
+	
+	for name, handler in handlers do
+		if target_cache[name] then
+			for target_group in target_cache[name] do
+				for target_data in target_group do
+					printf("Release %s: name: %s, id: %s", name, target_data.section_name, target_data.id)
+					handler(target_data)
+				end
+			end
+		end
+	end
+	printf("Igi: release_targets END")
+end
+
+function quest_target(CACHE)
+	if not CACHE.pda_target then
+		printf("Igi: No PDA target")
+		return
+	end
+	return CACHE.pda_target
+end
+
+function mark_targets(CACHE, unmark)
+	unmark = unmark or false
+	local marks = {
+		"packages" = "treasure_unique",
+		"squads" = "crlc_squad_red",
+		"item" = "item_misc",
+	}
+	for item, mark_type in pairs(marks) do
+		if CACHE.targets[item] then
+			for _, obj_group in pairs(CACHE.targets[item]) do
+				for _, obj_data in pairs(obj_group) do
+					if obj_data.custom_args.to_map then
+						update_mark(obj_data, mark_type, unmark)
+					end
+				end
+			end
+		end
+	end
+end
+
+function unmark_targets(CACHE)
+	mark_targets(CACHE, true)
+end
+
+function return_true()
+	-- Well... Don't judge me
+	return true
+end
+
+function change_squad_role(squad_data, CACHE, role)
+	if not CACHE.factions[role] and not gt_database.FACTION_TO_GUARD[role] then
+		printf("IGI: change role: role unknown")
+		return
+	end
+	role = CACHE.factions[role] or role		-- if role is not in CACHE => role is actual faction
+	change_squad_faction(squad_data.id, role)
+end
+
+function do_online_activities(CACHE)
+	local condition_handlers = {
+		['is_online'] = return_true,
+	}
+	
+	local action_handlers = {
+		['change_faction'] = change_squad_role,
+	}
+	
+	for _, group in CACHE.targets.squads do
+		for _, obj_data in group do
+			obj = alife():object(obj_data.id)
+			if obj and obj_data.online_activities then
+				for condition, acts do
+					if condition_handlers['condition'](obj_data, CACHE) then
+						for action, arg in acts do
+							if action_handlers[action] then
+								action_handlers[action](obj_data, CACHE, arg)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

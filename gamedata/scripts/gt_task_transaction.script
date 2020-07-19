@@ -4,23 +4,6 @@
 --	GhenTuong
 -- =============================================================
 local SETUP_TASK_CACHE = {} --CACHE to setup task
---SETUP_TASK_CACHE[task_id] = {
---	["setup"]
---	["smart"]
---	}
--- =============================================================
-
-local function init_cache(task_id, local_cache)
-	if not (SETUP_TASK_CACHE[task_id]) then 
-		printf("GhenTuong: %s| Can not init in first run.", task_id) 
-		return nil, "SETUP_TASK_CACHE not initialised" 
-	end
-	CACHE = SETUP_TASK_CACHE[task_id]
-	utils.save_var(db.actor, task_id, CACHE)
-	return CACHE
-end
-
-
 
 --< Effect >--------------------------------------------------
 xr_effects.gt_task_transaction_setup = function(actor,npc,p)	-- check?
@@ -78,6 +61,11 @@ task_status_functor.gt_task_transaction_status = function (tsk,task_id)	-- check
 	--Mark packages in PDA
 	gt_helper.update_packages_mark(CACHE.target.packages[1])
 	
+	local client_squad = alife():object(CACHE.target.squads[1][1].id)
+	if client_squad then
+		gt_helper.change_squad_faction(client_squad, CACHE.squads[2].faction)
+	end
+	
 	--Check if target is alive
 	local target_squad = alife():object(CACHE.target.squads[1][1].id)
 	local squad_info = CACHE.target.squads[1][1]	-- shortcut
@@ -118,7 +106,7 @@ task_functor.gt_task_transaction_text = function(task_id,field,p,tsk)	-- check
 	end
 end
 --< Reward >--------------------------------------------------
-xr_effects.gt_task_transaction_finish = function(actor,npc,p)	-- TODO
+xr_effects.gt_task_transaction_finish = function(actor,npc,p)
 	if not (p and p[1] and p[2]) then return end
 	local task_id = p[1]
 	local is_completed = p[2]
@@ -134,9 +122,6 @@ xr_effects.gt_task_transaction_finish = function(actor,npc,p)	-- TODO
 	end
 	--Release
 	gt_helper.package_loot_release(CACHE.target.packages[1], {65535})
-	printf(CACHE.target.squads[1][1])
-	printf(CACHE.target.squads[1])
-	printf(CACHE.target.squads)
 	gt_helper.release_squad(CACHE.target.squads[1][1])
 	gt_helper.release_squad(CACHE.target.squads[2][1])
 	--Reset stored data

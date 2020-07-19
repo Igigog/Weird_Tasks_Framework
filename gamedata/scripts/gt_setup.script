@@ -3,13 +3,9 @@
 local function setup_squad(squad_info, smarts, factions)	-- TODO: Custom smarts
 	printf("Igi: setup_squad")
 	local CACHE = {}
-	local smart = smarts[1]
 
 	local amount = squad_info.amount or 1
-	local faction = squad_info["faction"] or false
-	if not faction then
-		faction = factions[squad_info["faction_type"]]
-	end
+	local faction = squad_info["faction"] or factions[squad_info["faction_type"]]
 	
 	if not faction then
 		printf("Igi: setup_squad: Unable to set faction")
@@ -28,6 +24,9 @@ local function setup_squad(squad_info, smarts, factions)	-- TODO: Custom smarts
 	
 	local squad_data = {["name"] = squad_name, ['faction'] = faction}
 	squad_data.amount = amount
+	squad_data.description_data = faction
+	squad_data.target = squad_info.target
+	squad_data.online_activities = squad_info.online_activities
 
 	return squad_data
 end
@@ -50,7 +49,7 @@ local function setup_smarts(smarts)  -- check
 	return smarts_list
 end
 
-local function setup_package(pkg_info)				-- TODO: Custom smarts
+local function setup_package(pkg_info, smarts, factions)				-- TODO: Custom smarts
 	local pkgs = {}
 	
 	local pkg_data = gt_database.PACKAGE[pkg_info["package_type"]] or gt_helper.pick_quest_goods(pkg_info.quest_type)
@@ -62,10 +61,12 @@ local function setup_package(pkg_info)				-- TODO: Custom smarts
 	end
 
 	pkg_data.amount = amount
+	pkg_data.description_data = pkg_data.package_type
+	pkg_data.target = pkg_info.target
 	return pkg_data
 end
 
-local function setup_item(item_data, factions)
+local function setup_item(item_data, smarts, factions)
 	printf("Igi: Setup_item")
 	assert(item_data.item_type or item_data.item_list, "Igi: setup_item: No item list given")
 	local TYPE_TO_LIST = {
@@ -80,7 +81,8 @@ local function setup_item(item_data, factions)
 		printf("Igi: setup_item: No item_list")
 		return nil, "No item_list"
 	end
-	
+	local objects
+	objects_data = {}
 	if item_data.to_create then
 		printf("TODO")
 	else
@@ -93,64 +95,104 @@ local function setup_item(item_data, factions)
 			["only_enemies"] = item_data.only_enemies,
 			["enemy_to"] = item_data.enemy_to,
 		}
-		local objects = gt_helper.find_objects_ids(item_set, args)
+		objects = gt_helper.find_objects_ids(item_set, args)
+		objects = gt_utils.get_random_items(objects, item_data.amount)
 	end
-	return gt_utils.get_random_items(objects, item_data.amount)
+	objects_data.target = item_data.target
+	objects_data.ids = objects
+	return objects_data
+end
+
+function setup_description(CACHE)
+	local transform = {
+		['squads'] = 'factions',
+		['packages'] = 'targets',
+		['items'] = 'targets',
+	}
+	if CACHE.description then
+		for item, _ in pairs(transform) do
+			if CACHE.description[item] then
+				local new_desc = CACHE.description[transform[item]] -- shortcut
+				-- add item to relevant section
+				for _, data in CACHE.description[item] do
+					new_desc[#new_desc + 1] = data
+				end
+				-- delete old section to not hold trash in CACHE
+				CACHE.description[item] = nil
+			end
+		end
+	end
+	
+	return CACHE
 end
 
 function setup_quest(args)
 	-- This is generic function that sets everything you need for a quest
 	-- Possible args:
 	-- smarts (table) : {amount (int) - how many smarts to prepare,
-	--					 is_nearby, is_online (bool) - smart attributes}
+	--					 is_nearby, is_online (bool) - smart attributes,
+	--					 to_description (int) - n-th smart used for description}
 	-- squads (table of tables) : {{amount (int),
 	--								faction (string) OR		- can be any faction in game
 	--								faction_type (string) - can be "enemy", "client" or "quest_giver",
 	--								type (string) - can be "guard" or "heavy",
-	--								objective (string) - can be "kill", "save" or "contact"}
+	--								target (string) - can be "kill", "save" or "contact"; default: kill,
+	--								to_description (bool) - set squad faction as one of description factions, default: true
+	}
 	--								{*squads of another type with the same fields*}}
 	-- packages (table of tables): {{amount (int), default: standart amount for this quest type
 	--								 package_type (string) OR - must be in gt_database.PACKAGE,
-	--								 quest_type (string) - see gt_database.QUEST_TO_POSSIBLE_GOODS},
+	--								 quest_type (string) - see gt_database.QUEST_TO_POSSIBLE_GOODS,
+	--								 smart_to_create (int) - if create: create in n-th smart, default: smarts[1]
+	--								 target (string) - 'return', 'take' or 'open',
+	--								 to_description (bool) - set package_type as one of description targets; default: true
+	--},
 	--								{*packages of another types with the same fields*}}
 	-- items (table of tables): {{amount (int),
 	--							  item_type (string) - only "artifact" and "weapon_*lowcost, midgame, endgame or legend*" rn OR
 	--							  item_list (list) 	- search/create random item from list
 	--							  to_create (bool) - TODO, if not create - then find
 	--							  in_npc_inv (bool) - create(search) in npc inventories,
-	--							  only_npc (bool) - create(search) only in npc_inv
+	--							  npc_identity (string) - 'friend', 'enemy', 'all' or faction
 	--							  in_world (bool) - create(search) in world,
-	--							  only_enemies (bool) - create(search) only in enemies inv, if in_npc_inv
 	--							  enemy_to (string) - if only_enemies then faction or "client" or "enemy" or "quest_giver"; default: player
-	--							  npc_to_create (id) - TODO, if create: create in inventory of npc with this id,
-	--							  squad_to_create (int n) - TODO, if create: create in inventory of n-th created squad,
-	--							  smart_to_create (smart) - if create: create in smart},
+	--							  npc_to_create (int) - TODO, if create: create in inventory of npc with this squad group,
+	--							  smart_to_create (smart) - if create: create in n-th smart, default: 1},
 	--							 {*items of another types with the same fields*}}
 	CACHE = {}
 	CACHE["smarts"] = setup_smarts(args.smarts)
 	CACHE["factions"] = gt_helper.get_faction_setup()
+	CACHE["description"] = {
+		['factions'] = {},
+		['targets'] = {},
+		['smarts'] = {}
+	}
+	if args.smarts.to_description then
+		CACHE.description.smarts = CACHE.smarts[args.smarts.to_description]
+	end
 	
-	if args["squads"] then
-		CACHE["squads"] = {}
-		for _, squad_data in pairs(args.squads) do
-			CACHE.squads[#CACHE.squads + 1] = setup_squad(squad_data, CACHE.smarts, CACHE.factions)
+	local handlers = {
+		["squads"] = setup_squad,
+		["packages"] = setup_package,
+		["items"] = setup_item,
+	}
+	
+	for name, handler in handlers do
+		if args[name] then
+			CACHE[name] = {}
+			for _, data in pairs(args[name]) do
+				local group_data = handler(data, CACHE.smarts, CACHE.factions)
+				-- custom args are booleans that will be used later
+				group_data["custom_args"] = data.custom_args
+				CACHE[name][#CACHE[name] + 1] = group_data
+				if data.to_description ~= false then
+					CACHE.description[name][#CACHE.description[name] + 1] = group_data.description_data
+				end
+			end
 		end
 	end
 	
-	if args["packages"] then
-		CACHE["packages"] = {}
-		for _, pkg in pairs(args.packages) do
-			CACHE.packages[#CACHE.packages + 1] = setup_package(pkg)
-		end
-	end
-	
-	if args["items"] then
-		CACHE["items"] = {}
-		for _, item in pairs(args.items) do
-			CACHE.items[#CACHE.items + 1] = setup_item(item)
-		end
-	end
-	
+	CACHE = setup_description(CACHE)
 	return CACHE
 end
 
