@@ -1,10 +1,11 @@
 CONSTRUCTOR = {
 	['transaction'] = {
-		['smarts'] = {['is_nearby'] = true},
+		['smarts'] = {
+			['is_nearby'] = true,
+		},
 		['squads'] = {
 			{['type'] = 'guard',
 			['faction_type'] = 'client',
-			['custom_args'] = ['pda_target' = true,],
 			['online_activities'] = {
 				['is_online'] = {
 					['change_faction'] = 'enemy',
@@ -19,8 +20,15 @@ CONSTRUCTOR = {
 			{['quest_type'] = 'transaction',
 			['amount'] = 2,
 			['in_world'] = true,
+			['custom_args'] = {['on_map'] = true,},
 			['target'] = 'return',
-			['custom_args'] = ['on_map' = true,]},
+			},
+			
+			{['package_type'] = 'ammunition',
+			['amount'] = 1,
+			['in_world'] = true,
+			['target'] = 'return',
+			},
 		},
 	}
 }

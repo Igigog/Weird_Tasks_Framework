@@ -27,25 +27,24 @@ local function setup_squad(squad_info, smarts, factions)	-- TODO: Custom smarts
 	squad_data.description_data = faction
 	squad_data.target = squad_info.target
 	squad_data.online_activities = squad_info.online_activities
+	squad_data.target = squad_info.target or "kill"
 
 	return squad_data
 end
 
 local function setup_smarts(smarts)  -- check
-	printf("GT: setup_smarts")
+	printf("GT: setup_smarts: Amount: %s, Nearby: %s, Online: %s", smarts.amount, smarts.is_nearby, smarts.is_online)
 	-- This function returns a smart suitable for a quest
 	local amount = smarts.amount or 1;
-	local nearby_required = smarts.nearby_required or false;
-	local online_required = smarts.online_required or false;
+	local possible_smarts = gt_helper.check_smarts(SIMBOARD.smarts_by_names, smarts.is_nearby, smarts.is_online)
 	
-	local possible_smarts = gt_helper.check_smarts(SIMBOARD.smarts_by_names, nearby_required, online_required)
-	
-	if #possible_smarts < amount then		-- almost imposible case, but let it be
+	if #possible_smarts < amount then
 		printf("Igi: setup_smarts: Not enough smarts available")
 		return nil, "Not enough smarts available"
 	end
 
 	local smarts_list = gt_utils.get_random_items(possible_smarts, amount)
+	
 	return smarts_list
 end
 
@@ -114,7 +113,7 @@ function setup_description(CACHE)
 			if CACHE.description[item] then
 				local new_desc = CACHE.description[transform[item]] -- shortcut
 				-- add item to relevant section
-				for _, data in CACHE.description[item] do
+				for _, data in pairs(CACHE.description[item]) do
 					new_desc[#new_desc + 1] = data
 				end
 				-- delete old section to not hold trash in CACHE
@@ -138,7 +137,7 @@ function setup_quest(args)
 	--								type (string) - can be "guard" or "heavy",
 	--								target (string) - can be "kill", "save" or "contact"; default: kill,
 	--								to_description (bool) - set squad faction as one of description factions, default: true
-	}
+	--								}
 	--								{*squads of another type with the same fields*}}
 	-- packages (table of tables): {{amount (int), default: standart amount for this quest type
 	--								 package_type (string) OR - must be in gt_database.PACKAGE,
@@ -167,8 +166,8 @@ function setup_quest(args)
 		['targets'] = {},
 		['smarts'] = {}
 	}
-	if args.smarts.to_description then
-		CACHE.description.smarts = CACHE.smarts[args.smarts.to_description]
+	if not args.smarts['not_show'] then
+		CACHE.description.smarts = CACHE.smarts		-- TODO
 	end
 	
 	local handlers = {
@@ -177,9 +176,10 @@ function setup_quest(args)
 		["items"] = setup_item,
 	}
 	
-	for name, handler in handlers do
+	for name, handler in pairs(handlers) do
 		if args[name] then
 			CACHE[name] = {}
+			CACHE.description[name] = {}
 			for _, data in pairs(args[name]) do
 				local group_data = handler(data, CACHE.smarts, CACHE.factions)
 				-- custom args are booleans that will be used later

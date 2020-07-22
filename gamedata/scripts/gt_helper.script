@@ -1,7 +1,16 @@
 -- There are functions that are used by other complex functions
 
+local function alife_obj(id)
+	id = tonumber(id)
+	if not id then
+		callstack()
+		assert(nil, "Don't look at me, senpai >//////<")
+	end
+	return alife():object(id)
+end
+
 ARTIFACT_NAMES = {}
-function get_artifact_names()						-- check
+function get_artifact_names()
 	-- creates a set of all artifacts in game
 	if (next(ARTIFACT_NAMES) ~= nil) then return ARTIFACT_NAMES end	-- if set already created: return that set
 	-- if set not created: create, save and return
@@ -41,31 +50,35 @@ function object_in_world(obj)
 	return obj.parent_id == 65535
 end
 
-function object_in_npc_inventory(obj)
-	if not obj then return nil end
+function object_in_npc_inventory(obj_data)
+	local obj = alife_obj(obj_data.id)
+	if not obj then return end
 	return check_common_npc(obj.parent_id)
 end
 
-function get_object_level_id(obj, --[[optional]] alife_obj, --[[optional]] game_graph_obj)
+function object_in_player_inventory(obj_data)
+	local obj = alife_obj(obj_data.id)
+	if not obj then return end
+	return obj.parent_id == 0
+end
+
+function get_object_level_id(obj)
 	-- obj must be alife object
 	if not obj then return nil end
-	-- these are to not run alife() or gg() multiple times
-	alife_obj = alife_obj or alife()
-	game_graph_obj = game_graph_obj or game_graph()
 	
-	local lvl_info_obj = 0
+	local lvl_info_obj
 	if object_in_world(obj) then
 		lvl_info_obj = obj
 	elseif object_in_npc_inventory(obj) then
-		lvl_info_obj = alife_obj:object(obj.parent_id)
+		lvl_info_obj = alife_obj(obj.parent_id)
 	end
 	
-	local obj_level_id = game_graph_obj:vertex(lvl_info_obj.m_game_vertex_id):level_id()
+	local obj_level_id = game_graph():vertex(lvl_info_obj.m_game_vertex_id):level_id()
 	return obj_level_id
 end
 
 function get_object_level(obj, sim, gg)
-	return sim:level_name(get_object_level_id(object, sim, gg))
+	return alife():level_name(get_object_level_id(object))
 end
 
 local function get_faction_enemies(faction, --[[optional]] monolith_included)
@@ -82,7 +95,7 @@ local function get_faction_enemies(faction, --[[optional]] monolith_included)
 	return enemies_set
 end
 
-function check_smarts(smarts_table, --[[optional]] nearby_required, --[[optional]] online_required) -- check
+function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] online_req) -- check
 	-- This function checks table of smarts for
 	-->	- availability
 	-->	- smart is not a base
@@ -91,20 +104,20 @@ function check_smarts(smarts_table, --[[optional]] nearby_required, --[[optional
 	-- and returns a table of suitable smarts
 	assert(type(smarts_table) == 'table', 'gt: check_smarts: not a table given')
 	local return_list = {}
-	local sim = alife()
-	local gg = game_graph()
-	local actor_level = level.name()
 	
 	for smart_name, smart_data in pairs(smarts_table) do
 		if simulation_objects.available_by_id[smart_data.id] and	-- availability check
 				not simulation_objects.base_smarts[smart_name] then	-- base smart check
-			local smart_level = sim:level_name(gg:vertex(smart_data.m_game_vertex_id):level_id())
+			local smart_level = alife():level_name(game_graph():vertex(smart_data.m_game_vertex_id):level_id())
 			
 			if not gt_database.BLACKLISTED_MAPS[smart_level] then						-- blacklist check
 				local is_online = smart_data.online
-				local is_nearby = string.find(simulation_objects.config:r_value(actor_level, "target_maps", 0, ""), smart_level)
+				local is_nearby = string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), smart_level)
 				
-				if (is_nearby or not nearby_required) and (is_online or not online_required) then
+				if (nearby_req == nil and online_req == nil) or		-- any OR
+						((nearby_req and online_req) and (is_online or is_nearby)) or	-- nearby + online OR
+						(not is_nearby == not nearby_req) and 		-- specified
+						(not is_online == not online_req) then		-- not is used to convert to boolean
 					return_list[#return_list + 1] = smart_name
 				end
 			end
@@ -113,16 +126,15 @@ function check_smarts(smarts_table, --[[optional]] nearby_required, --[[optional
 	return return_list
 end
 
-function is_online(object, sim, gg)
-	player_level_id = get_object_level_id(db.player, sim, gg)
-	object_level_id = get_object_level_id(object, sim, gg)
+function is_online(object)
+	player_level_id = get_object_level_id(db.player)
+	object_level_id = get_object_level_id(object)
 	return player_level_id == object_level_id
 end
 
-function is_nearby(object, sim, gg)
-	local level = get_object_level(object, sim, gg)
-	local actor_level = level.name()
-	return string.find(simulation_objects.config:r_value(actor_level, "target_maps", 0, ""), level)
+function is_nearby(object)
+	local level = get_object_level(object)
+	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), level)
 end
 
 function is_on_blacklisted_map(object, sim, gg)
@@ -160,16 +172,14 @@ function find_objects_ids(name_set, --[[optional]] args) -- gl, check
 	assert(args.in_npc_inv or not(only_npc), "gt: find_objects_ids: only_npc but not in_npc_inv")
 	assert(args.only_enemies or not(enemy_to), "gt: find_objects_ids: enemy_to but not only_enemies")
 	id_range = args.id_range or {1, 65534}
-	
-	local sim = alife()
-	local gg = game_graph()
+
 	local id_list = {}
 	args.enemy_to = args.enemy_to or db.actor
 	local is_enemies = game_relations.is_factions_enemies	-- shortcut
 
 	
 	for id=id_range[1], id_range[2] do
-		local object = sim:object(id)
+		local object = alife_obj(id)
 		if object then
 			-- THIS IS IT. Argument handler. Killing machine. Use comments to know what's going on
 			if (name_set[object:section_name()] or has_ending_in_list(object, args.possible_endings)) and	-- name check
@@ -177,10 +187,10 @@ function find_objects_ids(name_set, --[[optional]] args) -- gl, check
 					(args.in_world or not(object_in_world(object))) and			-- in_world items if argument given
 					(args.in_npc_inv or not(object_in_npc_inventory(object)))) and	-- + npc items if argument given
 					(not args.only_npc or object_in_npc_inventory(object)) and		-- - world items if only_npc
-					(not args.only_enemies or is_enemies(get_community(args.enemy_to), get_community(sim:object(object.parent_id)))) and	-- only enemies check
-					(not online_required or is_online(object, sim, gg)) and	-- online check
-					(not nearby_required or is_nearby(object, sim, gg)) and	-- nearby check
-					(with_blacklisted_maps or is_on_blacklisted_map(object, sim, gg))	-- blacklist check
+					(not args.only_enemies or is_enemies(get_community(args.enemy_to), get_community(alife_obj(object.parent_id)))) and	-- only enemies check
+					(not online_required or is_online(object)) and	-- online check
+					(not nearby_required or is_nearby(object)) and	-- nearby check
+					(with_blacklisted_maps or is_on_blacklisted_map(object))	-- blacklist check
 					then -- then on new string for better git diff if new rule is added (please no)
 				id_list[#id_list + 1] = id
 				if first_item_only then return id_list end	-- I think this is clear
@@ -190,20 +200,18 @@ function find_objects_ids(name_set, --[[optional]] args) -- gl, check
 end
 
 function create_squad_at_smart(squad_data, smart)
-	printf("GhenTuong: Start Function| create_squad_at_smart")
 	local CACHE = {}
-	printf("Igi: create_squad: %s", squad_data.name)
 	local squad = alun_utils.create_squad(squad_data.name, smart)
 	squad.stay_time = game.get_game_time()
 	squad.force_online = true
 	
 	CACHE.id = squad.id
 	CACHE.section_name = squad:section_name()
+	CACHE.location = smart
 	return CACHE
 end
 
 function create_package(package_data, smart)		-- TODO
-	printf("GhenTuong: Start Function| create_package")
 	if not (package_data and smart) then printf("GhenTuong: not enought parameter") return end
 	
 	local package_obj_data = {}
@@ -236,28 +244,24 @@ function create_package(package_data, smart)		-- TODO
 	return package_obj_data
 end
 
-function create_target(SETUP_CACHE)
-	printf("Igi: create_target")
+function create_target(CACHE)
 	local handlers = {
 		["packages"] = create_package,
 		["squads"] = create_squad_at_smart,
 	}
 	local target = {}
-	local location = SETUP_CACHE.smarts[1]
-	alun_utils.print_table(SETUP_CACHE, "SETUP_CACHE")
+	local location = CACHE.smarts[1]	-- TODO
 	
 	for target_type, handler in pairs(handlers) do
-		if SETUP_CACHE[target_type] then
+		if CACHE[target_type] then
 			target[target_type] = {}
-			for _, target_group_data in pairs(SETUP_CACHE[target_type]) do
+			for _, target_group_data in pairs(CACHE[target_type]) do
 				local group_cache = {}
 				for i=1, target_group_data.amount do
-					printf("TARGET: %s : %s", _, target_data)
 					local obj_data = handler(target_group_data, location)
 					obj_data.custom_args = target_group_data.custom_args
-					if target_group_data.custom_args.pda_target then
-						SETUP_CACHE['pda_target'] = obj_data.id
-					end
+					obj_data.target = target_group_data.target
+					obj_data.online_activities = target_group_data.online_activities
 					group_cache[#group_cache + 1] = obj_data
 				end
 				target[target_type][#target[target_type] + 1] = group_cache
@@ -265,15 +269,13 @@ function create_target(SETUP_CACHE)
 		end
 	end
 	
-	SETUP_CACHE["target"] = target
-	utils.save_var(db.actor, task_id, SETUP_CACHE)
-	return SETUP_CACHE
+	CACHE["target"] = target
+	return CACHE
 end
 
 function get_faction_setup(--[[optional]] factions)	-- TODO: implement factions
 	-- This function returns target character factions for all possible quests
 	-- Quest by himself decides, which character(s) to use
-	printf("GhenTuong: Start Function| get_faction_setup")
 	
 	local faction_list = {
 		["actor"] = 'stalker',
@@ -348,7 +350,11 @@ function get_target_descript(postpone_data)
 		if type(v) == "table" then		-- if value is list: add every item in list
 			for key, value in pairs(v) do
 				if key > 1 then details = details .. ', ' end
-				details = details .. game.translate_string(value)
+				if k == "faction" then 
+					details = details .. game.translate_string(value)
+				else
+					details = details .. game.translate_string(gt_database.TEXT_HEADER .. value)
+				end
 			end
 		
 		elseif k == "location" then details = game.translate_string(v)
@@ -386,11 +392,10 @@ function change_goodwill(faction, to_increase)		-- TODO: goodwill stats to db
 end
 
 function release_squad(squad_data)
-	printf("GhenTuong: Start Function| release_squad")
 	if not (squad_data.id) then printf("GhenTuong: no squad_data.id") return end
 	if not (squad_data.section_name) then printf("GhenTuong: no squad_data.section_name") return end
 	
-	local squad = alife():object(squad_data.id)
+	local squad = alife_obj(squad_data.id)
 
 	if not (squad) then return end
 	if not (squad:clsid() == clsid.online_offline_group_s) then return end
@@ -400,38 +405,9 @@ function release_squad(squad_data)
 	SIMBOARD:remove_squad(squad)
 end
 
-function count_release_loot(list)
-	printf("GhenTuong: Start Function| package_loot_release")
-	--Count how many is in player inventory
-	--condition is a list of parent_id of the packages. Release if fitted. Must be a list.
-	--condition == nil => only count how many package is in player inventory
-	--AC_ID is player, 65535 is world map
-	if not (list) then return end
-	local count = 0
-	for index, data in pairs(list) do
-		local pick_package = alife():object(data.id)
-		if (pick_package and (pick_package:section_name() == data.section_name)) then
-			--Count how many is in player inventory
-			if (pick_package.parent_id == AC_ID) then count = count + 1 end
-			--Release if parent_id is fitted
-			if (condition and (#condition > 0)) then
-				for index, data in pairs(condition) do
-					if (pick_package.parent_id == data) then
-						printf("GhenTuong: release %s| parent_id = %s", pick_package:name(), pick_package.parent_id)
-						safe_release_manager.release(pick_package)
-					end
-				end
-			end
-		end
-	end
-	--Remove mark
-	local remove_mark = check_package(list, false)
-	return count
-end
-
 function change_squad_faction(squad_id, faction)
 	-- This can be used only on online objects
-	local squad = alife():object(squad_id)
+	local squad = alife_obj(squad_id)
 	for npc in squad:squad_members() do
 		local member = npc and level.object_by_id(npc.id)
 		if member and not (character_community(member) == faction) then
@@ -449,43 +425,28 @@ local function check_package_in_world(package_obj, package_data)
 	else return true end
 end
 
-function update_mark(obj_data, mark_type, unmark)
-	unmark = unmark or false
-	local obj = alife():object(data.id)
+function update_mark(obj_data, mark_type)
+	local obj = alife_obj(obj_data.id)
 	
-	if check_package_in_world(obj, obj_data) and not unmark then
+	if check_package_in_world(obj, obj_data) then
 		if (obj_data.id and level.map_has_object_spot(obj_data.id, mark_type) == 0) then
 			level.map_add_object_spot(obj_data.id, mark_type, game.translate_string(gt_database.TEXT_HEADER .. mark_type))
 		end
-	elseif not check_package_in_world(obj, obj_data) and unmark then
-		if (obj_data.id and level.map_has_object_spot(obj_data.id, marl_type) == 1) then
+	elseif not check_package_in_world(obj, obj_data) then
+		if (obj_data.id and level.map_has_object_spot(obj_data.id, mark_type) == 1) then
 			level.map_remove_object_spot(obj_data.id, mark_type)
 		end
 	end
 end
 
-function init_task_cache(task_id, local_cache, global_tasks_cache)
-	if not (global_tasks_cache[task_id]) then 
-		printf("GhenTuong: %s| Can not init in first run.", task_id) 
-		return nil, "global_tasks_cache not initialised" 
-	end
-	local_cache = global_tasks_cache[task_id]
-	utils.save_var(db.actor, task_id, local_cache)
-	return local_cache
-end
-
 function release_package(pkg_data)
-	printf("GhenTuong: Start Function| package_loot_release")
 	if not pkg_data then return end
 	
-	local pkg = alife():object(pkg_data.id)
+	local pkg = alife_obj(pkg_data.id)
 	if (pick_package and (pkg:section_name() == data.section_name)) then
 		printf("GhenTuong: release %s| parent_id = %s", pkg:name(), pkg.parent_id)
 		safe_release_manager.release(pkg)
 	end
-	--Remove mark
-	local remove_mark = update_packages_mark({pkg_data})
-	return count
 end
 
 function reward_quest_money(task_name)
@@ -495,55 +456,53 @@ function reward_quest_money(task_name)
 end
 
 function release_targets_in_world(target_cache)
-	printf("Igi: release_targets START")
 	local handlers = {
-		'packages' = release_package,
-		'squads' = release_squad,
+		['packages'] = release_package,
+		['squads'] = release_squad,
 	}
 	
-	for name, handler in handlers do
+	for name, handler in pairs(handlers) do
 		if target_cache[name] then
-			for target_group in target_cache[name] do
-				for target_data in target_group do
+			for _, target_group in pairs(target_cache[name]) do
+				for _, target_data in pairs(target_group) do
 					printf("Release %s: name: %s, id: %s", name, target_data.section_name, target_data.id)
 					handler(target_data)
 				end
 			end
 		end
 	end
-	printf("Igi: release_targets END")
 end
 
 function quest_target(CACHE)
-	if not CACHE.pda_target then
-		printf("Igi: No PDA target")
-		return
+	if not CACHE.win_conditions or 
+			not(CACHE.win_conditions.instant and CACHE.win_conditions.continuous) then
+		return end
+
+	_, target_obj = next(CACHE.win_conditions.instant)
+	if not target_obj then
+		for _, objective_data in pairs(CACHE.win_conditions.continuous) do
+			-- If ready_functor exist and is task is not ready => do it
+			target_obj = objective_data.ready_functor and not objective_data.ready_functor(objective_data) and objective_data
+			if target_obj then break end
+		end
 	end
-	return CACHE.pda_target
+	return target_obj and target_obj.id
 end
 
-function mark_targets(CACHE, unmark)
-	unmark = unmark or false
+function update_marks(CACHE)
 	local marks = {
-		"packages" = "treasure_unique",
-		"squads" = "crlc_squad_red",
-		"item" = "item_misc",
+		["packages"] = "treasure_unique",
+		["item"] = "item_misc",
 	}
-	for item, mark_type in pairs(marks) do
-		if CACHE.targets[item] then
-			for _, obj_group in pairs(CACHE.targets[item]) do
+	for typ, mark_type in pairs(marks) do
+		if CACHE.target[typ] then
+			for _, obj_group in pairs(CACHE.target[typ]) do
 				for _, obj_data in pairs(obj_group) do
-					if obj_data.custom_args.to_map then
-						update_mark(obj_data, mark_type, unmark)
-					end
+					update_mark(obj_data, mark_type)
 				end
 			end
 		end
 	end
-end
-
-function unmark_targets(CACHE)
-	mark_targets(CACHE, true)
 end
 
 function return_true()
@@ -551,52 +510,222 @@ function return_true()
 	return true
 end
 
-function change_squad_role(squad_data, CACHE, role)
+function change_squad_role(squad_data, role, CACHE)
 	if not CACHE.factions[role] and not gt_database.FACTION_TO_GUARD[role] then
 		printf("IGI: change role: role unknown")
 		return
+	end
+	if type(role) == table then
+		printf("Igi: role is table")
+		_, role = next(role)
 	end
 	role = CACHE.factions[role] or role		-- if role is not in CACHE => role is actual faction
 	change_squad_faction(squad_data.id, role)
 end
 
+function is_npc_online(id)
+    for i,v in ipairs(db.OnlineStalkers) do 
+        if (v == id) then 
+            return true
+        end
+    end
+end
+
+function is_squad_member_online(se_squad)
+	for k in se_squad:squad_members() do
+		return is_npc_online(k.id)
+	end
+end
+
 function do_online_activities(CACHE)
+	if not CACHE.online_activities then return CACHE, false end
 	local condition_handlers = {
-		['is_online'] = return_true,
 	}
 	
 	local action_handlers = {
 		['change_faction'] = change_squad_role,
 	}
-	
-	for _, group in CACHE.targets.squads do
-		for _, obj_data in group do
-			obj = alife():object(obj_data.id)
-			if obj and obj_data.online_activities then
-				for condition, acts do
-					if condition_handlers['condition'](obj_data, CACHE) then
-						for action, arg in acts do
-							if action_handlers[action] then
-								action_handlers[action](obj_data, CACHE, arg)
-							end
+	local is_changed = false
+	for condition, objects in pairs(CACHE.online_activities) do
+		for k, obj_data in pairs(objects) do
+			se_squad = alife_obj(obj_data.id)
+			alun_utils.print_table(CACHE.online_activities)
+			-- Check for first member online, I don't give a fuck if some of them are offline
+			if is_squad_member_online(se_squad) then
+				-- If condition is true
+				if condition == "is_online" or condition_handlers[condition](obj_data, CACHE) then
+					-- Do every activity with this condition
+					for action, args in pairs(obj_data.online_activities[condition]) do
+						if action_handlers[action] then
+							action_handlers[action](obj_data, args, CACHE)
 						end
+					end
+					-- Delete object after activity is done
+					objects[k] = nil
+					is_changed = true
+				end
+			end
+		end
+		-- delete activities if there's no more objects
+		if not next(objects) then CACHE.online_activities[condition] = nil end
+	end
+		-- delete the whole section
+	if not next(CACHE.online_activities) then CACHE.online_activities = nil end
+	return CACHE, is_changed
+end
+
+function gt_object_exist(obj_data)
+	local obj = alife_obj(obj_data.id)
+	return obj and obj:section_name() == obj_data.section_name
+end
+
+function gt_object_not_exist(obj_data)
+	return not gt_helper.gt_object_exist(obj_data)	-- Idk but it can't see object_exist or even gt_object_exist. Fuck lua.
+end
+
+function deliver_item(obj_data)
+	local npc = mob_trade.GetTalkingNpc()
+	if npc then
+		dialogs.relocate_item_section_from_actor(db.actor, npc, obj_data.section_name, 1)
+	else
+		local item = db.actor:object(obj_data.section_name)
+		local se_item = item and alife_obj(item:id())
+		if se_item then
+			alife():release(se_item,true)
+		end
+	end
+end
+
+function sort_win_conditions(CACHE)
+	local instant_objective = {
+		["kill"] = gt_object_not_exist,
+	}
+	-- function for task to not fail, 
+	-- function to call on quest finish,
+	-- function to check if task is ready to finish,
+	-- (optional) function to call on quest fail
+	local continuous_objective = {
+		["return"] = {gt_object_exist, deliver_item, object_in_player_inventory},
+	}
+	local instant = {}
+	local continuous = {}
+	for k, condition_data in pairs(CACHE.win_conditions) do
+		local target = condition_data.target
+		if instant_objective[target] then
+			condition_data.functor = instant_objective[target]
+			instant[#instant + 1] = condition_data
+		elseif continuous_objective[target] then
+			condition_data.functor = continuous_objective[target][1]
+			condition_data.finish_function = continuous_objective[target][2]
+			condition_data.ready_functor = continuous_objective[target][3]
+			condition_data.fail_function = continuous_objective[target][4]
+			continuous[#continuous + 1] = condition_data
+		end
+		condition_data.target = nil
+		CACHE.win_conditions[k] = nil
+	end
+	
+	CACHE.win_conditions["instant"] = instant
+	CACHE.win_conditions["continuous"] = continuous
+	return CACHE
+end
+
+function setup_win_condition(CACHE)
+	local conditions = {}
+	for _, groups in pairs(CACHE.target) do
+		for _, group in pairs(groups) do
+			for _, item in pairs(group) do
+				if item.target then
+					conditions[#conditions + 1] = item
+				end
+			end
+		end
+	end
+	CACHE.win_conditions = conditions
+	CACHE = sort_win_conditions(CACHE)
+	return CACHE
+end
+
+function process_objectives(CACHE)
+	-- Instant = instant without completed tasks
+	local temp_instant = {}
+	local is_changed = false
+	for k, objective_data in pairs(CACHE.win_conditions.instant) do
+		if not objective_data.functor(objective_data) then
+			temp_instant[#temp_instant + 1] = objective_data
+		else is_changed = true end
+	end
+	CACHE.win_conditions.instant = is_changed and temp_instant or CACHE.win_conditions.instant
+	return CACHE, is_changed
+end
+
+function check_continuous_failed(CACHE)
+	-- Returns true, if all continuous objectives are ready;
+	-- Returns false, if at least one condition is failed;
+	-- Continuous objectives will be completed with task end and can be failed
+
+	local continuous_conditions = CACHE.win_conditions.continuous
+	-- If functor of continuous not true - mission fail
+	for k, objective_data in pairs(continuous_conditions) do
+		if not objective_data.functor(objective_data) then
+			return true
+		end
+	end
+	return false
+end
+
+function check_continuous_running(CACHE)
+	local continuous_conditions = CACHE.win_conditions.continuous
+	-- If functor of continuous not true - mission fail
+	for k, objective_data in pairs(continuous_conditions) do
+		if not (objective_data.ready_functor and objective_data.ready_functor(objective_data)) then
+			return true
+		end
+	end
+	return false
+end
+
+function finish_continuous_objectives(CACHE, is_complete)
+	for _, objective_data in pairs(CACHE.win_conditions.continuous) do
+		if is_complete then objective_data.finish_function(objective_data)
+		elseif not is_complete and objective_data.fail_function then
+			objective_data.fail_function(objective_data)
+		end
+	end
+end
+
+function sort_online_activities(CACHE)
+	-- Adds all objects with online activities to CACHE
+	-- CACHE.online_activities = {*condition* = {*list of obj_data*}}
+	local online_acts = {}
+	for _, typ in pairs(CACHE.target) do
+		for _, group in pairs(typ) do
+			for _, obj_data in pairs(group) do
+				if obj_data.online_activities then
+					for condition, actions in pairs(obj_data.online_activities) do
+						if not online_acts[condition] then online_acts[condition] = {} end
+						online_acts[condition][#online_acts[condition] + 1] = obj_data
 					end
 				end
 			end
 		end
 	end
+	CACHE.online_activities = online_acts
+	return CACHE
 end
 
+function clear_smart(smart_name)
+	if not SIMBOARD.smarts_by_names[smart_name].squads then return end
+	for _, se_squad in pairs(SIMBOARD.smarts_by_names[smart_name].squads) do
+		SIMBOARD:remove_squad(se_squad)
+	end
+end
 
-
-
-
-
-
-
-
-
-
+function clear_smarts(CACHE)
+	for _, smart_name in pairs(CACHE.smarts) do
+		clear_smart(smart_name)
+	end
+end
 
 
 
