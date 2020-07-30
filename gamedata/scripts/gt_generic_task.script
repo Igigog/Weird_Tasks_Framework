@@ -4,10 +4,7 @@
 --	Igigog
 -- =============================================================
 local TASKS_CACHE = {} --CACHE to setup task
-
-function on_game_start()
-	print("Just wanna say, that I love you. Igi.")
-end
+local MAX_TASK = 2
 
 local function get_cache(task_id)
 	if not TASKS_CACHE[task_id] then 
@@ -23,31 +20,54 @@ end
 
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
-	task_name = p[1]
-	assert(task_name and igi_quests.CONSTRUCTOR[task_name], "Igi: validate_task: task_name invalid")
+	printf("I think i'm not broken yet")
+	if not p and p[1] and p[2] then return false end
+	local task_id = p[1]
+	local task_name = p[2]
+	assert(task_name and task_id and igi_quests.CONSTRUCTOR[task_name], "Igi: validate_task: task_name invalid")
+	printf("I'm here")
+
+	local task_giver = mob_trade.GetTalkingNpc()
+	local squad = get_object_squad(task_giver) --Task count for squad. Not NPC.
+	if not task_giver or not squad then return false end
+	local giver_task_count = utils.load_var(db.actor, "drx_sl_task_giver_" .. squad.id, 0)
+	if giver_task_count >= MAX_TASK then return false end
 	
+	condition_handlers = {
+		["player_tier"] = gt_helper.rank_precondition,
+		["goodwill"] = gt_helper.goodwill_precondition,
+	}
+
+	preconditions = igi_quests.CONSTRUCTOR[task_name].preconditions
+	if preconditions then
+		for condition, handler in pairs(condition_handlers) do
+			if preconditions[condition] and not handler(preconditions[condition]) then
+				return false
+			end
+		end
+	end
+	
+	local CACHE = gt_setup.setup_quest(igi_quests.CONSTRUCTOR[task_name])
+	if CACHE then
+		CACHE.task_name = task_name
+		save_cache(task_id, CACHE)
+		return true
+	end
+
+	return false
 end
 
 --< Effect >--------------------------------------------------
 xr_effects.gt_task_generic_setup = function(actor,npc,p)
 	--This function will be called on_job_descr
-	--p[1] is task id
-	--p[2] is task name
-	if not (p and p[1] and p[2]) then return false end
-	--Setup
+	if not p and p[1] then return false end
 	local task_id = p[1]
-	local task_name = p[2]
-
-	if not get_cache(task_id) then
-		TASKS_CACHE[task_id] = gt_setup.setup_quest(igi_quests.CONSTRUCTOR[task_name])
-		TASKS_CACHE[task_id].task_name = task_name
-		utils.save_var(db.actor, task_id, TASKS_CACHE[task_id])
-	end
-
-	local CACHE = get_cache(task_id)
+	if not get_cache(task_id) then return end
+	--Setup
+	local CACHE = assert(get_cache(task_id), "Igi: task ".. task_id .. " : CACHE not initialised") 
 	--Give message
 	local description = gt_helper.get_postpone_intel(CACHE.task_name, CACHE.description.targets,
-												CACHE.description.factions, CACHE.description.smarts[1])
+												CACHE.description.factions, CACHE.description.smarts and CACHE.description.smarts[1])
 	--Print the message
 	CreateTimeEvent(0, "gt_task_"..CACHE.task_name.."_setup", 0, gt_helper.postpone_function, description)
 end
@@ -69,15 +89,20 @@ task_status_functor.gt_task_generic_status = function (tsk,task_id)
 		CACHE = gt_helper.sort_online_activities(CACHE)
 		save_cache(task_id, CACHE)
 	end
-	-- This section is to renew markers after cache reset (lvl change or anything)
-	gt_helper.update_marks(CACHE)
 	---------------------------<ACTIONS>---------------------
-	CACHE, activities_changed = gt_helper.do_online_activities(CACHE)	-- to check
-	CACHE, objectives_changed = gt_helper.process_objectives(CACHE)		-- to check
+	gt_helper.update_marks(CACHE)
+	CACHE, activities_changed = gt_helper.do_online_activities(CACHE)
+	CACHE, objectives_changed = gt_helper.process_objectives(CACHE)
 	if activities_changed or objectives_changed then
 		save_cache(task_id, CACHE)
 	end
 	---------------------------<STAGE>----------------------
+	-- If no continuous and no money reward -> complete task, when all instant are ready
+	if not next(CACHE.win_conditions.instant) and not next(CACHE.win_conditions.continuous) and
+			igi_quests.QUEST_INFO[CACHE.task_name].reward_money == 0 then
+		return "complete" 
+	end
+	
 	-- If no more instant objectives: stage = 1; if all continuous are ready: stage = 2
 	if tsk.stage == 0 and not next(CACHE.win_conditions.instant) then
 		tsk.stage = 1
@@ -89,6 +114,7 @@ task_status_functor.gt_task_generic_status = function (tsk,task_id)
 		if gt_helper.check_continuous_failed(CACHE) then return "fail" end
 		if tsk.current_target ~= tsk.task_giver_id then tsk.stage = 1 end
 	end
+	
 end
 --< Target >--------------------------------------------------
 task_functor.gt_task_generic_target = function(task_id,field,p,tsk)
@@ -96,11 +122,11 @@ task_functor.gt_task_generic_target = function(task_id,field,p,tsk)
 	local CACHE = get_cache(task_id)
 	if not CACHE then return end
 
-	local target_id = gt_helper.quest_target(CACHE)		-- to check
+	local target_id = gt_helper.quest_target(CACHE)
 	return target_id or (tsk.stage ~= 0 and tsk.task_giver_id) 	-- target_id or task_giver_id
 end
 --< Text >--------------------------------------------------
-task_functor.gt_task_generic_text = function(task_id,field,p,tsk)	-- check
+task_functor.gt_task_generic_text = function(task_id,field,p,tsk)
 	--This function return a text for title_functor and descr_functor
 	local CACHE = get_cache(task_id)
 
@@ -115,7 +141,7 @@ task_functor.gt_task_generic_text = function(task_id,field,p,tsk)	-- check
 			text = game.translate_string(gt_database.TEXT_HEADER .. CACHE.task_name .. "_descr")
 		end
 		local description = gt_helper.get_postpone_intel(CACHE.task_name, CACHE.description.targets,
-												CACHE.description.factions, CACHE.description.smarts[1]).text
+												CACHE.description.factions, CACHE.description.smarts and CACHE.description.smarts[1]).text
 		return (text .. "\\n " .. description) or ""
 	end
 end
@@ -127,12 +153,12 @@ xr_effects.gt_task_generic_finish = function(actor,npc,p)	-- check
 
 	local CACHE = get_cache(task_id)
 	--Reward money
-	if is_completed then 
+	if is_completed then
 		gt_helper.reward_quest_money(CACHE.task_name)
 		xr_effects.inc_task_stage(a, b, {task_id})
 	end
-	--Goodwill
-	gt_helper.change_goodwill(CACHE.factions.task_giver, is_completed)
+	-- Goodwill
+	gt_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
 	--Release
 	gt_helper.release_targets_in_world(CACHE.target)
 	gt_helper.update_marks(CACHE)

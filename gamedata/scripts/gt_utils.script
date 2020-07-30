@@ -4,7 +4,7 @@ function list_to_set(l)
 	if(l == nil) then return nil end
 	
 	local set = {}
-	for _, v in l do
+	for _, v in pairs(l) do
 		assert(type(v) ~= "table", "list_to_set values mustn't be tables")
 		set[v] = true
 	end
@@ -15,7 +15,7 @@ function set_to_list(s)
 	if(s == nil) then return nil end
 	
 	local list = {}
-	for v, _ in s do
+	for v, _ in pairs(s) do
 		list[#list + 1] = v
 	end
 	return list
@@ -25,11 +25,13 @@ function random_table_element(tbl)
 	-- It's preffered to use lists with math.random rather
 	-- than this function bcs this function is slow
 	local keyset = {}
-	for k in pairs(myTable) do
+	for k in pairs(tbl) do
 		table.insert(keyset, k)
 	end
 	-- now you can reliably return a random key
-	random_elem = myTable[keyset[math.random(#keyset)]]
+	local random_key = keyset[math.random(#keyset)]
+	local random_elem = tbl[random_key]
+	return random_elem, random_key
 end
 
 function get_random_items(orig_list, amount)

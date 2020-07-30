@@ -1,28 +1,28 @@
 ;============================================================
 ;	Anomaly 1.5.5.0
-;	GhenTuong
+;	Igigog
 ;============================================================
-;dasc_tech_mlr
+; MECHANIC
 ;============================================================
 [dasc_tech_mlr_task_10]
-icon = ui_iconsTotal_mutant
+icon = ui_inGame2_Sdelka
 storyline = false
 prior = 2000
 repeat_timeout = 16200
-precondition = {=gt_task_precondition_check_max(dasc_tech_mlr_task_10)} true, false
+precondition = {=validate_generic_task(dasc_tech_mlr_task_10:transaction)} true, false
 
-title_functor = gt_task_mutant_text
-descr_functor = gt_task_mutant_text
-job_descr = gt_task_text_mutant_job_descr
-task_complete_descr = gt_task_text_mutant_finish
+title_functor = gt_task_generic_text
+descr_functor = gt_task_generic_text
+job_descr = gt_task_text_transaction_job_descr
+task_complete_descr = gt_task_text_transaction_finish
 
-stage_complete = 1
-status_functor = gt_task_mutant_status
-target_functor = gt_task_mutant_target
-on_job_descr = %=gt_task_mutant_setup(dasc_tech_mlr_task_10)%
+stage_complete = 2
+status_functor = gt_task_generic_status
+target_functor = gt_task_generic_target
+on_job_descr = %=gt_task_generic_setup(dasc_tech_mlr_task_10:transaction)%
 
-on_complete = %=gt_task_mutant_finish(dasc_tech_mlr_task_10:true))%
-on_fail = %=gt_task_mutant_finish(dasc_tech_mlr_task_10:false))%
+on_complete = %=gt_task_generic_finish(dasc_tech_mlr_task_10:true))%
+on_fail = %=gt_task_generic_finish(dasc_tech_mlr_task_10:false))%
 condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_10)} fail
 ;------------------------------------------------
 [dasc_tech_mlr_task_11]
@@ -30,81 +30,82 @@ icon = ui_inGame2_Osobiy_zakaz
 storyline = false
 prior = 2000
 repeat_timeout = 16200
-precondition = {=gt_task_precondition_check_max(dasc_tech_mlr_task_11)} true, false
+precondition = {=validate_generic_task(dasc_tech_mlr_task_11:supply)} true, false
 
-title_functor = gt_task_supply_text
-descr_functor = gt_task_supply_text
+title_functor = gt_task_generic_text
+descr_functor = gt_task_generic_text
 job_descr = gt_task_text_supply_job_descr
 task_complete_descr = gt_task_text_supply_finish
 
-stage_complete = 1
-status_functor = gt_task_supply_status
-target_functor = gt_task_supply_target
-on_job_descr = %=gt_task_supply_setup(dasc_tech_mlr_task_11)%
+stage_complete = 2
+status_functor = gt_task_generic_status
+target_functor = gt_task_generic_target
+on_job_descr = %=gt_task_generic_setup(dasc_tech_mlr_task_11:supply)%
 
-on_complete = %=gt_task_supply_finish(dasc_tech_mlr_task_11:true))%
-on_fail = %=gt_task_supply_finish(dasc_tech_mlr_task_11:false))%
+on_complete = %=gt_task_generic_finish(dasc_tech_mlr_task_11:true))%
+on_fail = %=gt_task_generic_finish(dasc_tech_mlr_task_11:false))%
 condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_11)} fail
 ;------------------------------------------------
 [dasc_tech_mlr_task_12]
+icon = ui_inGame2_Neizvestnoe_oruzhie
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=validate_generic_task(dasc_tech_mlr_task_12:weapon)} true, false
+
+title_functor = gt_task_generic_text
+descr_functor = gt_task_generic_text
+job_descr = gt_task_text_weapon_job_descr
+task_complete_descr = gt_task_weapon_finish
+
+stage_complete = 2
+status_functor = gt_task_generic_status
+target_functor = gt_task_generic_target
+on_job_descr = %=gt_task_generic_setup(dasc_tech_mlr_task_12:weapon)%
+
+on_complete = %=gt_task_generic_finish(dasc_tech_mlr_task_12:true))%
+on_fail = %=gt_task_generic_finish(dasc_tech_mlr_task_12:false))%
+condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_12)} fail
+;------------------------------------------------
+[dasc_tech_mlr_task_13]
+icon = ui_iconsTotal_mutant
+storyline = false
+prior = 2000
+repeat_timeout = 16200
+precondition = {=validate_generic_task(dasc_tech_mlr_task_13:mutant)} true, false
+
+title_functor = gt_task_generic_text
+descr_functor = gt_task_generic_text
+job_descr = gt_task_text_mutant_job_descr
+task_complete_descr = gt_task_text_mutant_finish
+
+stage_complete = 2
+status_functor = gt_task_generic_status
+target_functor = gt_task_generic_target
+on_job_descr = %=gt_task_generic_setup(dasc_tech_mlr_task_13:mutant)%
+
+on_complete = %=gt_task_generic_finish(dasc_tech_mlr_task_13:true))%
+on_fail = %=gt_task_generic_finish(dasc_tech_mlr_task_13:false))%
+condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_13)} fail
+;------------------------------------------------
+[dasc_tech_mlr_task_14]
 icon = ui_inGame2_PD_master_boevih_sistem
 storyline = false
 prior = 2000
 repeat_timeout = 16200
-precondition = {=gt_task_precondition_check_max(dasc_tech_mlr_task_12)} true, false
+precondition = {=validate_generic_task(dasc_tech_mlr_task_14:heavy)} true, false
 
-title_functor = gt_task_heavy_text
-descr_functor = gt_task_heavy_text
+title_functor = gt_task_generic_text
+descr_functor = gt_task_generic_text
 job_descr = gt_task_text_heavy_job_descr
 task_complete_descr = gt_task_text_heavy_finish
 
-stage_complete = 1
-status_functor = gt_task_heavy_status
-target_functor = gt_task_heavy_target
-on_job_descr = %=gt_task_heavy_setup(dasc_tech_mlr_task_12)%
+stage_complete = 2
+status_functor = gt_task_generic_status
+target_functor = gt_task_generic_target
+on_job_descr = %=gt_task_generic_setup(dasc_tech_mlr_task_14:heavy)%
 
-on_complete = %=gt_task_heavy_finish(dasc_tech_mlr_task_12:true))%
-on_fail = %=gt_task_heavy_finish(dasc_tech_mlr_task_12:false))%
-condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_12)} fail
-;------------------------------------------------
-[dasc_tech_mlr_task_13]
-icon = ui_inGame2_Skat_1
-storyline = false
-prior = 2000
-repeat_timeout = 16200
-precondition = {=gt_task_precondition_check_max(dasc_tech_mlr_task_13)} true, false
-
-title_functor = gt_task_gunship_text
-descr_functor = gt_task_gunship_text
-job_descr = gt_task_text_gunship_job_descr
-task_complete_descr = gt_task_text_gunship_finish
-
-stage_complete = 1
-status_functor = gt_task_gunship_status
-target_functor = gt_task_gunship_target
-on_job_descr = %=gt_task_gunship_setup(dasc_tech_mlr_task_13)%
-
-on_complete = %=gt_task_gunship_finish(dasc_tech_mlr_task_13:true))%
-on_fail = %=gt_task_gunship_finish(dasc_tech_mlr_task_13:false))%
-condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_13)} fail
-;------------------------------------------------
-[dasc_tech_mlr_task_14]
-icon = ui_inGame2_Sdelka
-storyline = false
-prior = 2000
-repeat_timeout = 16200
-precondition = {=gt_task_precondition_check_max(dasc_tech_mlr_task_14)} true, false
-
-title_functor = gt_task_transaction_text
-descr_functor = gt_task_transaction_text
-job_descr = gt_task_text_transaction_job_descr
-task_complete_descr = gt_task_text_transaction_finish
-
-stage_complete = 1
-status_functor = gt_task_transaction_status
-target_functor = gt_task_transaction_target
-on_job_descr = %=gt_task_transaction_setup(dasc_tech_mlr_task_14)%
-
-on_complete = %=gt_task_transaction_finish(dasc_tech_mlr_task_14:true))%
-on_fail = %=gt_task_transaction_finish(dasc_tech_mlr_task_14:false))%
+on_complete = %=gt_task_generic_finish(dasc_tech_mlr_task_14:true))%
+on_fail = %=gt_task_generic_finish(dasc_tech_mlr_task_14:false))%
 condlist_0 = {!task_giver_alive(dasc_tech_mlr_task_14)} fail
+

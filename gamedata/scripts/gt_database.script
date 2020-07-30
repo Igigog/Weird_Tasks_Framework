@@ -6,13 +6,6 @@
 
 TEXT_HEADER = "gt_task_text_"
 
-QUEST_INFO = {
-	["transaction"] = {
-		['icon'] = "ui_inGame2_Sdelka",
-		['reward'] = 5000,
-	},
-}
-
 BLACKLISTED_MAPS = { --List of maps to skip in scans
 	--North
 	["l13_generators"]        = true,
@@ -40,11 +33,9 @@ BLACKLISTED_MAPS = { --List of maps to skip in scans
 }
 
 QUEST_TIERS = {			-- lower bound, higher bound; inclusive
-	["novice"] = {'novice', 'novice'},
-	["start_game"] = {'novice', 'trainee'},
-	["midgame"] = {'trainee', 'veteran'},
-	["endgame"] = {'veteran', 'legend'},
-	["legend"] = {'legend', 'legend'},
+	["start_game"] = {0, 2500},
+	["midgame"] = {2500, 5000},
+	["endgame"] = {5000, 100000},
 }
 
 MUTANT = {
@@ -130,19 +121,43 @@ HEAVY_WEAPON = {
 	[4] = {"wpn_trg","ammo_magnum_300",50},
 }
 
-FACTION_TO_HEAVY = {
-	["stalker"] = "gt_stalker_heavy_stalker",
-	["dolg"] = "gt_stalker_heavy_dolg",
-	["freedom"] = "gt_stalker_heavy_freedom",
-	["csky"] = "gt_stalker_heavy_csky",
-	["ecolog"] = "gt_stalker_heavy_ecolog",
-	["killer"] = "gt_stalker_heavy_killer",
-	["army"] = "gt_stalker_heavy_army",
-	["bandit"] = "gt_stalker_heavy_bandit",
-	["monolith"] = "gt_stalker_heavy_monolith",
+HEAVY_SQUAD = {
+	["start_game"] = {
+		["stalker"] = "gt_stalker_heavy_start_game_stalker",
+		["dolg"] = "gt_stalker_heavy_start_game_dolg",
+		["freedom"] = "gt_stalker_heavy_start_game_freedom",
+		["csky"] = "gt_stalker_heavy_start_game_csky",
+		["ecolog"] = "gt_stalker_heavy_start_game_ecolog",
+		["killer"] = "gt_stalker_heavy_start_game_killer",
+		["army"] = "gt_stalker_heavy_start_game_army",
+		["bandit"] = "gt_stalker_heavy_start_game_bandit",
+		["monolith"] = "gt_stalker_heavy_start_game_monolith",
+	},
+	["midgame"] = {
+		["stalker"] = "gt_stalker_heavy_midgame_stalker",
+		["dolg"] = "gt_stalker_heavy_midgame_dolg",
+		["freedom"] = "gt_stalker_heavy_midgame_freedom",
+		["csky"] = "gt_stalker_heavy_midgame_csky",
+		["ecolog"] = "gt_stalker_heavy_midgame_ecolog",
+		["killer"] = "gt_stalker_heavy_midgame_killer",
+		["army"] = "gt_stalker_heavy_midgame_army",
+		["bandit"] = "gt_stalker_heavy_midgame_bandit",
+		["monolith"] = "gt_stalker_heavy_midgame_monolith",
+	},
+	["endgame"] = {
+		["stalker"] = "gt_stalker_heavy_endgame_stalker",
+		["dolg"] = "gt_stalker_heavy_endgame_dolg",
+		["freedom"] = "gt_stalker_heavy_endgame_freedom",
+		["csky"] = "gt_stalker_heavy_endgame_csky",
+		["ecolog"] = "gt_stalker_heavy_endgame_ecolog",
+		["killer"] = "gt_stalker_heavy_endgame_killer",
+		["army"] = "gt_stalker_heavy_endgame_army",
+		["bandit"] = "gt_stalker_heavy_endgame_bandit",
+		["monolith"] = "gt_stalker_heavy_endgame_monolith",
+	},
 }
 
-FACTION_TO_GUARD = {
+GUARD_SQUAD = {
 	["stalker"] = "gt_stalker_guard_stalker",
 	["dolg"] = "gt_stalker_guard_dolg",
 	["freedom"] = "gt_stalker_guard_freedom",
@@ -152,6 +167,27 @@ FACTION_TO_GUARD = {
 	["army"] = "gt_stalker_guard_army",
 	["bandit"] = "gt_stalker_guard_bandit",
 	["monolith"] = "gt_stalker_guard_monolith",
+}
+
+MUTANT_SQUAD = {
+	['start_game'] = {
+		["zombied"] = "gt_mutant_zombie",
+		["flesh"] = "gt_mutant_flesh",
+		["boar"] = "gt_mutant_boar",
+	},
+	['midgame'] = {
+		["snork"] = "gt_mutant_snork",
+		["psy_dog"] = "gt_mutant_psy_dog",
+		["lurker"] = "gt_mutant_lurker",
+		["poltergeist"] = "gt_mutant_poltergeist",
+		["bloodsucker"] = "gt_mutant_bloodsucker",
+	},
+	['endgame'] = {
+		["chimera"] = "gt_mutant_chimera",
+		["burer"] = "gt_mutant_burer",
+		["controller"] = "gt_mutant_controller",
+		["gigant"] = "gt_mutant_gigant",
+	},
 }
 
 GUNSHIP = {
@@ -298,24 +334,9 @@ PACKAGE = {  -- package objects for all package quests
 	},
 }
 
-TRANSACTION_GOODS = {	-- possible package types for "transaction" quests
-	"artifact",
-	"weapon",
-}
-
-SUPPLY_GOODS = {		-- possible package type for "supply" quests
-	"medicine",
-	"ammunition",
-}
-
 QUEST_TO_POSSIBLE_GOODS = {
-	["supply"] = SUPPLY_GOODS,
-	["transaction"] = TRANSACTION_GOODS,
-}
-
-GUNSHIPS = {	-- here you implement user-defined gunships (if these will ever be...)
-	"mi2",
-	"mi24",
+	["supply"] = {"medicine", "ammunition",},
+	["transaction"] = {"artifact", "weapon",},
 }
 
 ARTIFACT_BOXES_ENDINGS = {
@@ -325,7 +346,7 @@ ARTIFACT_BOXES_ENDINGS = {
 	"_af_aam",
 }
 
-WEAPONS_LOWCOST = {  -- here you find most pistols and some 12ga rifles
+WEAPONS_START_GAME = {
 	"w_pm",
 	"w_pb",
 	"w_pm",
@@ -347,7 +368,7 @@ WEAPONS_LOWCOST = {  -- here you find most pistols and some 12ga rifles
 	"w_grach",
 }
 
-WEAPONS_MIDGAME = {	-- most assault rifles, shotguns
+WEAPONS_MIDGAME = {
 	"w_bizon",
 	"w_desert_eagle",
 	"w_fn57",
@@ -391,7 +412,7 @@ WEAPONS_MIDGAME = {	-- most assault rifles, shotguns
 	"w_vintorez",
 }
 
-WEAPONS_ENDGAME = {	-- most sniper rifles, rpg, anything
+WEAPONS_ENDGAME = {
 	"w_usas12",
 	"w_g3sg1",
 	"w_l96a1",
@@ -404,12 +425,4 @@ WEAPONS_ENDGAME = {	-- most sniper rifles, rpg, anything
 	"w_vssk",
 	"w_g43",
 	"w_k98",
-}
-
-WEAPONS_LEGEND = {	-- well... heavy artillery
-	"w_gauss",
-	"w_m249",
-	"w_rpg7",
-	"w_pkm",
-	"w_rpk",
 }

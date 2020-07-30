@@ -1,46 +1,55 @@
 -- Main setup function for all quests
 
 local function setup_squad(squad_info, smarts, factions)	-- TODO: Custom smarts
-	printf("Igi: setup_squad")
-	local CACHE = {}
-
-	local amount = squad_info.amount or 1
-	local faction = squad_info["faction"] or factions[squad_info["faction_type"]]
+	local squad_types = {
+		["guard"] = gt_database.GUARD_SQUAD,
+		["heavy_start_game"] = gt_database.HEAVY_SQUAD["start_game"],
+		["heavy_midgame"] = gt_database.HEAVY_SQUAD["midgame"],
+		["heavy_endgame"] = gt_database.HEAVY_SQUAD["endgame"],
+		["mutant_start_game"] = gt_database.MUTANT_SQUAD["start_game"],
+		["mutant_midgame"] = gt_database.MUTANT_SQUAD["midgame"],
+		["mutant_endgame"] = gt_database.MUTANT_SQUAD["endgame"],
+	}
 	
-	if not faction then
-		printf("Igi: setup_squad: Unable to set faction")
-		return nil, "Unable to set faction"
-	end
-	
-	local squad_name = ""
-	if squad_info.type == "heavy" then
-		squad_name = gt_database.FACTION_TO_HEAVY[faction]
-	elseif squad_info.type == "guard" then
-		squad_name = gt_database.FACTION_TO_GUARD[faction]
+	assert(squad_types[squad_info.type], "Igi: setup squad: Unknown squad type")
+	local squad_name
+	local squad_type
+	local faction
+	printf("IGI: squad_type: " .. squad_info.type)
+	if string.find(squad_info.type, "mutant") then
+		printf("Igi: me here")
+		squad_name, squad_type = gt_utils.random_table_element(squad_types[squad_info.type])
+		printf("Igi: me here with " .. squad_name)
 	else
-		printf("Igi: setup_squad: Unknown squad type")
-		return nil, "Unknown squad type"
+		assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
+		faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
+		squad_name = squad_types[squad_info.type][faction]
 	end
-	
-	local squad_data = {["name"] = squad_name, ['faction'] = faction}
-	squad_data.amount = amount
-	squad_data.description_data = faction
-	squad_data.target = squad_info.target
-	squad_data.online_activities = squad_info.online_activities
-	squad_data.target = squad_info.target or "kill"
+
+	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
+	local squad_data = {
+		["name"] = squad_name, 
+		['faction'] = faction or "mutant",
+		['description_data'] = {
+			["factions"] = faction or nil,	-- none for mutant
+			["targets"] = squad_type or nil,	-- none for stalkers
+		},
+		['target'] = squad_info.target or "kill",
+		['amount'] = squad_info.amount or 1,
+		['online_activities'] = squad_info.online_activities,
+	}
 
 	return squad_data
 end
 
 local function setup_smarts(smarts)  -- check
-	printf("GT: setup_smarts: Amount: %s, Nearby: %s, Online: %s", smarts.amount, smarts.is_nearby, smarts.is_online)
 	-- This function returns a smart suitable for a quest
-	local amount = smarts.amount or 1;
-	local possible_smarts = gt_helper.check_smarts(SIMBOARD.smarts_by_names, smarts.is_nearby, smarts.is_online)
+	local amount = smarts and smarts.amount or 1;
+	local possible_smarts = gt_helper.check_smarts(
+		SIMBOARD.smarts_by_names,smarts and smarts.is_nearby, smarts and smarts.is_online)
 	
 	if #possible_smarts < amount then
-		printf("Igi: setup_smarts: Not enough smarts available")
-		return nil, "Not enough smarts available"
+		return nil
 	end
 
 	local smarts_list = gt_utils.get_random_items(possible_smarts, amount)
@@ -60,7 +69,7 @@ local function setup_package(pkg_info, smarts, factions)				-- TODO: Custom smar
 	end
 
 	pkg_data.amount = amount
-	pkg_data.description_data = pkg_data.package_type
+	pkg_data.description_data = {["targets"] = gt_database.TEXT_HEADER .. pkg_data.package_type}
 	pkg_data.target = pkg_info.target
 	return pkg_data
 end
@@ -69,60 +78,46 @@ local function setup_item(item_data, smarts, factions)
 	printf("Igi: Setup_item")
 	assert(item_data.item_type or item_data.item_list, "Igi: setup_item: No item list given")
 	local TYPE_TO_LIST = {
-		["weapon_lowcost"] = gt_database.WEAPONS_LOWCOST,
+		["weapon_start_game"] = gt_database.WEAPONS_START_GAME,
 		["weapon_midgame"] = gt_database.WEAPONS_MIDGAME,
 		["weapon_endgame"] = gt_database.WEAPONS_ENDGAME,
-		["weapon_legend"] = gt_database.WEAPONS_LEGEND,
 		["artifact"] = gt_helper.get_artifact_names(),
 	}
-	local item_list = item_data.item_list or TYPE_TO_LIST[item_data.item_type]
-	if not item_list then
-		printf("Igi: setup_item: No item_list")
-		return nil, "No item_list"
-	end
+	local ENDINGS = {
+		['artifact_boxes'] = gt_database.ARTIFACT_BOXES_ENDINGS,
+	}
+	
+	local item_list = TYPE_TO_LIST[item_data.item_type]
+	assert(item_list, "Igi: setup_item: No item_list")
+	item_data.endings_list = ENDINGS[item_data.possible_endings]
+
 	local objects
-	objects_data = {}
+	local object_data = {}
 	if item_data.to_create then
-		printf("TODO")
+		printf("TODO")		-- TODO
 	else
 		local item_set = gt_utils.list_to_set(item_list)
 		item_data.enemy_to = item_data.enemy_to or factions[item_data.enemy_to]
-		local args = {
-			["in_npc_inv"] = item_data.in_npc_inv,
-			["in_world"] = item_data.in_world,
-			["only_npc"] = item_data.only_npc,
-			["only_enemies"] = item_data.only_enemies,
-			["enemy_to"] = item_data.enemy_to,
+		printf("Igi: find start")
+		objects = gt_helper.find_objects_ids(item_set, item_data)
+		if not next(objects) then return nil end
+		printf("Alles gut")
+		objects = gt_utils.get_random_items(objects, item_data.amount or 1)
+		
+		object_data.target = item_data.target
+		object_data.id = objects[1]
+		printf("Igi: %s", object_data.id)
+		local parent_id = gt_helper.alife_obj(object_data.id).parent_id
+		local parent_npc = gt_helper.check_common_npc(parent_id) and gt_helper.alife_obj(parent_id)
+		local location = alife():level_name(game_graph():vertex(gt_helper.alife_obj(object_data.id).m_game_vertex_id):level_id())
+		object_data.description_data = {
+			['factions'] = parent_npc and gt_helper.get_community(parent_npc) or nil,
+			['targets'] = parent_npc and parent_npc:character_name() or item_data.item_type,
+			['smarts'] = location
 		}
-		objects = gt_helper.find_objects_ids(item_set, args)
-		objects = gt_utils.get_random_items(objects, item_data.amount)
-	end
-	objects_data.target = item_data.target
-	objects_data.ids = objects
-	return objects_data
-end
-
-function setup_description(CACHE)
-	local transform = {
-		['squads'] = 'factions',
-		['packages'] = 'targets',
-		['items'] = 'targets',
-	}
-	if CACHE.description then
-		for item, _ in pairs(transform) do
-			if CACHE.description[item] then
-				local new_desc = CACHE.description[transform[item]] -- shortcut
-				-- add item to relevant section
-				for _, data in pairs(CACHE.description[item]) do
-					new_desc[#new_desc + 1] = data
-				end
-				-- delete old section to not hold trash in CACHE
-				CACHE.description[item] = nil
-			end
-		end
 	end
 	
-	return CACHE
+	return object_data
 end
 
 function setup_quest(args)
@@ -158,16 +153,17 @@ function setup_quest(args)
 	--							  npc_to_create (int) - TODO, if create: create in inventory of npc with this squad group,
 	--							  smart_to_create (smart) - if create: create in n-th smart, default: 1},
 	--							 {*items of another types with the same fields*}}
-	CACHE = {}
+	local constructor = {}
+	copy_table(constructor, args)
+	args = gt_helper.scale_to_rank(constructor)		-- args are copied args with scale redone
+	
+	CACHE = {["setup"] = {},}
 	CACHE["smarts"] = setup_smarts(args.smarts)
+	if not CACHE.smarts then return nil end
 	CACHE["factions"] = gt_helper.get_faction_setup()
-	CACHE["description"] = {
-		['factions'] = {},
-		['targets'] = {},
-		['smarts'] = {}
-	}
-	if not args.smarts['not_show'] then
-		CACHE.description.smarts = CACHE.smarts		-- TODO
+	CACHE["description"] = {}
+	if args.smarts and not args.smarts['not_show'] then
+		CACHE.description.smarts = CACHE.smarts
 	end
 	
 	local handlers = {
@@ -178,21 +174,32 @@ function setup_quest(args)
 	
 	for name, handler in pairs(handlers) do
 		if args[name] then
-			CACHE[name] = {}
-			CACHE.description[name] = {}
+			CACHE.setup[name] = {}
 			for _, data in pairs(args[name]) do
+				printf("Igi: setup: %s", name)
 				local group_data = handler(data, CACHE.smarts, CACHE.factions)
+				-- if impossible to make group - no setup
+				if not group_data then return nil end
 				-- custom args are booleans that will be used later
 				group_data["custom_args"] = data.custom_args
-				CACHE[name][#CACHE[name] + 1] = group_data
-				if data.to_description ~= false then
-					CACHE.description[name][#CACHE.description[name] + 1] = group_data.description_data
+				CACHE.setup[name][#CACHE.setup[name] + 1] = group_data
+				
+				if data.to_description ~= false then	
+					for k, v in pairs(group_data.description_data) do
+						CACHE.description[k] = CACHE.description[k] or {}
+						if type(v) == 'table' then
+							for _, value in pairs(v) do
+								CACHE.description[k][#CACHE.description[k] + 1] = value
+							end
+						else 
+							CACHE.description[k][#CACHE.description[k] + 1] = v
+						end
+					end
+				
 				end
 			end
 		end
 	end
-	
-	CACHE = setup_description(CACHE)
 	return CACHE
 end
 
