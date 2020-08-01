@@ -32,7 +32,7 @@ local function setup_squad(squad_info, smarts, factions)	-- TODO: Custom smarts
 		['faction'] = faction or "mutant",
 		['description_data'] = {
 			["factions"] = faction or nil,	-- none for mutant
-			["targets"] = squad_type or nil,	-- none for stalkers
+			["targets"] = squad_type and gt_database.TEXT_HEADER .. squad_type or nil,	-- none for stalkers
 		},
 		['target'] = squad_info.target or "kill",
 		['amount'] = squad_info.amount or 1,

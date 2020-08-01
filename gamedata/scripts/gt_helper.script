@@ -35,6 +35,16 @@ function get_artifact_names()
 	return ARTIFACT_NAMES
 end
 
+function get_player_tier()
+	local player_rank = db.actor:character_rank()
+	for tier, bounds in pairs(gt_database.QUEST_TIERS) do
+		if player_rank >= bounds[1] and player_rank <= bounds[2] then
+			return tier
+		end
+	end
+	return "endgame"
+end
+
 function check_common_npc(id)
 	--Parameter is correct | not world map | not player |
 	local npc = id and (id ~= 65535) and (id ~= AC_ID) and alife():object(id)
@@ -494,22 +504,19 @@ end
 
 function reward_quest_money(task_name)
 	local difficulty_addition = {
-		['novice'] = 0,
 		['start_game'] = 0,
 		['midgame'] = 2000,
 		['endgame'] = 4000,
-		['legend'] = 6000,
 	}
 	local sum_money = igi_quests.QUEST_INFO[task_name].reward_money
 	if sum_money == 0 then return end
 	
-	local player_tier = igi_quests.CONSTRUCTOR[task_name].preconditions 
-			and igi_quests.CONSTRUCTOR[task_name].preconditions.player_tier
+	local player_tier = get_player_tier()
 
 	if (not sum_money) and player_tier then
-		sum_money = 3000 + difficulty_addition[player_tier]
+		sum_money = 2500 + difficulty_addition[player_tier]
 	elseif not sum_money then
-		sum_money = 3000
+		sum_money = 2500
 	end
 
 	local money = {tostring(sum_money), tostring(sum_money+1000)}
@@ -812,16 +819,6 @@ function goodwill_precondition(arg)
 	local task_giver = mob_trade.GetTalkingNpc()
 	local community = character_community(task_giver)
 	return db.actor:community_goodwill(community) >= arg
-end
-
-function get_player_tier()
-	local player_rank = db.actor:character_rank()
-	for tier, bounds in pairs(gt_database.QUEST_TIERS) do
-		if player_rank >= bounds[1] and player_rank <= bounds[2] then
-			return tier
-		end
-	end
-	return "endgame"
 end
 
 function scale_to_rank(tbl)

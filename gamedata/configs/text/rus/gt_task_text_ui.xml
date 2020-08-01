@@ -2,35 +2,18 @@
 <string_table>
 	<!-- UI -->
 	<string id="gt_task_text_target">
-		<text>Target</text>
+		<text>Цель</text>
 	</string>
 	<string id="gt_task_text_faction">
-		<text>Faction</text>
+		<text>Группировка</text>
 	</string>
 	<string id="gt_task_text_location">
-		<text>Location</text>
-	</string>
-	
-	<!-- Rank -->
-	<string id="gt_task_text_rank">
-		<text>Rank</text>
-	</string>
-	<string id="gt_task_text_rank_s">
-		<text>%c[d_red]S</text>
-	</string>
-	<string id="gt_task_text_rank_a">
-		<text>%c[0,250,250,0]A</text>
-	</string>
-	<string id="gt_task_text_rank_b">
-		<text>%c[d_blue]B</text>
-	</string>
-	<string id="gt_task_text_rank_c">
-		<text>%c[d_green]C</text>
+		<text>Место</text>
 	</string>
 	
 	<!-- Mutant -->
-	<string id="gt_task_text_zombied">
-		<text>Зомбированный Сталкер</text>
+	<string id="gt_task_text_zombie">
+		<text>Зомби</text>
 	</string>
 	<string id="gt_task_text_flesh">
 		<text>Плоть</text>
@@ -42,10 +25,10 @@
 		<text>Снорк</text>
 	</string>
 	<string id="gt_task_text_psy_dog">
-		<text>Пси собака</text>
+		<text>Пси-собака</text>
 	</string>
 	<string id="gt_task_text_lurker">
-		<text>Люркер</text>
+		<text>Луркер</text>
 	</string>
 	<string id="gt_task_text_chimera">
 		<text>Химера</text>
@@ -65,17 +48,10 @@
 	<string id="gt_task_text_gigant">
 		<text>Псевдогигант</text>
 	</string>
-	
-	<!-- Gunship -->
-	<string id="gt_task_text_mi2">
-		<text>Военный Ми-2</text>
-	</string>
-	<string id="gt_task_text_mi24">
-		<text>Военный Ми-24</text>
-	</string>
+
 	<!-- Package -->
 	<string id="gt_task_text_pda_package">
-		<text>В этой посылке наверное куча полезной всячины, до боли любопытно узнать что там внутри.</text>
+		<text>Кажется, именно эту посылку нужно доставить.</text>
 	</string>
 	<string id="gt_task_text_artifact">
 		<text>Артефакт</text>

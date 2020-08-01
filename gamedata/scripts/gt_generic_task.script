@@ -47,7 +47,7 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 		end
 	end
 	
-	local CACHE = gt_setup.setup_quest(igi_quests.CONSTRUCTOR[task_name])
+	local CACHE = get_cache(task_id) or gt_setup.setup_quest(igi_quests.CONSTRUCTOR[task_name])
 	if CACHE then
 		CACHE.task_name = task_name
 		save_cache(task_id, CACHE)
