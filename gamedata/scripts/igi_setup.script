@@ -1,0 +1,196 @@
+-- Main setup function for all quests
+
+local function init_constructor(task_name)
+	local constructor = {}
+	copy_table(constructor, igi_tasks[task_name])
+	constructor = igi_helper.scale_to_rank(constructor)
+	constructor = igi_linker.assign_group_id(constructor)
+	return constructor
+end
+
+local function setup_squad(squad_info, factions)
+	printf("SQUAD START")
+	local squads = assert(igi_db.TableView.new("squad_base.ltx", squad_info.type), "Igi: setup squad: Unknown squad type")
+
+	local squad_name
+	local squad_type
+	local faction
+
+	if string.find(squad_info.type, "mutant") then
+		squad_name, squad_type = squads:random()
+	else
+		assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
+		faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
+		squad_name = squads[faction]
+	end
+
+	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
+	-- set all default
+	local squad_data = {
+		["location"] = squad_info.location or "$smart_1_1$",
+		["name"] = squad_name, 
+		["faction"] = faction or "mutant",
+		['description_data'] = {
+			["faction"] = faction or nil,	-- none for mutant
+			["target"] = squad_type and igi_db.TEXT_HEADER .. squad_type or nil,	-- none for stalkers
+			["location"] = squad_info.location or "$smart_1_1$",
+		},
+		['target'] = squad_info.target or "kill",
+		['amount'] = squad_info.amount or 1,
+		['online_activities'] = squad_info.online_activities,
+	}
+	printf("SQUAD END")
+	return squad_data
+end
+
+local function setup_smart(smart_data)
+	printf("SMART START")
+	-- There's no links in smarts, bcs I'm too lazy atm
+	local amount = smart_data and smart_data.amount or 1;
+	local possible_smarts = igi_helper.check_smarts(
+		SIMBOARD.smarts_by_names, smart_data and smart_data.is_nearby, smart_data and smart_data.is_online)
+	
+	if #possible_smarts < amount then return nil end
+	local smarts_list = igi_utils.get_random_items(possible_smarts, amount)
+	local smarts_data = {
+		['names'] = smarts_list,
+	}
+	printf("SMART END")
+	return smarts_data
+end
+
+local function setup_package(pkg_info, factions)
+	printf("PACKAGE START")
+	local pkgs = {}
+	local pkg_data = {}
+	
+	local pkg_type = pkg_info.package_type
+	if not pkg_type then
+		pkg_type = igi_helper.pick_quest_goods(pkg_info.quest_type)
+	end
+	
+	if not pkg_type then
+		printf("Igi: setup_package: No package type given")
+		return nil
+	end
+	local section_name = "igi_package_"..pkg_type
+	local amount = pkg_info.amount or ini_sys:r_float_ex(section_name, "amount_content")
+	
+	if not amount then
+		printf("Igi: setup_package: Can't get amount")
+		return nil
+	end
+
+	pkg_data.section_name = section_name
+	pkg_data.amount = amount
+	pkg_data.description_data = {["target"] = igi_db.TEXT_HEADER..pkg_type}
+	pkg_data.target = pkg_info.target
+	pkg_data.location = pkg_info.location or "$smart_1_1$"
+	printf("PACKAGE END")
+	return pkg_data
+end
+
+local function setup_item(item_data, factions)
+	printf("ITEM START")
+	assert(item_data.item_type, "Igi: setup_item: No item list given")
+
+	local item_list = igi_db.TableView.new("item_types.ltx", igi_helper.scale_value(item_data.item_type))
+	assert(item_list, "Igi: setup_item: No item_list")
+	item_data.endings_list = igi_db.TableView.new("endings.ltx", item_data.possible_endings)
+
+	local object_data = {}
+	if item_data.to_create then
+		printf("TODO")		-- TODO
+	else
+		item_data.enemy_to = item_data.enemy_to or factions[item_data.enemy_to]
+		local item_set = igi_utils.list_to_set(item_list:as_table())
+		objects = igi_helper.find_objects_ids(item_set, item_data)
+		if not next(objects) then return nil end
+
+		objects = igi_utils.get_random_items(objects, item_data.amount or 1)
+		
+		object_data.target = item_data.target
+		object_data.ids = objects
+
+		local parent_id = igi_helper.igi_alife_obj(object_data.ids[1]).parent_id
+		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.igi_alife_obj(parent_id)
+
+		object_data.description_data = {
+			['factions'] = parent_npc and igi_helper.get_community(parent_npc) or nil,
+			['targets'] = parent_npc and parent_npc:character_name() or item_data.item_type,
+			['smarts'] = igi_helper.get_object_location_description(igi_helper.igi_alife_obj(objects[1]))
+		}
+	end
+	printf("SETUP END")
+	return object_data
+end
+
+function setup_quest(task_name)
+	--[[ This is generic function that sets everything you need for a quest
+	-- Possible args:
+	-- smarts (table) : {amount (int) - how many smarts to prepare,
+	--					 is_nearby, is_online (bool) - smart attributes,
+	--					 to_description (int) - n-th smart used for description}
+	-- squads (table of tables) : {{amount (int),
+	--								faction (string) OR		- can be any faction in game
+	--								faction_type (string) - can be "enemy", "client" or "quest_giver",
+	--								type (string) - can be "guard" or "heavy",
+	--								target (string) - can be "kill", "save" or "contact"; default: kill,
+	--								to_description (bool) - set squad faction as one of description factions, default: true
+	--								}
+	--								{*squads of another type with the same fields*}}
+	-- packages (table of tables): {{amount (int), default: standart amount for this quest type
+	--								 package_type (string) OR - must be in igi_db.PACKAGE,
+	--								 quest_type (string) - see igi_db.QUEST_TO_POSSIBLE_GOODS,
+	--								 smart_to_create (int) - if create: create in n-th smart, default: smarts[1]
+	--								 target (string) - 'return', 'take' or 'open',
+	--								 to_description (bool) - set package_type as one of description targets; default: true
+	--},
+	--								{*packages of another types with the same fields*}}
+	-- items (table of tables): {{amount (int),
+	--							  item_type (string) - only "artifact" and "weapon_*lowcost, midgame, endgame or legend*" rn OR
+	--							  item_list (list) 	- search/create random item from list
+	--							  to_create (bool) - TODO, if not create - then find
+	--							  in_npc_inv (bool) - create(search) in npc inventories,
+	--							  npc_identity (string) - 'friend', 'enemy', 'all' or faction
+	--							  in_world (bool) - create(search) in world,
+	--							  enemy_to (string) - if only_enemies then faction or "client" or "enemy" or "quest_giver"; default: player
+	--							  npc_to_create (int) - TODO, if create: create in inventory of npc with this squad group,
+	--							  smart_to_create (smart) - if create: create in n-th smart, default: 1},
+	--							 {*items of another types with the same fields*}}
+	--]]
+	local constructor = init_constructor(task_name)
+	CACHE = {["setup"] = {},}
+	CACHE.task_name = task_name
+	CACHE.factions = igi_helper.get_faction_setup()
+	CACHE.description = {}
+	
+	local handlers = {
+		["squad"] = setup_squad,
+		["package"] = setup_package,
+		["item"] = setup_item,
+		["smart"] = setup_smart,
+	}
+	
+	for _, entity in pairs(constructor) do
+		assert(handlers[entity.entity_type], "Unknown entity type: "..entity.entity_type)
+		local group_data = handlers[entity.entity_type](entity, CACHE.factions)
+		if not group_data then return nil end
+		group_data.entity_type = entity.entity_type
+		group_data.group_id = entity.group_id
+
+		if entity.to_description ~= false and entity.entity_type ~= "smart" then
+			for k, v in pairs(group_data.description_data) do
+				if not CACHE.description[k] then CACHE.description[k] = {} end
+				CACHE.description[k] = igi_utils.extend_list(CACHE.description[k], v)
+			end
+			group_data.description_data = nil
+		end
+		
+		CACHE.setup[igi_linker.make_id(entity.entity_type, entity.group_id)] = group_data
+	end
+
+	return CACHE
+end
+
+

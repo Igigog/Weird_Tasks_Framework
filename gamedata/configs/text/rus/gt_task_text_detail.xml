@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <string_table>
+	<string id="gt_task_text_done">
+		<text>Задание выполнено. Пора возвращаться к заказчику.</text>
+	</string>
 	<!-- mutant -->
 	<string id="gt_task_text_mutant_title">
 		<text>Уничтожение опасных мутантов</text>

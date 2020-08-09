@@ -1,0 +1,189 @@
+local ENTITY_ORDER_CACHE = {}
+
+--------------------<Utility>--------------------
+function make_id(typ, group_id, obj_id)
+	if not typ or not group_id then
+		callstack()
+		assert(nil, "Igi: linker: no typ "..typ.." or id "..group_id)
+	end
+
+	local id = "$"..typ.."_"..tostring(group_id)
+	if obj_id then id = id.."_"..tostring(obj_id) end
+	id = id.."$"
+	return id
+end
+
+local function is_dependency(str)
+	return string.find(str, "^%$%D+_%d+_-%d*%$")
+end
+
+local function is_incomplete_dependency(str)
+	return string.find(str, "^%$%D+_%d+%$")
+end
+
+local function set_default_deps(entities)
+	local defaults = {
+		['squad'] = {
+			['location'] = "$smart_1_1$",
+		},
+		['package'] = {
+			['location'] = "$smart_1_1$",
+		},
+	}
+
+	for _, entity in pairs(entities) do
+		if defaults[entity.entity_type] then
+			for k, v in pairs(defaults[entity.entity_type]) do
+				if not entity[k] then entity[k] = v end
+			end
+		end
+	end
+	return entities
+end
+
+local function finalize_dependency(dep)
+	-- if there's only group num in dependency: add default object num (1)
+	-- aka: "smart_1" -> "smart_1_1"
+	if is_incomplete_dependency(dep) then dep = string.gsub(dep, "%$$", "_1$") end
+	return dep
+end
+
+function assign_group_id(entities)
+	local counters = {}
+	for k, entity in pairs(entities) do
+		counters[entity.entity_type] = counters[entity.entity_type] and counters[entity.entity_type] + 1 or 1
+		entities[k].group_id = counters[entity.entity_type]
+	end
+	return entities
+end
+
+local function assign_ids(entities)
+	-- This function is used for dependency testing purposes and will not modify CACHE
+	local new_entities = {}
+	for _, entity in pairs(entities) do
+		for i=1, entity.amount or 1 do
+			assert(entity.group_id, "Group id not initialised: "..entity.entity_type)
+			new_entities[make_id(entity.entity_type, entity.group_id, i)] = entity
+		end
+	end
+	return new_entities
+end
+
+local function get_table_dependencies(tbl)
+	local deps = {}
+	for _, v in pairs(tbl) do
+		-- this expression looks for strings of type: *entity_type*_*group_id*_*entity_id*(optional)
+		if type(v) == 'string' and is_dependency(v) then
+			deps[#deps + 1] = finalize_dependency(v)
+		elseif type(v) == 'table' then
+			for _, dep in pairs(get_table_dependencies(v)) do
+				deps[#deps + 1] = finalize_dependency(dep)
+			end
+		end
+	end
+	return deps
+end
+
+local function get_all_dependencies(entities)
+	local deps = {}
+	for id, entity in pairs(assign_ids(entities)) do
+		deps[id] = get_table_dependencies(entity)
+	end
+	return deps
+end
+
+local function is_dependencies_resolved(dep_list, objs_set)
+	for _, dep in pairs(dep_list) do
+        if not objs_set[dep] then
+            return false
+        end
+    end
+    return true
+end
+
+--------------------<Test dependencies>--------------------
+local function get_entities_test_order(entities)
+	entities = assign_group_id(entities)
+	entities = set_default_deps(entities)
+	local objs = {}
+	local order = {}
+	local changes = true
+	while changes do
+		changes = false
+		for object_id, dependencies in pairs(get_all_dependencies(entities)) do
+			if not objs[object_id] and 
+					(not next(dependencies) or is_dependencies_resolved(dependencies, objs)) then
+				objs[object_id] = true
+				order[#order + 1] = object_id
+				changes = true
+			end
+		end
+	end
+	return order
+end
+
+--------------------<Setup order>--------------------
+local function test_to_group_order(test_order)
+	local group_order = {}
+	local group_pool = {}
+	for _, obj_name in pairs(test_order) do
+		group_name = string.match(obj_name, "^(%$%D+_%d+)") .. "$"
+		if not group_pool[group_name] then
+			group_order[#group_order + 1] = group_name
+			group_pool[group_name] = true
+		end
+	end
+	return group_order
+end
+
+local function set_group_order(entities)
+	local test_order = get_entities_test_order(entities)
+
+	local entities_count = 0
+	for _, entity in pairs(entities) do
+		entities_count = entities_count + (entity.amount or 1)
+	end
+	if #test_order ~= entities_count then return nil, "Igi: linker: Can't resolve dependencies" end
+
+	local order = test_to_group_order(test_order)
+	return order
+end
+
+--------------------<Globals>--------------------
+function get_order(task_name)
+	assert(igi_tasks[task_name], "Igi: Linker: Task not found: "..task_name)
+	if not ENTITY_ORDER_CACHE[task_name] then
+		local constructor = {}
+		copy_table(constructor, igi_tasks[task_name])
+		ENTITY_ORDER_CACHE[task_name] = assert(set_group_order(constructor))
+	end
+	return ENTITY_ORDER_CACHE[task_name]
+end
+
+function link(obj_tbl, entities)
+	for k, v in pairs(obj_tbl.as_table and obj_tbl:as_table() or obj_tbl) do
+		if type(v) == "string" and is_dependency(v) then
+			obj_tbl[k] = entities[v].id
+		elseif type(v) == "table" then
+			obj_tbl[k] = link(v, entities)
+		end
+	end
+	return obj_tbl
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

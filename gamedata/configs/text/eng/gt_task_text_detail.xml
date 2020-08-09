@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <string_table>
+	<string id="gt_task_text_done">
+		<text>Job done. Time to return to task giver.</text>
+	</string>
 	<!-- mutant -->
 	<string id="gt_task_text_mutant_title">
 		<text>Eliminate dangerous mutants</text>

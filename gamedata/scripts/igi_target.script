@@ -1,0 +1,94 @@
+local function create_squad(group_data)
+	local squads = {}
+	
+	for i=1, group_data.amount or 1 do
+		local squad = alun_utils.create_squad(group_data.name, group_data.location)
+		squad.stay_time = game.get_game_time()
+		squad.force_online = true
+
+		if group_data.items then
+			local commander = igi_helper.igi_alife_obj(squad:commander_id())
+			for item, amount in pairs(items) do
+				alife():create(item, commander:position(), commander.m_level_vertex_id, commander.m_game_vertex_id, commander:id())
+			end
+		end
+
+		squads[igi_linker.make_id("squad", group_data.group_id, i)] = {
+			['id'] = squad.id,
+			['section_name'] = squad:section_name(),
+		}
+	end
+	
+	return squads
+end
+
+local function create_package(group_data)
+	local packages = {}
+	local smart_data = SIMBOARD.smarts_by_names[group_data.location]
+	local location = vector():set( --Make sure it don't fall under the ground
+		smart_data.position.x,
+		smart_data.position.y + 1,
+		smart_data.position.z)
+	for i=1, group_data.amount or 1 do
+		local created_object = alife():create(group_data.section_name, location, smart_data.m_level_vertex_id, smart_data.m_game_vertex_id)
+		assert(created_object, "Igi: impossible to create package: "..group_data.section_name.." at "..group_data.location)
+
+		packages[igi_linker.make_id("package", group_data.group_id, i)] = {
+			id = created_object.id,
+			section_name = created_object:section_name(),
+		}
+	end
+	return packages
+end
+
+local function create_item(group_data)
+	local items = {}
+	if group_data.ids then
+		for i, id in pairs(group_data.ids) do
+			local item_info = {}
+			item_info.section_name = igi_helper.igi_alife_obj(id):section_name()
+			item_info.id = id
+			items[igi_linker.make_id("item", group_data.group_id, i)] = item_info
+		end
+	end
+	return items
+end
+
+local function check_smart(group_data)
+	smarts = {}
+	for i, smart_name in pairs(group_data.names) do
+		local smart_data = {['id'] = smart_name}
+		xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
+		smarts[igi_linker.make_id("smart", group_data.group_id, i)] = smart_data
+	end
+	return smarts
+end
+
+function create_target(CACHE)
+	local handlers = {
+		["package"] = create_package,
+		["squad"] = create_squad,
+		["item"] = create_item,
+		["smart"] = check_smart,
+	}
+	local targets = {}
+	local order = igi_linker.get_order(CACHE.task_name)
+	
+	for _, group_name in pairs(order) do
+		local entity = CACHE.setup[group_name]
+		local handler = assert(handlers[entity.entity_type], "Igi: Unknown entity type: " .. entity.entity_type)
+
+		-- printf("linking "..igi_linker.make_id(entity.entity_type, entity.group_id))
+		entity = igi_linker.link(entity, targets)
+		local group_data = handler(entity)
+		for k, obj_data in pairs(group_data) do
+			obj_data.target = entity.target
+			obj_data.online_activities = entity.online_activities
+		end
+		for k, v in pairs(group_data) do
+			targets[k] = v
+		end
+	end
+	CACHE["target"] = targets
+	return CACHE
+end

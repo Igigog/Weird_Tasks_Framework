@@ -51,3 +51,30 @@ function get_random_items(orig_list, amount)
 	end
 	return list
 end
+
+function extend_list(orig, val)
+	if type(val) == 'table' then
+		for _, v in pairs(val) do orig[#orig + 1] = v end
+	else orig[#orig + 1] = val end
+	return orig
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

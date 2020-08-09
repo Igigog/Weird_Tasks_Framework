@@ -1,0 +1,98 @@
+local function link_smarts(locations, entities)
+	if not locations or not entities then return end
+	
+	for k, location in pairs(locations) do
+		if string.find(location, "%$smart") then
+			group, id = string.match(location, "_(%d+)_(%d+)")
+			assert(group and id, "Igi: description: smart unlinkable: "..location)
+			-- entities = CACHE.setup, so: entities[group_id].names[obj_id]
+			local smart_name = entities["$smart_"..group.."$"].names[tonumber(id)]
+			locations[k] = "!smart_"..smart_name
+		end
+	end
+	return locations
+end
+
+local function delete_duplicates(tbl)
+	if not tbl then return nil end
+	
+	local values_set = {}
+	local new_tbl = {}
+	for k, v in pairs(tbl) do
+		if not values_set[v] then
+			table.insert(new_tbl, v)
+			values_set[v] = true
+		end
+	end
+	return new_tbl
+end
+
+local function setup_postpone_data(targets, factions, locations)
+	local postpone_data = {}
+	if targets and targets[1] then
+		postpone_data["target"] = targets
+	end
+	
+	if factions and factions[1] then
+		postpone_data["faction"] = factions
+	end
+	
+	if locations and locations[1] then
+		local locs = {}
+		for _, location in pairs(locations) do
+			if string.find(location, "!smart_") then
+				table.insert(locs, "st_"..string.gsub(location, "!smart_", "").."_name")
+			else
+				table.insert(locs, location)
+			end
+		end
+		postpone_data["location"] = locs
+	end
+	return postpone_data
+end
+
+local function get_target_descript(postpone_data)
+	local content = ""
+	local function text_line(name, detail)
+		return "%c[d_orange]" .. name .. ": " .. "%c[0,255,255,255]" .. detail
+	end
+	
+	for k, v in pairs(postpone_data) do
+		local label = game.translate_string(igi_db.TEXT_HEADER .. k)
+		local details = ""
+		
+		if type(v) == "table" then		-- if value is list: add every item in list
+			for key, value in pairs(v) do
+				if key > 1 then details = details .. ', ' end
+				details = details .. game.translate_string(value)
+			end
+		else details = game.translate_string(v) end
+
+		local text = text_line(label, details)
+		content = content .. text .. "\\n"
+	end
+
+	return content
+end
+
+function get_postpone_intel(task_name, desc, entities)
+	local locations = link_smarts(desc.location, entities)
+	
+	local locations = delete_duplicates(locations)
+	local factions = delete_duplicates(desc.faction)
+	local targets = delete_duplicates(desc.target)
+	
+	local postpone_data = setup_postpone_data(targets, factions, locations)
+	local postpone_intel = {
+		caption = game.translate_string(igi_db.TEXT_HEADER .. task_name .. "_title"),
+		text = get_target_descript(postpone_data),
+		icon = igi_db.TableView.new('task_info.ltx', task_name).icon
+	}
+	printf(postpone_intel.icon)
+	return postpone_intel
+end
+
+function postpone_function(intel)
+	db.actor:give_talk_message2(intel.caption, intel.text, intel.icon, "iconed_answer_item")
+	return true
+end

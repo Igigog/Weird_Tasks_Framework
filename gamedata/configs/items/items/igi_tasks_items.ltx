@@ -1,0 +1,105 @@
+;==============================================================
+;
+; QUEST ITEMS
+;	CoC 1.4.22 - DoctorX Questlines 1.22
+;
+;	Modified by: DoctorX
+;	Last revised: December 24, 2016
+;
+;==============================================================
+
+
+[igi_tasks]:identity_immunities	;;-- (technical)
+GroupControlSection											= spawn_group 
+discovery_dependency										= 
+$spawn														= "devices\pda"
+$prefetch													= 16
+cform														= skeleton 
+visual														= dynamics\devices\dev_pda\dev_pda
+class														= II_ATTCH 
+kind														= i_quest
+default_to_ruck												= false
+sprint_allowed												= true
+description													= st_pda_descr
+inv_name													= st_pda_name
+inv_name_short												= st_pda_name
+inv_weight													= 0.1
+inv_grid_width												= 1
+inv_grid_height												= 1
+inv_grid_x													= 0
+inv_grid_y													= 0
+inv_name													= quest_package_name
+inv_name_short												= quest_package_name
+description													= quest_package_desc
+can_trade													= false
+cost														= 0
+attach_angle_offset											= 0.000000, -1.204452, -1.262921 
+attach_position_offset										= 0.081856, -0.035081, 0.011694 
+attach_bone_name											= bip01_l_hand 
+auto_attach													= false 
+can_trade													= false
+
+;--===================================< Packages >===================================--
+[igi_package_weapon]:igi_tasks
+$spawn														= "igi_tasks_items\igi_package_weapon"
+kind														= i_quest
+visual														= dynamics\box\expl_dinamit
+story_id													= igi_package_weapon
+inv_weight													= 3.42
+inv_grid_width												= 2
+inv_grid_height												= 2
+inv_grid_x													= 0
+inv_grid_y													= 77
+possible_content 											= weapon_scalable
+amount_content 												= 1
+default_amount_package 										= 2
+use1_functor												= itms_manager.menu_unpack
+use1_action_functor											= itms_manager.igi_use_package
+
+[igi_package_artifact]:igi_tasks
+$spawn														= "igi_tasks_items\igi_package_artifact"
+kind														= i_quest
+visual														= dynamics\equipments\trade\kit_hunt
+story_id													= igi_package_artifact
+inv_weight													= 4
+inv_grid_width												= 2
+inv_grid_height												= 2
+inv_grid_x													= 4
+inv_grid_y													= 77
+possible_content 											= artifact_scalable
+amount_content 												= 1
+default_amount_package 										= 2
+use1_functor												= itms_manager.menu_unpack
+use1_action_functor											= itms_manager.igi_use_package
+
+[igi_package_medicine]:igi_tasks
+$spawn														= "igi_tasks_items\igi_package_medicine"
+kind														= i_quest
+visual														= dynamics\repair\armor_repair_pro.ogf
+story_id													= igi_package_medicine
+inv_weight													= 2
+inv_grid_width												= 2
+inv_grid_height												= 1
+inv_grid_x													= 2
+inv_grid_y													= 76
+possible_content 											= medicine
+amount_content 												= 4
+default_amount_package 										= 1
+use1_functor												= itms_manager.menu_unpack
+use1_action_functor											= itms_manager.igi_use_package
+
+[igi_package_ammunition]:igi_tasks
+$spawn														= "igi_tasks_items\igi_package_ammunition"
+kind														= i_quest
+visual														= dynamics\devices\dev_instrument_1\dev_instrument_1
+story_id													= igi_package_ammunition
+inv_weight													= 2
+inv_grid_width												= 1
+inv_grid_height												= 1
+inv_grid_x													= 4
+inv_grid_y													= 76
+possible_content 											= ammunition
+amount_content 												= 2
+default_amount_package 										= 2
+use1_functor												= itms_manager.menu_unpack
+use1_action_functor											= itms_manager.igi_use_package

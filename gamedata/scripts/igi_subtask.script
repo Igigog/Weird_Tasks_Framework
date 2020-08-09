@@ -1,0 +1,140 @@
+function process_instant_subtasks(CACHE)
+	-- Instant = instant without completed tasks
+	local temp_instant = {}
+	local is_changed = false
+	for k, subtask_data in pairs(CACHE.subtasks.instant) do
+		if not subtask_data.functor(subtask_data) then
+			temp_instant[#temp_instant + 1] = subtask_data
+		else is_changed = true end
+	end
+	CACHE.subtasks.instant = is_changed and temp_instant or CACHE.subtasks.instant
+	return CACHE, is_changed
+end
+
+function check_continuous_failed(CACHE)
+	-- Returns true, if all continuous objectives are ready;
+	-- Returns false, if at least one condition is failed;
+	-- Continuous objectives will be completed with task end and can be failed
+
+	local continuous_conditions = CACHE.subtasks.continuous
+	-- If functor of continuous not true - mission fail
+	for k, subtask_data in pairs(continuous_conditions) do
+		if not subtask_data.functor(subtask_data) then
+			return true
+		end
+	end
+	return false
+end
+
+function check_continuous_running(CACHE)
+	local continuous_conditions = CACHE.subtasks.continuous
+	-- If functor of continuous not true - mission fail
+	for k, subtask_data in pairs(continuous_conditions) do
+		if not (subtask_data.ready_functor and subtask_data.ready_functor(subtask_data)) then
+			return true
+		end
+	end
+	return false
+end
+
+function finish_continuous_subtasks(CACHE, is_complete)
+	for _, subtask_data in pairs(CACHE.subtasks.continuous) do
+		if is_complete then subtask_data.finish_function(subtask_data)
+		elseif not is_complete and subtask_data.fail_function then
+			subtask_data.fail_function(subtask_data)
+		end
+	end
+end
+---------------------------------------------------
+function quest_target(CACHE)
+	if not CACHE.subtasks or 
+			not(CACHE.subtasks.instant and CACHE.subtasks.continuous) then
+		return end
+
+	_, target_obj = next(CACHE.subtasks.instant)
+	if not target_obj then
+		for _, objective_data in pairs(CACHE.subtasks.continuous) do
+			-- If ready_functor exist and is task is not ready => do it
+			target_obj = objective_data.ready_functor and not objective_data.ready_functor(objective_data) and objective_data
+			if target_obj then break end
+		end
+	end
+	return target_obj and target_obj.id
+end
+---------------------------------------------------
+local function sort_subtasks(CACHE)
+	local instant_objective = {
+		["kill"] = igi_helper.object_not_exist,
+		["get"] = igi_helper.object_in_player_inv,
+	}
+	-- function for task to not fail, 
+	-- function to call on quest finish,
+	-- function to check if task is ready to finish,
+	-- (optional) function to call on quest fail
+	local continuous_objective = {
+		["return"] = {igi_helper.object_exist, igi_helper.deliver_item, igi_helper.object_in_player_inventory},
+	}
+	local instant = {}
+	local continuous = {}
+	for k, condition_data in pairs(CACHE.subtasks) do
+		local target = condition_data.target
+		if instant_objective[target] then
+			condition_data.functor = instant_objective[target]
+			instant[#instant + 1] = condition_data
+		elseif continuous_objective[target] then
+			condition_data.functor = continuous_objective[target][1]
+			condition_data.finish_function = continuous_objective[target][2]
+			condition_data.ready_functor = continuous_objective[target][3]
+			condition_data.fail_function = continuous_objective[target][4]
+			continuous[#continuous + 1] = condition_data
+		end
+		condition_data.target = nil
+		CACHE.subtasks[k] = nil
+	end
+	
+	CACHE.subtasks["instant"] = instant
+	CACHE.subtasks["continuous"] = continuous
+	return CACHE
+end
+
+function setup_subtask(CACHE)
+	local conditions = {}
+	for id, entity in pairs(CACHE.target) do
+		if entity.target then
+			conditions[#conditions + 1] = entity
+		end
+	end
+	CACHE.subtasks = conditions
+	CACHE = sort_subtasks(CACHE)
+	return CACHE
+end
+---------------------------------------------------
+local function update_mark(obj_data, mark_type)
+	if not tonumber(obj_data.id) then return end
+	local obj = igi_helper.igi_alife_obj(obj_data.id)
+	printf("in world: "..tostring(igi_helper.object_in_world(obj_data.id)).." has spot: "..tostring(level.map_has_object_spot(obj_data.id, mark_type)))
+	
+	if igi_helper.object_in_world(obj_data.id) then
+		if level.map_has_object_spot(obj_data.id, mark_type) == 0 then
+			level.map_add_object_spot(obj_data.id, mark_type, game.translate_string(igi_db.TEXT_HEADER .. mark_type))
+		end
+	else
+		if level.map_has_object_spot(obj_data.id, mark_type) == 1 then
+			level.map_remove_object_spot(obj_data.id, mark_type)
+		end
+	end
+end
+
+function update_marks(entities)
+	local marks = {
+		["package"] = "treasure_unique",
+		["item"] = "item_misc",
+	}
+	
+	for entity_name, entity in pairs(entities) do
+		local mark = marks[string.match(entity_name, "%$(%D+)_")]
+		if mark then
+			update_mark(entity, mark)
+		end
+	end
+end
