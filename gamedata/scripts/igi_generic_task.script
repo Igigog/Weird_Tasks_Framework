@@ -68,6 +68,9 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE = igi_target.create_target(CACHE)
 		CACHE = igi_subtask.setup_subtask(CACHE)
 		CACHE = igi_activities.sort_online_activities(CACHE)
+		alun_utils.print_table(CACHE.online_activities, "online")
+		alun_utils.print_table(CACHE.target, "target")
+		alun_utils.print_table(CACHE.subtasks, "subtasks")
 		save_cache(task_id, CACHE)
 	end
 	---------------------------<ACTIONS>---------------------

@@ -1,4 +1,16 @@
-local function change_squad_role(squad_data, role, CACHE)
+local function is_parent_dead(obj_data)
+	local se_obj = igi_helper.igi_alife_obj(obj_data.id)
+	local parent = igi_helper.igi_alife_obj(se_obj.parent_id)
+	return not parent:alive()
+end
+
+local function is_low_condition(obj_data, se_obj)
+	local cond = se_obj and se_obj.condition and se_obj:condition()
+	printf(se_obj:id().." "..cond)
+	return cond < 0.9
+end
+------------------------------------------
+local function change_squad_role(squad_data, obj, role, CACHE)
 	local factions = igi_db.TableView.new("squads\\squad_guard.ltx", "guard")
 	if not CACHE.factions[role] and not factions[role] then
 		printf("IGI: change role: role unknown")
@@ -12,36 +24,60 @@ local function change_squad_role(squad_data, role, CACHE)
 	igi_helper.change_squad_faction(squad_data.id, role)
 end
 
-local function repair_item(item_data, arg, CACHE)
-	local item = igi_helper.igi_alife_obj(item_data.id)
+local function repair_item(item_data, item, arg, CACHE)
+	--local item = igi_helper.level_object(item_data.id)
+	printf("Why can't I?")
+	printf(tostring(item and item:condition()))
 	if item and item:condition() < 0.9 then
 		item:set_condition(math.random(90,100)/100)
+		printf("Well... It must be set?")
 	end
 end
+------------------------------------------
+--[[local function do_activities(obj_data, condition, se_obj, CACHE)
+	local action_handlers = {
+		['change_faction'] = change_squad_role,
+		['repair'] = repair_item,
+	}
+	
+	for action, args in pairs(obj_data.online_activities[condition]) do
+		if action_handlers[action] then
+			action_handlers[action](obj_data, se_obj, args, CACHE)
+		else
+			printf("Igi: unknown action: "..action.." with object: "..obj_data.section_name)
+		end
+	end
+end	--]]
 
 function do_online_activities(CACHE)
 	if not CACHE.online_activities then return CACHE, false end
 	local condition_handlers = {
+		["on_parent_death"] = is_parent_dead,
+		["if_low_condition"] = is_low_condition,
 	}
 	
 	local action_handlers = {
 		['change_faction'] = change_squad_role,
 		['repair'] = repair_item,
 	}
+
 	local is_changed = false
 	for condition, objects in pairs(CACHE.online_activities) do
 		for k, obj_data in pairs(objects) do
-			se_squad = igi_helper.igi_alife_obj(obj_data.id)
-			-- Check for first member online, I don't give a fuck if some of them are offline
-			if igi_helper.is_squad_member_online(se_squad) then
+
+			se_obj = igi_helper.level_object(obj_data.id)
+			if se_obj then
 				-- If condition is true
-				if condition == "is_online" or condition_handlers[condition](obj_data, CACHE) then
+				if condition == "is_online" or condition_handlers[condition](obj_data, se_obj, CACHE) then
+					
 					-- Do every activity with this condition
 					for action, args in pairs(obj_data.online_activities[condition]) do
 						if action_handlers[action] then
-							action_handlers[action](obj_data, args, CACHE)
+
+							action_handlers[action](obj_data, se_obj, args, CACHE)
 						end
 					end
+					
 					-- Delete object after activity is done
 					objects[k] = nil
 					is_changed = true

@@ -11,6 +11,15 @@ function igi_alife_obj(id)
 	return alife_object(id)
 end
 
+function level_object(id)
+	id = tonumber(id)
+	if not id then
+		callstack()
+		assert(nil, "Don't look at me, senpai >//////<\n"..tostring(id))
+	end
+	return level.object_by_id(id)
+end
+
 function get_player_tier()
 	local player_rank = db.actor:character_rank()
 	local tiers = igi_db.TableView.new("tiers.ltx", "player_tiers")
@@ -83,17 +92,17 @@ function object_in_player_inventory(obj_data)
 	return obj.parent_id == 0
 end
 
-function get_object_level_id(obj)
-	-- obj must be alife object
-	if not obj then return nil end
+function get_object_level_id(se_obj)
+	if not se_obj then return nil end
 	
 	local lvl_info_obj
-	if object_in_world(obj.id) then
-		lvl_info_obj = obj
-	elseif igi_helper.object_in_npc_inventory(obj.id) then
-		lvl_info_obj = igi_helper.igi_alife_obj(obj.parent_id)
+	if object_in_world(se_obj.id) then
+		lvl_info_obj = se_obj
+	elseif igi_helper.check_common_npc(se_obj.parent_id) then
+		lvl_info_obj = igi_helper.igi_alife_obj(se_obj.parent_id)
 	end
 	
+	if not lvl_info_obj then return end
 	local obj_level_id = game_graph():vertex(lvl_info_obj.m_game_vertex_id):level_id()
 	return obj_level_id
 end
@@ -150,7 +159,7 @@ function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] on
 	return return_list
 end
 
-function is_online(object)
+function is_online(object)	-- TODO: rename
 	player_level_id = igi_helper.get_object_level_id(db.player)
 	object_level_id = igi_helper.get_object_level_id(object)
 	return player_level_id == object_level_id
@@ -158,6 +167,7 @@ end
 
 function is_nearby(object)
 	local level = get_object_level(object)
+	if not level then return false end
 	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), level)
 end
 
@@ -182,47 +192,39 @@ end
 local function check_object_by_args(args, se_object)
 	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
 			"Igi: Check object: enemy but not in_npc_inv")
-	
+
 	if args.in_world and object_in_npc_inventory(se_object.id) or
-			args.in_npc_inv and object_in_world(se_object.id) then
+			args.in_npc_inv and 
+			(object_in_world(se_object.id) or not 
+				check_common_npc(se_object.parent_id)) then
 		return false 
 	end
-	
-	if object_in_npc_inventory(se_object.id) and args.only_enemies and
-			not game_relations.is_factions_enemies(
-					args.enemy_to and get_community(args.enemy_to) or get_community(db.actor), 
-					get_community(igi_helper.igi_alife_obj(se_object.parent_id))) then
-		return false
+	if args.only_enemies then
+		local my_faction = get_community(args.enemy_to or db.actor)
+		local npc_faction = get_community(igi_helper.igi_alife_obj(se_object.parent_id))
+
+		if npc_faction == "monolith" then return false end
+		if not game_relations.is_factions_enemies(my_faction, npc_faction) then
+			return false
+		end
 	end
-	
 	if args.is_online and not is_online(se_object) then
 		return false 
 	end
-	
 	if args.is_nearby and not is_nearby(se_object) then
 		return false
 	end
-	printf(se_object:section_name() .. ' parent: ' .. tostring(se_object.parent_id) .. "in_npc: " .. tostring(object_in_npc_inventory(se_object.id)))
 	return true
 end
 
 function find_objects_ids(name_set, args)
-	--[[ Well, this big horse shit function finds all objects, which names are in name_set (must be set)
-			Possible args:
-		nearby_required (bool) - search for objects that are on player's nearby levels
-		online_required (bool) - search for objects that are online
-		possible endings (list of strings) - search for objects which name ends with one of these strings
-		in_npc_inv (bool) - search in npc's inventories
-		only_enemies (bool) - if in_npc_inv: only in enemies's inventories
-	]]
-	local name_set = name_set.as_table and name_set:as_table() or name_set	-- cache to table for speed
-	assert(next(name_set) ~= nil, "gt: find_objects_ids: no name set given")
+	-- Well, this slow shit func makes what it need to make the most slow way possible
+	assert(next(name_set) ~= nil, "Igi: find_objects_ids: no name set given")
 	local id_list = {}	
 
 	for id=1, 65534 do
 		local obj = igi_helper.igi_alife_obj(id)
 		if obj then
-			printf(obj:section_name())
 			if name_set[obj:section_name()] or has_ending_in_list(obj, args.endings_list) then
 				printf("Found: %s ", obj:section_name())
 				if check_object_by_args(args, obj) then
@@ -241,9 +243,9 @@ function get_faction_setup(--[[optional]] factions)	-- TODO: implement factions
 	-- Quest by himself decides, which character(s) to use
 	
 	local faction_list = {
-		["actor"] = 'stalker',
+		["actor"] = 'stalker',		-- default values is 'stalker', will be changed if possible
 		["task_giver"] = 'stalker',
-		["client"] = 'stalker',		-- default value is 'stalker', will be changed if possible
+		["client"] = 'stalker',
 		["enemy"] = 'stalker',
 	}
 	
@@ -449,7 +451,6 @@ itms_manager.igi_use_package = function (obj)
 	if not possible_content_key then return end
 
 	local possible_content = igi_db.TableView.new('item_types.ltx', igi_helper.scale_value(possible_content_key))
-	printf(possible_content.section)
 	local content = {}
 	for i=1, ini_sys:r_float_ex(sec, "amount_content") do
 		local v = possible_content:random()

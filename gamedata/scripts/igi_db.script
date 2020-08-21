@@ -148,7 +148,6 @@ end
 
 TableView.methods.random = function(tbl)
 	-- Ебал рот для кастомных ключей тоже прописывать
-	printf(tbl.ini:line_count(tbl.section))
 	local line = math.random(tbl.ini:line_count(tbl.section)) - 1
 	local _, key, values_str = tbl.ini:r_line(tbl.section, line)
 	-- delete newline char

@@ -88,7 +88,6 @@ function get_postpone_intel(task_name, desc, entities)
 		text = get_target_descript(postpone_data),
 		icon = igi_db.TableView.new('task_info.ltx', task_name).icon
 	}
-	printf(postpone_intel.icon)
 	return postpone_intel
 end
 

@@ -68,11 +68,12 @@ artifact_stalker = {
 weapon = {
 	{['entity_type'] = 'item',
 	['item_type'] = 'weapon_scalable',
+	['is_nearby'] = true,
 	['in_npc_inv'] = true,
 	['only_enemies'] = true,
 	['target'] = 'get',
 	['online_activities'] = {
-		['is_online'] = {
+		['if_low_condition'] = {
 			['repair'] = true,
 			},
 		},

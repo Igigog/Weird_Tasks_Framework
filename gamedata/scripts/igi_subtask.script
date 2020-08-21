@@ -112,7 +112,7 @@ end
 local function update_mark(obj_data, mark_type)
 	if not tonumber(obj_data.id) then return end
 	local obj = igi_helper.igi_alife_obj(obj_data.id)
-	printf("in world: "..tostring(igi_helper.object_in_world(obj_data.id)).." has spot: "..tostring(level.map_has_object_spot(obj_data.id, mark_type)))
+	--printf("in world: "..tostring(igi_helper.object_in_world(obj_data.id)).." has spot: "..tostring(level.map_has_object_spot(obj_data.id, mark_type)))
 	
 	if igi_helper.object_in_world(obj_data.id) then
 		if level.map_has_object_spot(obj_data.id, mark_type) == 0 then
