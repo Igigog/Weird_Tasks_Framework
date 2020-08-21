@@ -226,9 +226,9 @@ function find_objects_ids(name_set, args)
 		local obj = igi_helper.igi_alife_obj(id)
 		if obj then
 			if name_set[obj:section_name()] or has_ending_in_list(obj, args.endings_list) then
-				printf("Found: %s ", obj:section_name())
+				--printf("Found: %s ", obj:section_name())
 				if check_object_by_args(args, obj) then
-					printf("Igi: Found one! %s", obj:section_name())
+					--printf("Igi: Found one! %s", obj:section_name())
 					id_list[#id_list + 1] = id
 				end
 			end

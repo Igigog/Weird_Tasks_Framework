@@ -6,7 +6,7 @@ end
 
 local function is_low_condition(obj_data, se_obj)
 	local cond = se_obj and se_obj.condition and se_obj:condition()
-	printf(se_obj:id().." "..cond)
+	--printf(se_obj:id().." "..cond)
 	return cond < 0.9
 end
 ------------------------------------------
@@ -25,12 +25,8 @@ local function change_squad_role(squad_data, obj, role, CACHE)
 end
 
 local function repair_item(item_data, item, arg, CACHE)
-	--local item = igi_helper.level_object(item_data.id)
-	printf("Why can't I?")
-	printf(tostring(item and item:condition()))
-	if item and item:condition() < 0.9 then
+	if item then
 		item:set_condition(math.random(90,100)/100)
-		printf("Well... It must be set?")
 	end
 end
 ------------------------------------------

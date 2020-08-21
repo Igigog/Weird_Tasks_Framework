@@ -39,7 +39,6 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 		save_cache(task_id, CACHE)
 		return true
 	end
-	printf("Precondition end")
 	return false
 end
 
@@ -49,8 +48,7 @@ xr_effects.igi_task_generic_setup = function(actor,npc,p)
 	if not p and p[1] then return false end
 	local task_id = p[1]
 	--Setup
-	local CACHE = assert(get_cache(task_id), "Igi: task ".. task_id .. " : CACHE not initialised") 
-		printf("Current task: "..CACHE.task_name)
+	local CACHE = assert(get_cache(task_id), "Igi: task "..task_id .." : CACHE not initialised for task "..task_id)
 	--Give message
 	local description = igi_description.get_postpone_intel(CACHE.task_name, CACHE.description, CACHE.setup)
 	--Print the message
@@ -68,9 +66,6 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE = igi_target.create_target(CACHE)
 		CACHE = igi_subtask.setup_subtask(CACHE)
 		CACHE = igi_activities.sort_online_activities(CACHE)
-		alun_utils.print_table(CACHE.online_activities, "online")
-		alun_utils.print_table(CACHE.target, "target")
-		alun_utils.print_table(CACHE.subtasks, "subtasks")
 		save_cache(task_id, CACHE)
 	end
 	---------------------------<ACTIONS>---------------------
