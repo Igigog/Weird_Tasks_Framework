@@ -138,8 +138,8 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	-- Goodwill
 	igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
 	--Release
-	igi_helper.release_targets_in_world(CACHE.target)
 	igi_subtask.finish_continuous_subtasks(CACHE, is_completed)
+	igi_helper.release_targets_in_world(CACHE.target)
 	igi_subtask.update_marks(CACHE.target)
 	--Reset stored data
 	save_cache(task_id, nil)

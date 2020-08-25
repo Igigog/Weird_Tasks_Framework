@@ -1,3 +1,6 @@
 id finding rework
 artifact package wrong texture
 linker attributes
+m_data instead of db
+task fail scale from rank
+get task requirements

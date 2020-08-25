@@ -82,6 +82,7 @@ function create_target(CACHE)
 		entity = igi_linker.link(entity, targets)
 		local group_data = handler(entity)
 		for k, obj_data in pairs(group_data) do
+			obj_data.entity_type = entity.entity_type
 			obj_data.target = entity.target
 			obj_data.online_activities = entity.online_activities
 		end

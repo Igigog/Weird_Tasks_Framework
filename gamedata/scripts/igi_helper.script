@@ -315,6 +315,7 @@ end
 function change_squad_faction(squad_id, faction)
 	-- This can be used only on online objects
 	local squad = igi_helper.igi_alife_obj(squad_id)
+	if not squad then return end
 	for npc in squad:squad_members() do
 		local member = npc and level.object_by_id(npc.id)
 		if member and not (character_community(member) == faction) then
@@ -328,7 +329,7 @@ function release_package(pkg_data)
 	if not pkg_data then return end
 	
 	local pkg = igi_helper.igi_alife_obj(pkg_data.id)
-	if (pick_package and (pkg:section_name() == data.section_name)) then
+	if (pkg and (pkg:section_name() == pkg_data.section_name)) then
 		printf("GhenTuong: release %s| parent_id = %s", pkg:name(), pkg.parent_id)
 		safe_release_manager.release(pkg)
 	end
@@ -358,18 +359,15 @@ end
 
 function release_targets_in_world(target_cache)
 	local handlers = {
-		['packages'] = release_package,
-		['squads'] = release_squad,
+		['package'] = release_package,
+		['squad'] = release_squad,
 	}
 	
-	for name, handler in pairs(handlers) do
-		if target_cache[name] then
-			for _, target_group in pairs(target_cache[name]) do
-				for _, target_data in pairs(target_group) do
-					printf("Release %s: name: %s, id: %s", name, target_data.section_name, target_data.id)
-					handler(target_data)
-				end
-			end
+	for _, entity in pairs(target_cache) do
+		local handler = handlers[entity.entity_type]
+		if handler then
+			printf("Igi: Release from world: "..entity.section_name.." with id: "..entity.id)
+			handler(entity)
 		end
 	end
 end
