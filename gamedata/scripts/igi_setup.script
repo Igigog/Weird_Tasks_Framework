@@ -114,9 +114,10 @@ local function setup_item(item_data, factions)
 		local parent_id = igi_helper.igi_alife_obj(objects[1]).parent_id
 		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.igi_alife_obj(parent_id)
 
+		local desc_target = igi_db.TEXT_HEADER..string.match(item_data.item_type, "^(%a+)")
 		object_data.description_data = {
 			['faction'] = parent_npc and igi_helper.get_community(parent_npc) or nil,
-			['target'] = parent_npc and parent_npc:character_name() or item_data.item_type,
+			['target'] = parent_npc and parent_npc:character_name() or desc_target,
 			['location'] = igi_helper.get_object_location_description(igi_helper.igi_alife_obj(objects[1]))
 		}
 		--alun_utils.print_table(object_data.description_data)

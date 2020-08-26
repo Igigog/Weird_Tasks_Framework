@@ -59,7 +59,7 @@
 	
 	<!-- artifact_world -->
 	<string id="gt_task_text_artifact_world_title">
-		<text>Артефакты всем, даром, и пусть никто не уйдет обиженным</text>
+		<text>Артефакты всем, даром</text>
 	</string>
 	<string id="gt_task_text_artifact_world_descr">
 		<text>Доктор сказал мне что тут находится один интересный артефакт. Испытаем удачу?</text>

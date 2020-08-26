@@ -138,3 +138,17 @@ function update_marks(entities)
 		end
 	end
 end
+
+function unmark_all(entities)
+	local marks = {
+		["package"] = "treasure_unique",
+		["item"] = "item_misc",
+	}
+	
+	for _, entity in pairs(entities) do
+		local mark = marks[string.match(entity_name, "%$(%D+)_")]
+		if mark then
+			level.map_remove_object_spot(entity.id, mark)
+		end
+	end
+end

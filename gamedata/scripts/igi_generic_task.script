@@ -75,13 +75,14 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if activities_changed or objectives_changed then
 		save_cache(task_id, CACHE)
 	end
-	---------------------------<STAGE>----------------------
+	
+	if igi_subtask.check_continuous_failed(CACHE) then return "fail" end
 	-- If no continuous and no money reward -> complete task, when all instant are ready
 	if not next(CACHE.subtasks.instant) and not next(CACHE.subtasks.continuous) and
 			igi_db.get_value("task_info.ltx", CACHE.task_name, "reward_money") == 0 then
 		return "complete" 
 	end
-	
+	---------------------------<STAGE>----------------------
 	-- If no more instant objectives: stage = 1; if all continuous are ready: stage = 2
 	if tsk.stage == 0 and not next(CACHE.subtasks.instant) then
 		tsk.stage = 1
@@ -90,7 +91,6 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		tsk.stage = 2
 	end
 	if tsk.stage == 2 then
-		if igi_subtask.check_continuous_failed(CACHE) then return "fail" end
 		if tsk.current_target ~= tsk.task_giver_id then tsk.stage = 1 end
 	end
 	
@@ -140,7 +140,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	--Release
 	igi_subtask.finish_continuous_subtasks(CACHE, is_completed)
 	igi_helper.release_targets_in_world(CACHE.target)
-	igi_subtask.update_marks(CACHE.target)
+	igi_subtask.unmark_all(CACHE.target)
 	--Reset stored data
 	save_cache(task_id, nil)
 	--Finish

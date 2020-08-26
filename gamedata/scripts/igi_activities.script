@@ -21,13 +21,16 @@ local function is_stalker_online(se_obj)
     end
 end
 
-local function get_online_object(id, entity_type)
-	if not id or not entity_type then return nil end
+local function get_online_object(id)
+	if not id then return nil end
 	
 	se_obj = igi_helper.igi_alife_obj(id)
 	if not se_obj then return nil end
 	
-	local npc = se_obj:squad_members()()	-- stateful iterator, returns function
+	local npc
+	if se_obj.squad_members and se_obj:squad_members() then
+		npc = se_obj:squad_members()()	-- stateful iterator, returns function
+	end
 	return (npc and is_stalker_online(npc) or se_obj.online) and se_obj or nil
 end
 ------------------------------------------

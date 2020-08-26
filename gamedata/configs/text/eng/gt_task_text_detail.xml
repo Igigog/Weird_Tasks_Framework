@@ -59,7 +59,7 @@
 	
 	<!-- artifact_world -->
 	<string id="gt_task_text_artifact_world_title">
-		<text>Artifacts for everyone, for free, and let no one leave offended</text>
+		<text>Artifacts for everyone, for free</text>
 	</string>
 	<string id="gt_task_text_artifact_world_descr">
 		<text>Doctor said that an artifact could be found here. Let's try my luck, then.</text>
