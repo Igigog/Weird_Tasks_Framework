@@ -146,6 +146,19 @@ TableView.methods.as_table = function (tbl)
 	return new_tbl
 end
 
+TableView.methods.as_set = function (tbl)
+	local new_tbl = get_table(tbl.filename, tbl.section)
+	set = {}
+	for _, v in pairs(new_tbl) do
+		set[v] = true
+	end
+	
+	for _, v in pairs(tbl.custom) do
+		set[v] = true
+	end
+	return set
+end
+
 TableView.methods.random = function(tbl)
 	-- Ебал рот для кастомных ключей тоже прописывать
 	local line = math.random(tbl.ini:line_count(tbl.section)) - 1

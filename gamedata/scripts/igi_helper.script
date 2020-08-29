@@ -133,7 +133,9 @@ function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] on
 	-- and returns a table of suitable smarts
 	assert(type(smarts_table) == 'table', 'gt: check_smarts: not a table given')
 	local return_list = {}
-	local blacklisted_maps = igi_db.TableView.new("blacklist.ltx", "maps")
+	local blacklisted_maps = igi_db.TableView.new("blacklist.ltx", "maps"):as_set()
+	local t = profile_timer()
+	local m = profile_timer()
 	
 	for smart_name, smart_data in pairs(smarts_table) do
 		if simulation_objects.available_by_id[smart_data.id] and	-- availability check
