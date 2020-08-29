@@ -4,3 +4,5 @@ linker attributes
 m_data instead of db
 task fail scale from rank
 get task requirements
+radar is unbalanced
+map blacklist as lua table

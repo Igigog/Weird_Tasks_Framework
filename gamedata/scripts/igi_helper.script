@@ -73,10 +73,8 @@ function get_community(character)
 	end
 end
 
-function object_in_world(obj_id)
-	if not obj_id then return end
-	local obj = igi_helper.igi_alife_obj(obj_id)
-	return obj and obj.parent_id == 65535
+function object_in_world(se_obj)
+	return se_obj and se_obj.parent_id == 65535
 end
 
 function object_in_npc_inventory(obj_id)
@@ -96,7 +94,7 @@ function get_object_level_id(se_obj)
 	if not se_obj then return nil end
 	
 	local lvl_info_obj
-	if object_in_world(se_obj.id) then
+	if object_in_world(se_obj) then
 		lvl_info_obj = se_obj
 	elseif igi_helper.check_common_npc(se_obj.parent_id) then
 		lvl_info_obj = igi_helper.igi_alife_obj(se_obj.parent_id)
@@ -195,7 +193,7 @@ local function check_object_by_args(args, se_object)
 
 	if args.in_world and object_in_npc_inventory(se_object.id) or
 			args.in_npc_inv and 
-			(object_in_world(se_object.id) or not 
+			(object_in_world(se_object) or not 
 				check_common_npc(se_object.parent_id)) then
 		return false 
 	end
@@ -312,19 +310,6 @@ function release_squad(squad_data)
 	SIMBOARD:remove_squad(squad)
 end
 
-function change_squad_faction(squad_id, faction)
-	-- This can be used only on online objects
-	local squad = igi_helper.igi_alife_obj(squad_id)
-	if not squad then return end
-	for npc in squad:squad_members() do
-		local member = npc and level.object_by_id(npc.id)
-		if member and not (character_community(member) == faction) then
-			printf("GhenTuong: %s| %s => %s", npc.object:name(), character_community(member), faction)
-			member:set_character_community(faction, 0, 0)
-		end
-	end
-end
-
 function release_package(pkg_data)
 	if not pkg_data then return end
 	
@@ -396,8 +381,7 @@ function object_not_exist(obj_data)
 end
 
 function object_in_player_inv(obj_data)
-	local obj = igi_helper.igi_alife_obj(obj_data.id)
-	return obj and obj.parent_id == 0
+	return obj_data.se_obj and obj_data.se_obj.parent_id == 0
 end
 
 function deliver_item(obj_data)

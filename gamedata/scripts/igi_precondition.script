@@ -28,6 +28,7 @@ function check_preconditions(preconditions)
 	}
 
 	for condition, handler in pairs(condition_handlers) do
+		-- not too good when there'll be more conditions but good enough now
 		if preconditions[condition] and not handler(preconditions[condition]) then
 			return false
 		end

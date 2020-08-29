@@ -1,5 +1,5 @@
 local function is_parent_dead(obj_data)
-	local se_obj = igi_helper.igi_alife_obj(obj_data.id)
+	local se_obj = obj_data.se_obj
 	local parent = igi_helper.igi_alife_obj(se_obj.parent_id)
 	return not parent:alive()
 end
@@ -7,7 +7,6 @@ end
 local function is_low_condition(obj_data)
 	local item = igi_helper.level_object(obj_data.id)
 	local cond = item and item.condition and item:condition()
-	--printf(se_obj:id().." "..cond)
 	return cond < 0.9
 end
 
@@ -21,19 +20,29 @@ local function is_stalker_online(se_obj)
     end
 end
 
-local function get_online_object(id)
-	if not id then return nil end
-	
-	se_obj = igi_helper.igi_alife_obj(id)
+local function is_object_online(se_obj)
 	if not se_obj then return nil end
-	
+
 	local npc
 	if se_obj.squad_members and se_obj:squad_members() then
 		npc = se_obj:squad_members()()	-- stateful iterator, returns function
 	end
-	return (npc and is_stalker_online(npc) or se_obj.online) and se_obj or nil
+
+	return npc and is_stalker_online(npc) or se_obj.online
 end
 ------------------------------------------
+local function change_squad_faction(se_squad, faction)
+	if not se_squad then return end
+
+	for npc in se_squad:squad_members() do
+		local member = npc and igi_helper.level_object(npc.id)
+		if member and not (character_community(member) == faction) then
+			printdbg("Igi: %s| %s => %s", npc.object:name(), character_community(member), faction)
+			member:set_character_community(faction, 0, 0)
+		end
+	end
+end
+
 local function change_squad_role(squad_data, se_obj, role, CACHE)
 	local factions = igi_db.TableView.new("squads\\squad_guard.ltx", "guard")
 	if not CACHE.factions[role] and not factions[role] then
@@ -45,17 +54,17 @@ local function change_squad_role(squad_data, se_obj, role, CACHE)
 		_, role = next(role)
 	end
 	role = CACHE.factions[role] or role		-- if role is not in CACHE => role is actual faction
-	igi_helper.change_squad_faction(squad_data.id, role)
+	change_squad_faction(squad_data.se_obj, role)
 end
 
-local function repair_item(item_data, se_obj, arg, CACHE)
+local function repair_item(item_data)
 	local item = igi_helper.level_object(item_data.id)
 	if item then
 		item:set_condition(math.random(90,100)/100)
 	end
 end
 ------------------------------------------
---[[local function do_activities(obj_data, condition, se_obj, CACHE)
+local function do_activities(obj_data, condition, se_obj, CACHE)
 	local action_handlers = {
 		['change_faction'] = change_squad_role,
 		['repair'] = repair_item,
@@ -68,7 +77,7 @@ end
 			printf("Igi: unknown action: "..action.." with object: "..obj_data.section_name)
 		end
 	end
-end	--]]
+end
 
 function do_online_activities(CACHE)
 	-- TODO: rework
@@ -86,21 +95,12 @@ function do_online_activities(CACHE)
 	local is_changed = false
 	for condition, objects in pairs(CACHE.online_activities) do
 		for k, obj_data in pairs(objects) do
-			se_obj = get_online_object(obj_data.id, obj_data.entity_type)
-			--printf("Igi: object "..obj_data.section_name.." is online: "..tostring(not not se_obj))
-			if se_obj then
+			local se_obj = obj_data.se_obj
+			-- printf("Igi: object "..obj_data.section_name.." exists: "..tostring(not not se_obj))
+			if is_object_online(se_obj) then
 				-- If condition is true
 				if condition == "is_online" or condition_handlers[condition](obj_data, se_obj, CACHE) then
-					
-					-- Do every activity with this condition
-					for action, args in pairs(obj_data.online_activities[condition]) do
-						if action_handlers[action] then
-							--printf("Igi: doing action: "..action)
-
-							action_handlers[action](obj_data, se_obj, args, CACHE)
-							--printf("Igi: action done")
-						end
-					end
+					do_activities(obj_data, condition, se_obj, CACHE)
 					
 					-- Delete object after activity is done
 					objects[k] = nil
@@ -113,14 +113,14 @@ function do_online_activities(CACHE)
 	end
 		-- delete the whole section
 	if not next(CACHE.online_activities) then CACHE.online_activities = nil end
-	return CACHE, is_changed
+	return is_changed
 end
 
-function sort_online_activities(CACHE)
+function sort_online_activities(targets)
 	-- Adds all objects with online activities to CACHE
 	-- CACHE.online_activities = {*condition* = {*list of obj_data*}}
 	local online_acts = {}
-	for _, entity in pairs(CACHE.target) do
+	for _, entity in pairs(targets) do
 		if entity.online_activities then
 			for condition, actions in pairs(entity.online_activities) do
 				if not online_acts[condition] then online_acts[condition] = {} end
@@ -128,6 +128,6 @@ function sort_online_activities(CACHE)
 			end
 		end
 	end
-	CACHE.online_activities = online_acts
-	return CACHE
+
+	return online_acts
 end

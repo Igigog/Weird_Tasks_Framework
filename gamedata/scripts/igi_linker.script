@@ -163,7 +163,7 @@ end
 function link(obj_tbl, entities)
 	for k, v in pairs(obj_tbl.as_table and obj_tbl:as_table() or obj_tbl) do
 		if type(v) == "string" and is_dependency(v) then
-			obj_tbl[k] = entities[v].id
+			obj_tbl[k] = entities[v].id or entities[v].smart_name
 		elseif type(v) == "table" then
 			obj_tbl[k] = link(v, entities)
 		end

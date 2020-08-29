@@ -1,21 +1,51 @@
 -- =============================================================
---	Quest functions (gt_generic_task.script)
+--	Quest functions (igi_generic_task.script)
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-local TASKS_CACHE = {} --CACHE to setup task
--- local MAX_TASK = 2
+local TASKS_CACHE = {}
+local userdata_initialised = true
 
-local function get_cache(task_id)
-	if not TASKS_CACHE[task_id] then 
-		TASKS_CACHE[task_id] = utils.load_var(db.actor, task_id) 
-	end
-	return TASKS_CACHE[task_id]
+function on_game_start()
+    RegisterScriptCallback("save_state",save_state)
+    RegisterScriptCallback("load_state",load_state)
+	printdbg("Igi_Tasks BETA initialised")
 end
 
-local function save_cache(task_id, cache_obj)
-	TASKS_CACHE[task_id] = cache_obj
-	utils.save_var(db.actor, task_id, cache_obj)
+local function deinit_userdata(cache_tbl)
+	-- userdata can't be serialised, so I remove & restore it
+	for _, cache in pairs(cache_tbl) do
+		if cache and cache.target then
+			for _, obj_data in pairs(cache.target) do
+				obj_data.se_obj = nil
+			end
+		end
+	end
+end
+
+local function init_userdata(cache_tbl)
+	for k, cache in pairs(cache_tbl) do
+		--printf("Igi: "..k.." is loading")
+		if cache.target then
+			for m, obj_data in pairs(cache.target) do
+				if obj_data.id and obj_data.section_name then
+					obj_data.se_obj = igi_helper.igi_alife_obj(obj_data.id)
+					--printf("Igi: obj loaded: "..type(obj_data.se_obj))
+				end
+			end
+		end
+	end
+end
+
+function save_state(m_data)
+	deinit_userdata(TASKS_CACHE)
+	m_data.igi_tasks_cache = TASKS_CACHE
+end
+
+function load_state(m_data)
+	TASKS_CACHE = m_data.igi_tasks_cache or {}
+	-- you can't initialise userdata here bcs server objects are yet not loaded
+	userdata_initialised = false
 end
 
 ---------------------------< Precondition >---------------------------
@@ -34,12 +64,8 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	igi_precondition.check_preconditions(
 			igi_db.TableView.new("task_info.ltx", task_name.."_preconditions"))
 	
-	local CACHE = get_cache(task_id) or igi_setup.setup_quest(task_name)
-	if CACHE then
-		save_cache(task_id, CACHE)
-		return true
-	end
-	return false
+	TASKS_CACHE[task_id] = TASKS_CACHE[task_id] or igi_setup.setup_quest(task_name)
+	return TASKS_CACHE[task_id]
 end
 
 --< Effect >--------------------------------------------------
@@ -48,7 +74,7 @@ xr_effects.igi_task_generic_setup = function(actor,npc,p)
 	if not p and p[1] then return false end
 	local task_id = p[1]
 	--Setup
-	local CACHE = assert(get_cache(task_id), "Igi: task "..task_id .." : CACHE not initialised for task "..task_id)
+	local CACHE = assert(TASKS_CACHE[task_id], "Igi: task "..task_id.." : CACHE not initialised")
 	--Give message
 	local description = igi_description.get_postpone_intel(CACHE.task_name, CACHE.description, CACHE.setup)
 	--Print the message
@@ -57,26 +83,25 @@ end
 --< Status >--------------------------------------------------
 task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if not (db.actor and tsk) then return end
-	local CACHE = assert(get_cache(task_id), "CACHE not initialised")
-	local activities_changed
-	local objectives_changed
+	if not userdata_initialised then
+		init_userdata(TASKS_CACHE)
+		userdata_initialised = true
+	end
+	local CACHE = assert(TASKS_CACHE[task_id], "CACHE not initialised for task "..task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not (CACHE["target"]) then
-		CACHE = igi_target.create_target(CACHE)
-		CACHE = igi_subtask.setup_subtask(CACHE)
-		CACHE = igi_activities.sort_online_activities(CACHE)
-		save_cache(task_id, CACHE)
+		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_name)
+		CACHE.setup = nil	-- you don't need setup after object creation
+		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
+		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
 	end
 	---------------------------<ACTIONS>---------------------
 	igi_subtask.update_marks(CACHE.target)
-	CACHE, activities_changed = igi_activities.do_online_activities(CACHE)
-	CACHE, objectives_changed = igi_subtask.process_instant_subtasks(CACHE)
-	if activities_changed or objectives_changed then
-		save_cache(task_id, CACHE)
-	end
+	igi_activities.do_online_activities(CACHE)
+	igi_subtask.process_instant_subtasks(CACHE.subtasks)
 	
-	if igi_subtask.check_continuous_failed(CACHE) then return "fail" end
+	if igi_subtask.check_continuous_failed(CACHE.subtasks.continuous) then return "fail" end
 	-- If no continuous and no money reward -> complete task, when all instant are ready
 	if not next(CACHE.subtasks.instant) and not next(CACHE.subtasks.continuous) and
 			igi_db.get_value("task_info.ltx", CACHE.task_name, "reward_money") == 0 then
@@ -87,10 +112,11 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if tsk.stage == 0 and not next(CACHE.subtasks.instant) then
 		tsk.stage = 1
 	end
-	if tsk.stage == 1 and not igi_subtask.check_continuous_running(CACHE) then
+	if tsk.stage == 1 and not igi_subtask.check_continuous_running(CACHE.subtasks.continuous) then
 		tsk.stage = 2
 	end
 	if tsk.stage == 2 then
+		-- target function works independently so this works
 		if tsk.current_target ~= tsk.task_giver_id then tsk.stage = 1 end
 	end
 	
@@ -98,21 +124,21 @@ end
 --< Target >--------------------------------------------------
 task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 	--This function point to a task target in PDA
-	local CACHE = get_cache(task_id)
+	local CACHE = TASKS_CACHE[task_id]
 	if not CACHE then return end
 
-	local target_id = igi_subtask.quest_target(CACHE)
+	local target_id = igi_subtask.quest_target(CACHE.subtasks)
 	return target_id or (tsk.stage ~= 0 and tsk.task_giver_id) 	-- target_id or task_giver_id
 end
 --< Text >--------------------------------------------------
 task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 	--This function return a text for title_functor and descr_functor
-	local CACHE = get_cache(task_id)
+	local CACHE = TASKS_CACHE[task_id]
 
 	if (field == "title") then
 		return game.translate_string(igi_db.TEXT_HEADER..CACHE.task_name.."_title")
 	elseif (field == "descr") then
-		if not (CACHE) then return "" end
+		if not CACHE then return "" end
 		local text = ""
 		if (tsk.stage == 2) then
 			text = game.translate_string(igi_db.TEXT_HEADER .. "done")
@@ -129,7 +155,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	local task_id = p[1]
 	local is_completed = p[2] == "true"
 
-	local CACHE = get_cache(task_id)
+	local CACHE = TASKS_CACHE[task_id]
 	--Reward money
 	if is_completed then
 		igi_helper.reward_quest_money(CACHE.task_name)
@@ -138,11 +164,11 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	-- Goodwill
 	igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
 	--Release
-	igi_subtask.finish_continuous_subtasks(CACHE, is_completed)
-	igi_helper.release_targets_in_world(CACHE.target)
+	igi_subtask.finish_continuous_subtasks(CACHE.subtasks.continuous, is_completed)
+	igi_helper.release_targets_in_world(CACHE.target)	-- to rework: SV: can't find child...
 	igi_subtask.unmark_all(CACHE.target)
 	--Reset stored data
-	save_cache(task_id, nil)
+	TASKS_CACHE[task_id] = nil
 	--Finish
 	xr_effects.drx_sl_unregister_task_giver(a, b, {task_id})
 	xr_effects.drx_sl_reset_stored_task(a, b, {task_id})

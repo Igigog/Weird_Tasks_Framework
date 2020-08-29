@@ -16,6 +16,7 @@ local function create_squad(group_data)
 		squads[igi_linker.make_id("squad", group_data.group_id, i)] = {
 			['id'] = squad.id,
 			['section_name'] = squad:section_name(),
+			['se_obj'] = squad,
 		}
 	end
 	
@@ -36,6 +37,7 @@ local function create_package(group_data)
 		packages[igi_linker.make_id("package", group_data.group_id, i)] = {
 			id = created_object.id,
 			section_name = created_object:section_name(),
+			se_obj = created_object,
 		}
 	end
 	return packages
@@ -46,8 +48,10 @@ local function create_item(group_data)
 	if group_data.ids then
 		for i, id in pairs(group_data.ids) do
 			local item_info = {}
-			item_info.section_name = igi_helper.igi_alife_obj(id):section_name()
+			local se_obj = igi_helper.igi_alife_obj(id)
+			item_info.section_name = se_obj:section_name()
 			item_info.id = id
+			item_info.se_obj = se_obj
 			items[igi_linker.make_id("item", group_data.group_id, i)] = item_info
 		end
 	end
@@ -57,14 +61,14 @@ end
 local function check_smart(group_data)
 	smarts = {}
 	for i, smart_name in pairs(group_data.names) do
-		local smart_data = {['id'] = smart_name}
+		local smart_data = {['smart_name'] = smart_name}
 		xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
 		smarts[igi_linker.make_id("smart", group_data.group_id, i)] = smart_data
 	end
 	return smarts
 end
 
-function create_target(CACHE)
+function create_target(setup, task_name)
 	local handlers = {
 		["package"] = create_package,
 		["squad"] = create_squad,
@@ -72,10 +76,10 @@ function create_target(CACHE)
 		["smart"] = check_smart,
 	}
 	local targets = {}
-	local order = igi_linker.get_order(CACHE.task_name)
+	local order = igi_linker.get_order(task_name)
 	
 	for _, group_name in pairs(order) do
-		local entity = CACHE.setup[group_name]
+		local entity = setup[group_name]
 		local handler = assert(handlers[entity.entity_type], "Igi: Unknown entity type: " .. entity.entity_type)
 
 		-- printf("linking "..igi_linker.make_id(entity.entity_type, entity.group_id))
@@ -89,6 +93,6 @@ function create_target(CACHE)
 			targets[k] = v
 		end
 	end
-	CACHE["target"] = targets
-	return CACHE
+
+	return targets
 end
