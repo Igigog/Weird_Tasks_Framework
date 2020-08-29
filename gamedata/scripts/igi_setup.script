@@ -1,5 +1,239 @@
 -- Main setup function for all quests
 
+------------------------------------------------
+-- Object finder functions
+
+local function is_online(object)	-- TODO: rename
+	player_level_id = igi_helper.get_object_level_id(db.player)
+	object_level_id = igi_helper.get_object_level_id(object)
+	return player_level_id == object_level_id
+end
+
+local function is_nearby(object)
+	local level = get_object_level(object)
+	if not level then return false end
+	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), level)
+end
+
+local function is_on_blacklisted_map(object, sim, gg)
+	object_lvl = igi_helper.get_object_level(object, sim, gg)
+	local blacklisted_maps = igi_db.TableView.new("blacklist.ltx", "maps")
+	if blacklisted_maps[object_lvl] then return true
+	else return false end
+end
+
+local function has_ending_in_list(object, ending_list)
+	if not ending_list then return nil end
+	local sec = object:section_name()
+	
+	for _, ending in pairs(ending_list:as_table()) do
+		if string.find(sec, ending) then
+			return true end
+	end
+	return false
+end
+
+local function check_object_by_args(args, se_object)
+	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
+			"Igi: Check object: enemy but not in_npc_inv")
+
+	if args.in_world and object_in_npc_inventory(se_object.id) or
+			args.in_npc_inv and 
+			(object_in_world(se_object) or not 
+				check_common_npc(se_object.parent_id)) then
+		return false 
+	end
+	if args.only_enemies then
+		local my_faction = get_community(args.enemy_to or db.actor)
+		local npc_faction = get_community(igi_helper.igi_alife_obj(se_object.parent_id))
+
+		if npc_faction == "monolith" then return false end
+		if not game_relations.is_factions_enemies(my_faction, npc_faction) then
+			return false
+		end
+	end
+	if args.is_online and not is_online(se_object) then
+		return false 
+	end
+	if args.is_nearby and not is_nearby(se_object) then
+		return false
+	end
+	return true
+end
+
+local item_names = {}
+local item_endings = {}
+local function get_item_names()
+	-- there are many IO calls so we cache this function (cache resets on level change)
+	-- I think I want to check function time cached vs uncached
+	if next(item_names) then return item_names end
+
+	local name_sections = igi_db.TableView.new("item_types.ltx", "igi_item_types_sections")
+	local endings_sections = igi_db.TableView.new("endings.ltx", "igi_endings_sections")
+
+	for _, section in pairs(name_sections:as_table()) do
+		local name_set = igi_db.TableView.new("item_types.ltx", section):as_set()
+		item_names[section] = name_set 
+	end
+
+	for _, section in pairs(endings_sections:as_table()) do
+		local name_set = igi_db.TableView.new("endings.ltx", section):as_set()
+		item_endings[section] = name_set
+	end
+
+	return item_names, item_endings
+end
+
+local function find_set_of_name(sec_name)
+	-- return set, (bool) is set from endings
+	local item_names, item_endings = get_item_names()
+	local actual_name = sec_name
+	local ending_section
+	
+	for section, endings in pairs(item_endings) do
+		for ending, _ in pairs(endings) do
+			local changes
+			actual_name, changes = string.gsub(sec_name, ending, "")
+			ending_section = changes ~= 0 and section
+		end
+	end
+
+	for section, name_set in pairs(item_names) do
+		if name_set[actual_name] then
+			return section, ending_section
+		end
+	end
+end
+
+local function sort_objects()	-- ARGS!
+	-- Well, this slow shit func makes what it need to make the most slow way possible
+	local obj_lists = {}
+	local endings_obj_lists = {}
+	local name_sets = get_item_names()
+
+	for id=1, 65534 do
+		local obj = igi_helper.igi_alife_obj(id)
+		if se_obj then
+			local name_set, ending_section = find_set_of_name(se_obj:section_name())
+			if name_set and ending_section then
+				if not endings_obj_lists[name_set] then 
+					endings_obj_lists[name_set] = {}
+				end
+				
+				if not endings_obj_lists[name_set][ending_section] then
+					endings_obj_lists[name_set][ending_section] = {}
+				end
+				
+				table.insert(endings_obj_lists[name_set][ending_section], se_obj)
+			elseif name_set then
+				if not obj_lists[name_set] then
+					obj_lists[name_set] = {}
+				end
+				
+				table.insert(obj_lists[name_set], se_obj)
+			end
+		end
+	end
+
+	return obj_lists, endings_obj_lists
+end
+
+local objects_cache = {}
+local ending_objects_cache = {}
+local function renew_objects_cache()
+	objects_cache, ending_objects_cache = sort_objects()
+	local cur_time = game.get_game_time()
+	local dt = game.CTime()
+	dt:setHMS(0,2,0)	-- 2 minutes from current time
+	objects_cache.expire_time = cur_time + dt
+	ending_objects_cache = cur_time + dt
+end
+
+local function get_items_of_type(typ)
+	-- renew if cache is expired
+	if not (objects_cache.expire_time and objects_cache.expire_time > game.get_game_time()) then
+		renew_objects_cache()
+	end
+	
+	return objects_cache[typ]
+end
+
+local function get_ending_items_of_type(typ, ending)
+	if not (ending_objects_cache.expire_time and ending_objects_cache.expire_time > game.get_game_time()) then
+		renew_objects_cache()
+	end
+	
+	return ending_objects_cache[typ] and ending_objects_cache[typ][ending]
+end
+
+local function filter_by_args(items_pool, args)
+	for k, se_obj in pairs(items_pool) do
+		if not check_object_by_args(se_obj, args) then
+			items_pool[k] = nil
+		end
+	end
+
+	return items_pool
+end
+
+local function get_items_by_args(typ, args, ending, only_ending)
+	local items_pool
+	assert(ending or not only_ending, "Igi: setup: only_ending but no ending")
+	if not only_ending then
+		local items_of_typ = get_items_of_type(typ)
+		igi_utils.extend_list(items_pool, items_of_typ)
+	end
+	
+	if ending then
+		local ending_items = get_ending_items_of_type(typ)
+		igi_utils.extend_list(items_pool, ending_items)
+	end
+	
+	return filter_by_args(items_pool, args)
+end
+
+local function get_faction_setup()	-- TODO: implement factions
+	-- This function returns target character factions for all possible quests
+	-- Quest by himself decides, which character(s) to use
+	
+	local faction_list = {
+		["actor"] = 'stalker',		-- default values is 'stalker', will be changed if possible
+		["task_giver"] = 'stalker',
+		["client"] = 'stalker',
+		["enemy"] = 'stalker',
+	}
+	
+	local task_giver = mob_trade.GetTalkingNpc()
+	faction_list["task_giver"] = character_community(task_giver)
+	faction_list["actor"] = character_community(db.actor)
+	
+	local player_enemies = get_faction_enemies(faction_list['actor'])
+	local task_giver_enemies = get_faction_enemies(faction_list["task_giver"])
+	
+	-- set enemy - must be enemy for both player and task giver
+	tmp_enemies = {}	
+	for faction in pairs(player_enemies) do					-- search for enemies of both player and task giver
+		if task_giver_enemies[faction] then
+			tmp_enemies[#tmp_enemies + 1] = faction
+		end
+	end
+	if (#tmp_enemies == 0) then printf("GhenTuong: player and task giver doesn't share enemies") end
+	faction_list["enemy"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
+	
+	-- set client - must be enemy for enemy and not enemy with task giver; can be player's faction
+	local enemy_enemies = get_faction_enemies(faction_list["enemy"])
+	tmp_enemies = {}
+	for faction in pairs(enemy_enemies) do
+		if(faction ~= faction_list["task_giver"] and task_giver_enemies[faction] == nil) then
+			tmp_enemies[#tmp_enemies + 1] = faction
+		end
+	end
+	if (#tmp_enemies == 0) then printf("GhenTuong: can't setup client") end
+	faction_list["client"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
+	return faction_list
+end
+
+------------------------------------------------
 local function init_constructor(task_name)
 	local constructor = {}
 	copy_table(constructor, igi_tasks[task_name])
@@ -93,8 +327,9 @@ local function setup_item(item_data, factions)
 	--printf("ITEM START")
 	assert(item_data.item_type, "Igi: setup_item: No item list given")
 
-	local item_list = igi_db.TableView.new("item_types.ltx", igi_helper.scale_value(item_data.item_type))
-	assert(item_list, "Igi: setup_item: No item_list")
+	local item_set = igi_db.TableView.new("item_types.ltx", 
+			igi_helper.scale_value(item_data.item_type)):as_set()
+	assert(item_set, "Igi: setup_item: No item_list")
 	item_data.endings_list = igi_db.TableView.new("endings.ltx", item_data.possible_endings)
 
 	local object_data = {}
@@ -102,7 +337,6 @@ local function setup_item(item_data, factions)
 		printf("TODO")		-- TODO
 	else
 		item_data.enemy_to = item_data.enemy_to or factions[item_data.enemy_to]
-		local item_set = igi_utils.list_to_set(item_list:as_table())
 		objects = igi_helper.find_objects_ids(item_set, item_data)
 		if not next(objects) then return nil end
 
@@ -163,7 +397,7 @@ function setup_quest(task_name)
 	local constructor = init_constructor(task_name)
 	CACHE = {["setup"] = {},}
 	CACHE.task_name = task_name
-	CACHE.factions = igi_helper.get_faction_setup()
+	CACHE.factions = get_faction_setup()
 	CACHE.description = {}
 	
 	local handlers = {
