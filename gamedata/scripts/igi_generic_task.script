@@ -61,6 +61,10 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	--local giver_task_count = utils.load_var(db.actor, "drx_sl_task_giver_" .. squad.id, 0)
 	--if giver_task_count >= MAX_TASK then return false end
 	
+	if igi_db.get_value("task_info.ltx", task_name.."_preconditions", "disabled") then
+		return false
+	end
+
 	igi_precondition.check_preconditions(
 			igi_db.TableView.new("task_info.ltx", task_name.."_preconditions"))
 	
