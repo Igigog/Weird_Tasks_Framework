@@ -45,12 +45,12 @@ end
 
 local function create_item(group_data)
 	local items = {}
-	if group_data.ids then
-		for i, id in pairs(group_data.ids) do
+	if group_data.se_objects then
+		for i, se_obj in pairs(group_data.se_objects) do
 			local item_info = {}
-			local se_obj = igi_helper.igi_alife_obj(id)
+			local se_obj = se_obj
 			item_info.section_name = se_obj:section_name()
-			item_info.id = id
+			item_info.id = se_obj.id
 			item_info.se_obj = se_obj
 			items[igi_linker.make_id("item", group_data.group_id, i)] = item_info
 		end

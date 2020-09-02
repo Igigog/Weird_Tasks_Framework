@@ -64,12 +64,12 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	if igi_db.get_value("task_info.ltx", task_name.."_preconditions", "disabled") then
 		return false
 	end
-
+	
 	igi_precondition.check_preconditions(
 			igi_db.TableView.new("task_info.ltx", task_name.."_preconditions"))
 	
 	TASKS_CACHE[task_id] = TASKS_CACHE[task_id] or igi_setup.setup_quest(task_name)
-	return TASKS_CACHE[task_id]
+	return TASKS_CACHE[task_id] and true or false
 end
 
 --< Effect >--------------------------------------------------
@@ -95,12 +95,14 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not (CACHE["target"]) then
+		--alun_utils.print_table(CACHE, "CACHE before")
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_name)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
 	end
 	---------------------------<ACTIONS>---------------------
+	--alun_utils.print_table(CACHE, "CACHE after")
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	igi_subtask.process_instant_subtasks(CACHE.subtasks)
