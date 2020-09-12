@@ -50,6 +50,7 @@ end
 
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
+	printf("Igi: task exists: "..p[1])
 	if not p and p[1] and p[2] then return false end
 	local task_id = p[1]
 	local task_name = p[2]
@@ -95,14 +96,14 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not (CACHE["target"]) then
-		--alun_utils.print_table(CACHE, "CACHE before")
+		--utils_data.print_table(CACHE, "CACHE before")
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_name)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
 	end
 	---------------------------<ACTIONS>---------------------
-	--alun_utils.print_table(CACHE, "CACHE after")
+	--utils_data.print_table(CACHE, "CACHE after")
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	igi_subtask.process_instant_subtasks(CACHE.subtasks)

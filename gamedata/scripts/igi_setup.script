@@ -10,7 +10,7 @@ local function is_online(object)	-- TODO: rename
 end
 
 local function is_nearby(object)
-	local level = get_object_level(object)
+	local level = igi_helper.get_object_level(object)
 	if not level then return false end
 	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), level)
 end
@@ -47,17 +47,17 @@ local function check_object_by_args(se_object, args)
 			"Igi: Check object: enemy but not in_npc_inv")
 			
 	printf("Check started")
-	alun_utils.print_table(args, "args")
+	utils_data.print_table(args, "args")
 
 	if args.in_world and object_in_npc_inventory(se_object) or
 			args.in_npc_inv and 
 			(object_in_world(se_object) or not 
-				check_common_npc(se_object.parent_id)) then
+				igi_helper.check_common_npc(se_object.parent_id)) then
 		return false 
 	end
 	if args.only_enemies then
-		local my_faction = get_community(args.enemy_to or db.actor)
-		local npc_faction = get_community(igi_helper.igi_alife_obj(se_object.parent_id))
+		local my_faction = igi_helper.get_community(args.enemy_to or db.actor)
+		local npc_faction = igi_helper.get_community(igi_helper.igi_alife_obj(se_object.parent_id))
 
 		if npc_faction == "monolith" then return false end
 		if not game_relations.is_factions_enemies(my_faction, npc_faction) then
@@ -92,8 +92,8 @@ local function get_item_names()
 		local name_set = igi_db.TableView.new("endings.ltx", section):as_set()
 		item_endings_cache[section] = name_set
 	end
-	alun_utils.print_table(item_names_cache, "item_names")
-	alun_utils.print_table(item_endings_cache, "item_endings")
+	--utils_data.print_table(item_names_cache, "item_names")
+	--utils_data.print_table(item_endings_cache, "item_endings")
 	return item_names_cache, item_endings_cache
 end
 
@@ -156,7 +156,7 @@ local ending_objects_cache = {}
 local function renew_objects_cache()
 	printf("Igi: renewing")
 	objects_cache, ending_objects_cache = sort_objects()
-	alun_utils.print_table(ending_objects_cache, "ending objects")
+	utils_data.print_table(ending_objects_cache, "ending objects")
 	local cur_time = game.get_game_time()
 	local dt = game.CTime()
 	dt:setHMS(0,1,0)	-- 1 minute from current time
@@ -385,7 +385,7 @@ local function setup_item(item_data, factions)
 			['target'] = parent_npc and parent_npc:character_name() or desc_target,
 			['location'] = igi_helper.get_object_location_description(objects[1])	-- TODO
 		}
-		--alun_utils.print_table(object_data.description_data)
+		--utils_data.print_table(object_data.description_data)
 	end
 	--printf("SETUP END")
 	return object_data

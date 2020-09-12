@@ -2,7 +2,7 @@ local function create_squad(group_data)
 	local squads = {}
 	
 	for i=1, group_data.amount or 1 do
-		local squad = alun_utils.create_squad(group_data.name, group_data.location)
+		local squad = utils_obj.create_squad(group_data.name, group_data.location)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 

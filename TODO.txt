@@ -8,3 +8,4 @@ gt_task_text_treasure_ and all of these
 reinit userdata as callback
 check if callback module will make everything easier
 clean configs
+weapon quality to config
