@@ -324,7 +324,7 @@ itms_manager.igi_use_package = function (obj)
 		local v = possible_content:random()
 		table.insert(content, v)
 	end
-	txr_utils.delay_item("medkit_ai1", true, 5, obj, content)
+	utils_item.delay_event(content, {obj:id()}, "medkit_ai1", true, 5)
 end
 
 
