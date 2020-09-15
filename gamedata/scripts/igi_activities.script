@@ -1,6 +1,7 @@
-local function is_parent_dead(obj_data)
-	local se_obj = obj_data.se_obj
-	local parent = igi_helper.igi_alife_obj(se_obj.parent_id)
+local function is_parent_dead(obj_data, se_obj)
+	if not se_obj then return end
+
+	local parent = igi_helper.alife_obj(se_obj.parent_id)
 	return not parent:alive()
 end
 
@@ -11,6 +12,7 @@ local function is_low_condition(obj_data)
 end
 
 local function is_stalker_online(se_obj)
+	-- idk if I can just make se_obj.online
 	if not se_obj then return end
 
 	for i,v in ipairs(db.OnlineStalkers) do 
@@ -54,7 +56,8 @@ local function change_squad_role(squad_data, se_obj, role, CACHE)
 		_, role = next(role)
 	end
 	role = CACHE.factions[role] or role		-- if role is not in CACHE => role is actual faction
-	change_squad_faction(squad_data.se_obj, role)
+	local se_squad = igi_helper.alife_obj(squad_data.id)
+	change_squad_faction(se_squad, role)
 end
 
 local function repair_item(item_data)
@@ -95,7 +98,7 @@ function do_online_activities(CACHE)
 	local is_changed = false
 	for condition, objects in pairs(CACHE.online_activities) do
 		for k, obj_data in pairs(objects) do
-			local se_obj = obj_data.se_obj
+			local se_obj = igi_helper.alife_obj(obj_data.id)
 			-- printf("Igi: object "..obj_data.section_name.." exists: "..tostring(not not se_obj))
 			if is_object_online(se_obj) then
 				-- If condition is true

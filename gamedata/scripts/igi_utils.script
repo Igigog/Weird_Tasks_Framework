@@ -53,6 +53,7 @@ function get_random_items(orig_list, amount)
 end
 
 function extend_list(orig, val)
+	-- add value to a list or add every value if val is a list
 	if type(val) == 'table' then
 		for _, v in pairs(val) do orig[#orig + 1] = v end
 	else orig[#orig + 1] = val end

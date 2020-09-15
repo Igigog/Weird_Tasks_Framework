@@ -1,7 +1,7 @@
 local ENTITY_ORDER_CACHE = {}
 
 --------------------<Utility>--------------------
-function make_id(typ, group_id, obj_id)
+function make_link(typ, group_id, obj_id)
 	if not typ or not group_id then
 		callstack()
 		assert(nil, "Igi: linker: no typ "..typ.." or id "..group_id)
@@ -63,7 +63,7 @@ local function assign_ids(entities)
 	for _, entity in pairs(entities) do
 		for i=1, entity.amount or 1 do
 			assert(entity.group_id, "Group id not initialised: "..entity.entity_type)
-			new_entities[make_id(entity.entity_type, entity.group_id, i)] = entity
+			new_entities[make_link(entity.entity_type, entity.group_id, i)] = entity
 		end
 	end
 	return new_entities

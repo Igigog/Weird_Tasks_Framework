@@ -4,7 +4,6 @@
 --	Igigog
 -- =============================================================
 local TASKS_CACHE = {}
-local userdata_initialised = true
 
 function on_game_start()
     RegisterScriptCallback("save_state",save_state)
@@ -12,40 +11,12 @@ function on_game_start()
 	printdbg("Igi_Tasks BETA initialised")
 end
 
-local function deinit_userdata(cache_tbl)
-	-- userdata can't be serialised, so I remove & restore it
-	for _, cache in pairs(cache_tbl) do
-		if cache and cache.target then
-			for _, obj_data in pairs(cache.target) do
-				obj_data.se_obj = nil
-			end
-		end
-	end
-end
-
-local function init_userdata(cache_tbl)
-	for k, cache in pairs(cache_tbl) do
-		--printf("Igi: "..k.." is loading")
-		if cache.target then
-			for m, obj_data in pairs(cache.target) do
-				if obj_data.id and obj_data.section_name then
-					obj_data.se_obj = igi_helper.igi_alife_obj(obj_data.id)
-					--printf("Igi: obj loaded: "..type(obj_data.se_obj))
-				end
-			end
-		end
-	end
-end
-
 function save_state(m_data)
-	deinit_userdata(TASKS_CACHE)
 	m_data.igi_tasks_cache = TASKS_CACHE
 end
 
 function load_state(m_data)
 	TASKS_CACHE = m_data.igi_tasks_cache or {}
-	-- you can't initialise userdata here bcs server objects are yet not loaded
-	userdata_initialised = false
 end
 
 ---------------------------< Precondition >---------------------------
@@ -65,9 +36,13 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	if igi_db.get_value("task_info.ltx", task_name.."_preconditions", "disabled") then
 		return false
 	end
-	
-	igi_precondition.check_preconditions(
-			igi_db.TableView.new("task_info.ltx", task_name.."_preconditions"))
+
+	local preconditions = igi_db.TableView.new("task_info.ltx", task_name.."_preconditions")
+	-- DBG
+	--local preconditions = igi_db.TableView.new("task_info_debug.ltx", task_name.."_preconditions")
+	if not igi_conditions.check_preconditions(preconditions) then
+		return false
+	end
 	
 	TASKS_CACHE[task_id] = TASKS_CACHE[task_id] or igi_setup.setup_quest(task_name)
 	return TASKS_CACHE[task_id] and true or false
@@ -88,10 +63,6 @@ end
 --< Status >--------------------------------------------------
 task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if not (db.actor and tsk) then return end
-	if not userdata_initialised then
-		init_userdata(TASKS_CACHE)
-		userdata_initialised = true
-	end
 	local CACHE = assert(TASKS_CACHE[task_id], "CACHE not initialised for task "..task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
@@ -107,7 +78,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	igi_subtask.process_instant_subtasks(CACHE.subtasks)
-	
+
 	if igi_subtask.check_continuous_failed(CACHE.subtasks.continuous) then return "fail" end
 	-- If no continuous and no money reward -> complete task, when all instant are ready
 	if not next(CACHE.subtasks.instant) and not next(CACHE.subtasks.continuous) and

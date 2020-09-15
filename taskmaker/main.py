@@ -21,7 +21,7 @@ def main():
         pass
     
     for location, npcs in db.locations.items():
-        with open(f"task/gt_task_{location}.ltx", 'w') as f:
+        with open(f"task/tm_igi_tasks_{location}.ltx", 'w') as f:
             f.write(FILE_HEADER)
             for npc, typ in npcs.items():
                 count = COUNT_START

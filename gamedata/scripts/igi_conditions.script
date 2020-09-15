@@ -77,16 +77,8 @@ function check_preconditions(preconditions)
 	return true
 end
 -----------------<Task conditions>----------------------------
-local function setup_timer(arg)
-	printf(arg)
-	print_variables(
-		tonumber(string.match(arg, "(%d+)Y") or 0),
-		tonumber(string.match(arg, "(%d+)M") or 0),
-		tonumber(string.match(arg, "(%d+)D") or 0),
-		tonumber(string.match(arg, "(%d+)h") or 0),
-		tonumber(string.match(arg, "(%d+)m") or 0),
-		tonumber(string.match(arg, "(%d+)s") or 0),
-		tonumber(string.match(arg, "(%d+)ms") or 0))
+-- Fuck CTime, better luck next time
+--[[local function setup_timer(arg)
 	local cur_time = game.get_game_time()
 	local dt = game.CTime()
 	dt:set(
@@ -98,22 +90,21 @@ local function setup_timer(arg)
 		tonumber(string.match(arg, "(%d+)s") or 0),
 		tonumber(string.match(arg, "(%d+)ms") or 0)
 	)
-	print_time(dt, "dt")
 	local timer = cur_time + dt
 	print_time(timer, "timer")
 	return {timer:get()}
-end
+end]]
 
-local function setup_until(arg)
+--[[local function setup_until(arg)
 	local bound, _ = get_daytime_bounds(arg)
 	local y, m, d, h = game.get_game_time():get()
 	if h > bound then
 		d = d + 1
 	end
 	return {y, m, d, bound, 0, 0, 0}
-end
+end]]
 
-function setup_task_conditions(conditions)
+--[[function setup_task_conditions(conditions)
 	if not conditions then return end
 	local condition_setup_funcs = {
 		["timer"] = setup_timer,
@@ -131,15 +122,9 @@ function setup_task_conditions(conditions)
 end
 
 local function check_timer(args)
-	printf(type(args))
 	local y, m, d, h, minute, s, ms = unpack(args)
-	print_variables(y, m, d, h, minute, s, ms)
-	print_variables(game.get_game_time():get())
 	local timer = game.CTime()
 	timer:set(y, m, d, h, minute, s, ms)
-	print_time(timer, "timer")
-	print_time(game.get_game_time(), "game_time")
-	printf(tostring(game.get_game_time() < timer))
 	return game.get_game_time() < timer
 end
 
@@ -160,4 +145,4 @@ function is_task_conditions_valid(conditions_setup)
 
 	return true
 end
-	
+	]]

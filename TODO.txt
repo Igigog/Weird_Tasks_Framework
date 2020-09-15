@@ -1,4 +1,3 @@
-id finding rework
 artifact package wrong texture
 linker attributes
 task fail scale from rank
@@ -7,5 +6,13 @@ radar is unbalanced
 gt_task_text_treasure_ and all of these
 reinit userdata as callback
 check if callback module will make everything easier
-clean configs
 weapon quality to config
+clean configs, helper
+de-cache ini funcs
+artifacts disappearing after blowout
+the same artifact for two tasks
+simulation_objects.is_on_the_linked_lvl
+no save se_obj in CACHE
+CreateTimeEvent (_g.script) for caching OR
+callback actor_on_leave_dialog
+one package stays after quest finish

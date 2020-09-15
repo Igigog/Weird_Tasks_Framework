@@ -32,11 +32,13 @@ end
 
 function finish_continuous_subtasks(subtasks_continuous, is_complete)
 	for _, subtask_data in pairs(subtasks_continuous) do
+		printf("Igi: subtask finish: "..subtask_data.section_name..tostring(subtask_data.id))
 		if is_complete then subtask_data.finish_function(subtask_data)
 		elseif not is_complete and subtask_data.fail_function then
 			subtask_data.fail_function(subtask_data)
 		end
 	end
+	printf("Igi: finish end")
 end
 ---------------------------------------------------
 function quest_target(subtasks)
@@ -103,7 +105,7 @@ end
 ---------------------------------------------------
 local function update_mark(obj_data, mark_type)
 	--printdbg("Igi: Spot in world: "..tostring(igi_helper.object_in_world(obj_data.se_obj)).." spot: "..tostring(level.map_has_object_spot(obj_data.id, mark_type)))
-	if igi_helper.object_in_world(obj_data.se_obj) then
+	if igi_helper.object_in_world(igi_helper.alife_obj(obj_data.id)) then
 		if level.map_has_object_spot(obj_data.id, mark_type) == 0 then
 			level.map_add_object_spot(obj_data.id, mark_type, game.translate_string(igi_db.TEXT_HEADER .. mark_type))
 		end

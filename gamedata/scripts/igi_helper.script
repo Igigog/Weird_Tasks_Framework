@@ -2,7 +2,7 @@
 -- I HAVE NO FUCKING IDEA WHY
 -- but sometimes(!) you can access global functions only through filename.functionname()
 
-function igi_alife_obj(id)
+function alife_obj(id)
 	id = tonumber(id)
 	if not id then
 		callstack()
@@ -79,13 +79,13 @@ end
 
 function object_in_npc_inventory(obj_id)
 	if not obj_id then return end
-	local obj = igi_helper.igi_alife_obj(obj_id)
+	local obj = igi_helper.alife_obj(obj_id)
 	if not obj then return end
 	return igi_helper.check_common_npc(obj.parent_id)
 end
 
 function object_in_player_inventory(obj_data)
-	local obj = igi_helper.igi_alife_obj(obj_data.id)
+	local obj = igi_helper.alife_obj(obj_data.id)
 	if not obj then return end
 	return obj.parent_id == 0
 end
@@ -97,7 +97,7 @@ function get_object_level_id(se_obj)
 	if object_in_world(se_obj) then
 		lvl_info_obj = se_obj
 	elseif igi_helper.check_common_npc(se_obj.parent_id) then
-		lvl_info_obj = igi_helper.igi_alife_obj(se_obj.parent_id)
+		lvl_info_obj = igi_helper.alife_obj(se_obj.parent_id)
 	end
 	
 	if not lvl_info_obj then return end
@@ -186,7 +186,7 @@ function release_squad(squad_data)
 	if not (squad_data.id) then printf("GhenTuong: no squad_data.id") return end
 	if not (squad_data.section_name) then printf("GhenTuong: no squad_data.section_name") return end
 	
-	local squad = igi_helper.igi_alife_obj(squad_data.id)
+	local squad = igi_helper.alife_obj(squad_data.id)
 
 	if not (squad) then return end
 	if not (squad:clsid() == clsid.online_offline_group_s) then return end
@@ -199,7 +199,7 @@ end
 function release_package(pkg_data)
 	if not pkg_data then return end
 	
-	local pkg = igi_helper.igi_alife_obj(pkg_data.id)
+	local pkg = igi_helper.alife_obj(pkg_data.id)
 	if (pkg and (pkg:section_name() == pkg_data.section_name)) then
 		printf("GhenTuong: release %s| parent_id = %s", pkg:name(), pkg.parent_id)
 		safe_release_manager.release(pkg)
@@ -258,7 +258,7 @@ function is_squad_member_online(se_squad)
 end
 
 function object_exist(obj_data)
-	local obj = igi_helper.igi_alife_obj(obj_data.id)
+	local obj = igi_helper.alife_obj(obj_data.id)
 	return obj and obj:section_name() == obj_data.section_name
 end
 
@@ -267,19 +267,18 @@ function object_not_exist(obj_data)
 end
 
 function object_in_player_inv(obj_data)
-	return obj_data.se_obj and obj_data.se_obj.parent_id == 0
+	local se_obj = igi_helper.alife_obj(obj_data.id)
+	return se_obj and se_obj.parent_id == 0
 end
 
 function deliver_item(obj_data)
 	local npc = mob_trade.GetTalkingNpc()
 	if npc then
-		dialogs.relocate_item_section_from_actor(db.actor, npc, obj_data.section_name, 1)
+		local obj = igi_helper.level_object(obj_data.id)
+		db.actor:transfer_item(obj, npc)
+		news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
 	else
-		local item = db.actor:object(obj_data.section_name)
-		local se_item = item and igi_helper.igi_alife_obj(item:id())
-		if se_item then
-			alife():release(se_item,true)
-		end
+		alife_release_id(obj_data.id)
 	end
 end
 

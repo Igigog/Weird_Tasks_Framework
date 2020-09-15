@@ -57,7 +57,7 @@ local function check_object_by_args(se_object, args)
 	end
 	if args.only_enemies then
 		local my_faction = igi_helper.get_community(args.enemy_to or db.actor)
-		local npc_faction = igi_helper.get_community(igi_helper.igi_alife_obj(se_object.parent_id))
+		local npc_faction = igi_helper.get_community(igi_helper.alife_obj(se_object.parent_id))
 
 		if npc_faction == "monolith" then return false end
 		if not game_relations.is_factions_enemies(my_faction, npc_faction) then
@@ -125,7 +125,7 @@ local function sort_objects()	-- ARGS!
 	local name_sets = get_item_names()
 
 	for id=1, 65534 do
-		local se_obj = igi_helper.igi_alife_obj(id)
+		local se_obj = igi_helper.alife_obj(id)
 		if se_obj then
 			local name_set, ending_section = find_set_of_name(se_obj:section_name())
 			if name_set and ending_section then
@@ -156,7 +156,7 @@ local ending_objects_cache = {}
 local function renew_objects_cache()
 	printf("Igi: renewing")
 	objects_cache, ending_objects_cache = sort_objects()
-	utils_data.print_table(ending_objects_cache, "ending objects")
+
 	local cur_time = game.get_game_time()
 	local dt = game.CTime()
 	dt:setHMS(0,1,0)	-- 1 minute from current time
@@ -266,7 +266,8 @@ end
 ------------------------------------------------
 local function init_constructor(task_name)
 	local constructor = {}
-	copy_table(constructor, igi_tasks[task_name])
+	local tbl = igi_tasks[task_name] and igi_tasks_dbg[task_name]
+	copy_table(constructor, tbl)
 	constructor = igi_helper.scale_to_rank(constructor)
 	constructor = igi_linker.assign_group_id(constructor)
 	return constructor
@@ -274,7 +275,8 @@ end
 
 local function setup_squad(squad_info, factions)
 	--printf("SQUAD START")
-	local squads = assert(igi_db.TableView.new("squad_base.ltx", squad_info.type), "Igi: setup squad: Unknown squad type")
+	local squads = assert(igi_db.TableView.new("squad_base.ltx", squad_info.type),
+			"Igi: setup squad: Unknown squad type")
 
 	local squad_name
 	local squad_type
@@ -377,7 +379,7 @@ local function setup_item(item_data, factions)
 		object_data.se_objects = objects
 
 		local parent_id = objects[1].parent_id	-- TODO
-		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.igi_alife_obj(parent_id)
+		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.alife_obj(parent_id)
 
 		local desc_target = igi_db.TEXT_HEADER..string.match(item_data.item_type, "^(%a+)")
 		object_data.description_data = {
@@ -392,7 +394,8 @@ local function setup_item(item_data, factions)
 end
 
 function setup_quest(task_name)
-	--[[ This is generic function that sets everything you need for a quest
+	--[[		OUTDATED 
+	-- This is generic function that sets everything you need for a quest
 	-- Possible args:
 	-- smarts (table) : {amount (int) - how many smarts to prepare,
 	--					 is_nearby, is_online (bool) - smart attributes,
@@ -438,23 +441,24 @@ function setup_quest(task_name)
 		["smart"] = setup_smart,
 	}
 	
-	for _, entity in pairs(constructor) do
-		assert(handlers[entity.entity_type], "Unknown entity type: "..entity.entity_type)
-		local group_data = handlers[entity.entity_type](entity, CACHE.factions)
-		if not group_data then return nil end
-		group_data.entity_type = entity.entity_type
-		group_data.group_id = entity.group_id
-		group_data.online_activities = entity.online_activities
+	for _, entity_preset in pairs(constructor) do
+		assert(handlers[entity_preset.entity_type], "Unknown entity_preset type: "..entity_preset.entity_type)
+		local group_setup = handlers[entity_preset.entity_type](entity_preset, CACHE.factions)
+		if not group_setup then return nil end
+		
+		group_setup.entity_type = entity_preset.entity_type
+		group_setup.group_id = entity_preset.group_id
+		group_setup.online_activities = entity_preset.online_activities
 
-		if entity.to_description ~= false and entity.entity_type ~= "smart" then
-			for k, v in pairs(group_data.description_data) do
+		if entity_preset.to_description ~= false and entity_preset.entity_type ~= "smart" then
+			for k, v in pairs(group_setup.description_data) do
 				if not CACHE.description[k] then CACHE.description[k] = {} end
 				CACHE.description[k] = igi_utils.extend_list(CACHE.description[k], v)
 			end
-			group_data.description_data = nil
+			group_setup.description_data = nil
 		end
-		
-		CACHE.setup[igi_linker.make_id(entity.entity_type, entity.group_id)] = group_data
+		local group_link = igi_linker.make_link(entity_preset.entity_type, entity_preset.group_id)
+		CACHE.setup[group_link] = group_setup
 	end
 
 	return CACHE
