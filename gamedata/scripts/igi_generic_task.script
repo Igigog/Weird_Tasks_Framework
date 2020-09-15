@@ -21,7 +21,6 @@ end
 
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
-	printf("Igi: task exists: "..p[1])
 	if not p and p[1] and p[2] then return false end
 	local task_id = p[1]
 	local task_name = p[2]
@@ -38,7 +37,6 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	end
 
 	local preconditions = igi_db.TableView.new("task_info.ltx", task_name.."_preconditions")
-	-- DBG
 	--local preconditions = igi_db.TableView.new("task_info_debug.ltx", task_name.."_preconditions")
 	if not igi_conditions.check_preconditions(preconditions) then
 		return false

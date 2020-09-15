@@ -1,5 +1,7 @@
 -- Main setup function for all quests
-
+--function on_game_start()
+--	RegisterScriptCallback("actor_on_leave_dialog", clear_cache)
+--end
 ------------------------------------------------
 -- Object finder functions
 
@@ -118,7 +120,7 @@ local function find_set_of_name(sec_name)
 	end
 end
 
-local function sort_objects()	-- ARGS!
+local function sort_objects()
 	-- Well, this slow shit func makes what it need to make the most slow way possible
 	local obj_lists = {}
 	local endings_obj_lists = {}
@@ -153,31 +155,25 @@ end
 
 local objects_cache = {}
 local ending_objects_cache = {}
-local function renew_objects_cache()
-	printf("Igi: renewing")
-	objects_cache, ending_objects_cache = sort_objects()
+local function clear_cache()
+	objects_cache = {}
+	ending_objects_cache = {}
+	return true
+end
 
-	local cur_time = game.get_game_time()
-	local dt = game.CTime()
-	dt:setHMS(0,1,0)	-- 1 minute from current time
-	objects_cache.expire_time = cur_time + dt
-	ending_objects_cache.expire_time = cur_time + dt
+local function renew_objects_cache()
+	objects_cache, ending_objects_cache = sort_objects()
+	-- Engine can't run time events before task script ends
+	CreateTimeEvent("igi_clear_cache", "clear_cache", 0, clear_cache)
 end
 
 local function get_items_of_type(typ)
-	-- renew if cache is expired
-	if not (objects_cache.expire_time and objects_cache.expire_time > game.get_game_time()) then
-		renew_objects_cache()
-	end
-	
+	renew_objects_cache()
 	return objects_cache[typ]
 end
 
 local function get_ending_items_of_type(typ, ending)
-	if not (ending_objects_cache.expire_time and ending_objects_cache.expire_time > game.get_game_time()) then
-		renew_objects_cache()
-	end
-	
+	renew_objects_cache()
 	return ending_objects_cache[typ] and ending_objects_cache[typ][ending]
 end
 
@@ -266,7 +262,7 @@ end
 ------------------------------------------------
 local function init_constructor(task_name)
 	local constructor = {}
-	local tbl = igi_tasks[task_name] and igi_tasks_dbg[task_name]
+	local tbl = igi_tasks[task_name]	-- and igi_tasks_dbg[task_name]
 	copy_table(constructor, tbl)
 	constructor = igi_helper.scale_to_rank(constructor)
 	constructor = igi_linker.assign_group_id(constructor)
