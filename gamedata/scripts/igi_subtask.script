@@ -1,6 +1,9 @@
 function process_instant_subtasks(subtasks)
 	-- Instant = instant without completed tasks
 	for k, subtask_data in pairs(subtasks.instant) do
+		local se_obj = igi_helper.alife_obj(subtask_data.id)
+		if not se_obj then return "fail" end
+		if se_obj:section_name() ~= subtask_data.section_name then return "fail" end
 		if subtask_data.functor(subtask_data) then
 			subtasks.instant[k] = nil
 		end

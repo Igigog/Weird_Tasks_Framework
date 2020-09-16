@@ -6,6 +6,4 @@ radar is unbalanced
 gt_task_text_treasure_ and all of these
 weapon quality to config
 clean configs, helper
-de-cache ini funcs
-artifacts disappearing after blowout
 the same artifact for two tasks
