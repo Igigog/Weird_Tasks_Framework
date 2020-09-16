@@ -91,11 +91,6 @@ function do_online_activities(CACHE)
 		["on_parent_death"] = is_parent_dead,
 		["if_low_condition"] = is_low_condition,
 	}
-	
-	local action_handlers = {
-		['change_faction'] = change_squad_role,
-		['repair'] = repair_item,
-	}
 
 	local is_changed = false
 	for condition, objects in pairs(CACHE.online_activities) do
