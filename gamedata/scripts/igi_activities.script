@@ -8,7 +8,8 @@ end
 local function is_low_condition(obj_data)
 	local item = igi_helper.level_object(obj_data.id)
 	local cond = item and item.condition and item:condition()
-	return cond < 0.9
+	local bound = igi_db.get_value("misc.ltx", "repair", "condition")[1]
+	return cond < (bound / 100)
 end
 
 local function is_stalker_online(se_obj)
@@ -62,8 +63,9 @@ end
 
 local function repair_item(item_data)
 	local item = igi_helper.level_object(item_data.id)
+	local bounds = igi_db.get_value("misc.ltx", "repair", "condition")
 	if item then
-		item:set_condition(math.random(90,100)/100)
+		item:set_condition(math.random(bounds[1], bounds[2])/100)
 	end
 end
 ------------------------------------------

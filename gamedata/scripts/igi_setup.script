@@ -199,8 +199,8 @@ local function get_items_by_args(typ, args, ending, only_ending)
 		local ending_items = get_ending_items_of_type(typ, ending)
 		igi_utils.extend_list(items_pool, ending_items)
 	end
-	
-	return filter_by_args(items_pool, args)
+	-- extend for new pool of indexes
+	return igi_utils.extend_list({}, filter_by_args(items_pool, args))
 end
 ------------------------------------------------
 local function get_faction_enemies(faction, --[[optional]] monolith_included)
