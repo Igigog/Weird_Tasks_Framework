@@ -1,7 +1,3 @@
--- Main setup function for all quests
---function on_game_start()
---	RegisterScriptCallback("actor_on_leave_dialog", clear_cache)
---end
 ------------------------------------------------
 -- Object finder functions
 
@@ -47,9 +43,6 @@ end
 local function check_object_by_args(se_object, args)
 	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
 			"Igi: Check object: enemy but not in_npc_inv")
-			
-	printf("Check started")
-	utils_data.print_table(args, "args")
 
 	if args.in_world and object_in_npc_inventory(se_object) or
 			args.in_npc_inv and 
