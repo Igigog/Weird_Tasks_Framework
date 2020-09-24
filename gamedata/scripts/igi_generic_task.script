@@ -70,9 +70,9 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
+		utils_data.print_table(CACHE, "CACHE after")
 	end
 	---------------------------<ACTIONS>---------------------
-	--utils_data.print_table(CACHE, "CACHE after")
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	if igi_subtask.process_instant_subtasks(CACHE.subtasks) == "fail" then

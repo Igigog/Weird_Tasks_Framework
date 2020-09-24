@@ -57,8 +57,9 @@ end
 
 local function create_item(group_data)
 	local items = {}
-	if group_data.se_objects then
-		for i, se_obj in pairs(group_data.se_objects) do
+	if group_data.ids then
+		for i, id in pairs(group_data.ids) do
+			local se_obj = igi_helper.alife_obj(id)
 			add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
 		end
 	end

@@ -7,3 +7,4 @@ gt_task_text_treasure_ and all of these
 weapon quality to config
 clean configs, helper
 the same artifact for two tasks
+clean setups on... sometimes ._.
