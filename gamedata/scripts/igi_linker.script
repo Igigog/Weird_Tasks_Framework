@@ -151,10 +151,11 @@ end
 
 --------------------<Globals>--------------------
 function get_order(task_name)
-	assert(igi_tasks[task_name], "Igi: Linker: Task not found: "..task_name)
+	local task_data = igi_db.get_task_data(task_name)
+	assert(task_data, "Igi: Linker: Task not found: "..task_name)
 	if not ENTITY_ORDER_CACHE[task_name] then
 		local constructor = {}
-		copy_table(constructor, igi_tasks[task_name])
+		copy_table(constructor, task_data)
 		ENTITY_ORDER_CACHE[task_name] = assert(set_group_order(constructor))
 	end
 	return ENTITY_ORDER_CACHE[task_name]

@@ -95,7 +95,7 @@ end
 ------------------------------------------------
 local function init_constructor(task_name)
 	local constructor = {}
-	local tbl = igi_tasks[task_name] --and igi_tasks_dbg[task_name]
+	local tbl = igi_db.get_task_data(task_name)
 	copy_table(constructor, tbl)
 	constructor = igi_helper.scale_to_rank(constructor)
 	constructor = igi_linker.assign_group_id(constructor)

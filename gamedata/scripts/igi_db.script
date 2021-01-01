@@ -171,7 +171,45 @@ end
 
 -------------------------------------------------------
 
+local function memoize_one_variable(f)
+    local cache = {}
+    return function (arg)
+        if cache[arg] then
+            return cache[arg]
+        else
+            local y = f(arg)
+            cache[arg] = y
+            return y
+        end
+    end
+end
 
+local function get_configs_path()
+  local info = debug.getinfo(1,'S');
+  local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
+  gamedata_path = script_path:match([[(.*gamedata)]])
+  config_path = gamedata_path.."\\configs\\igi_tasks\\"
+  return config_path
+end
+
+local configs_path = get_configs_path()
+local function read_task_json(task_name)
+	local path = configs_path.."tasks\\"..task_name..".json"
+    local file = io.open(path, "rb") -- r read mode and b binary mode
+    if not file then return nil end
+    local content = file:read "*a" -- *a or *all reads the whole file
+    file:close()
+    return content
+end
+
+local json = igi_json.get_json()
+-- this function is memoized, so no additional cost for all calls after first.
+function get_task_data(task_name)
+	local data = read_task_json(task_name)
+	local tbl = json.decode(data)
+	return tbl
+end
+get_task_data = memoize_one_variable(get_task_data)
 
 
 
