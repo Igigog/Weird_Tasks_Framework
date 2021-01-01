@@ -136,7 +136,7 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 
 			-- description by task id; if there's none, then basic description for this task type
 			text = game.translate_string(descr_tag)
-			if text = descr_tag then
+			if text == descr_tag then
 				text = game.translate_string(basic_descr)
 			end
 		end

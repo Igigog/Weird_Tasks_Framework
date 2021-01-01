@@ -4,7 +4,7 @@ import os
 op = "{"
 cl = "}"
 COUNT_START = 10
-TEXT_HEADER = "gt_task_text_"
+TEXT_HEADER = "igi_task_text_"
 STAGES = 2
 SPACE_COUNT = 21
 FILE_HEADER = """;============================================================
