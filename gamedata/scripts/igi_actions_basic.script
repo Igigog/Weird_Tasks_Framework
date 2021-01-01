@@ -1,0 +1,42 @@
+local function change_squad_faction(se_squad, faction)
+	if not se_squad then return end
+
+	for npc in se_squad:squad_members() do
+		local member = npc and igi_helper.level_object(npc.id)
+		if member and not (character_community(member) == faction) then
+			printdbg("Igi: %s| %s => %s", npc.object:name(), character_community(member), faction)
+			member:set_character_community(faction, 0, 0)
+		end
+	end
+end
+
+local function change_squad_role(squad_data, se_obj, role, CACHE)
+	local factions = igi_db.TableView.new("squads\\squad_guard.ltx", "guard")
+	if not CACHE.factions[role] and not factions[role] then
+		printf("IGI: change role: role unknown")
+		return
+	end
+	if type(role) == table then
+		printf("Igi: role is table")
+		_, role = next(role)
+	end
+	role = CACHE.factions[role] or role		-- if role is not in CACHE => role is actual faction
+	local se_squad = igi_helper.alife_obj(squad_data.id)
+	change_squad_faction(se_squad, role)
+end
+
+local function repair_item(item_data)
+	local item = igi_helper.level_object(item_data.id)
+	local bounds = igi_db.get_value("misc.ltx", "repair", "condition")
+	if item then
+		item:set_condition(math.random(bounds[1], bounds[2])/100)
+	end
+end
+
+local action_handlers = {
+	change_faction = change_squad_role,
+	repair = repair_item,
+}
+for k,v in pairs(action_handlers) do
+	igi_activities.action_handlers[k] = v
+end
