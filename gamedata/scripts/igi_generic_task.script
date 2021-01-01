@@ -75,6 +75,13 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
 		--utils_data.print_table(CACHE, "CACHE after")
 	end
+	
+	-- Timer for less pressure (totally stolen from tasks_assault.script)
+	local tg = time_global()
+	if (tsk.__actions_time and tg < tsk.__actions_time) then
+		return
+	end
+	tsk.__actions_time = tg+3000
 	---------------------------<ACTIONS>---------------------
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
