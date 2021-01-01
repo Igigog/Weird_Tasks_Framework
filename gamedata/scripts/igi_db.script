@@ -4,7 +4,7 @@
 --	Igigog
 -- =============================================================
 
-TEXT_HEADER = "gt_task_text_"
+TEXT_HEADER = "igi_task_text_"
 local database_folder = "igi_tasks\\"
 
 --------------------------------------------
