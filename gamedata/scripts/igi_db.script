@@ -75,15 +75,15 @@ function get_value(file, section, key)
 end
 
 -------------------------------------------------------
--- Looks like table, behaves like table, but take keys and values from ini_file
-TableView = {}
-TableView.mt = {}
-TableView.methods = {}
+-- Looks like table, behaves like table, but takes keys and values from ini_file
+SectionView = {}
+SectionView.mt = {}
+SectionView.methods = {}
 
-function TableView.new (file, section)
+function SectionView.new (file, section)
 	if not file then
 		callstack()
-		assert(nil, "Igi: TableView.new: no file "..file.." or section "..section)
+		assert(nil, "Igi: SectionView.new: no file "..file.." or section "..section)
 	end
 	if not section then return nil end
 
@@ -94,20 +94,20 @@ function TableView.new (file, section)
 	view.ini = ini_file(database_folder..file)
 	if not view.ini then
 		callstack()
-		assert(nil, "Igi: TableView.new: no such file: "..file)
+		assert(nil, "Igi: SectionView.new: no such file: "..file)
 	end
 	
 	if not view.ini:section_exist(section) then return nil end
 	
-	for k, method in pairs(TableView.methods) do
+	for k, method in pairs(SectionView.methods) do
 		view[k] = method
 	end
 	
-	setmetatable(view, TableView.mt)
+	setmetatable(view, SectionView.mt)
 	return view
 end
 
-TableView.mt.__index = function (tbl, key)
+SectionView.mt.__index = function (tbl, key)
 	if not key then return end
 	if tbl.custom[key] then return tbl.custom[key] end
 	local values_str
@@ -123,21 +123,21 @@ TableView.mt.__index = function (tbl, key)
 			-- printf("Igi: No line "..key.." in file "..tbl.filename.." section "..tbl.section)
 			return nil
 		end
-		values_str = tbl.ini:r_string(tbl.section, key)
+		values_str = tbl.ini:r_string_ex(tbl.section, key)
 	end
 	if not values_str then return line_key end
 	return parse_values(values_str)
 end
 
-TableView.mt.__newindex = function (tbl, k, v)
+SectionView.mt.__newindex = function (tbl, k, v)
 	tbl.custom[k] = v
 end
 
-TableView.mt.__len = function (tbl)
+SectionView.mt.__len = function (tbl)
 	return tbl.ini:line_count(section) + #tbl.custom
 end
 
-TableView.methods.as_table = function (tbl)
+SectionView.methods.as_table = function (tbl)
 	-- Lua 5.1 sucks, so you need to use this table for pairs()
 	local new_tbl = get_table(tbl.filename, tbl.section)
 	for k, v in pairs(tbl.custom) do
@@ -146,7 +146,7 @@ TableView.methods.as_table = function (tbl)
 	return new_tbl
 end
 
-TableView.methods.as_set = function (tbl)
+SectionView.methods.as_set = function (tbl)
 	local new_tbl = get_table(tbl.filename, tbl.section)
 	set = {}
 	for _, v in pairs(new_tbl) do
@@ -159,10 +159,10 @@ TableView.methods.as_set = function (tbl)
 	return set
 end
 
-TableView.methods.random = function(tbl)
+SectionView.methods.random = function(tbl)
 	-- Ебал рот для кастомных ключей тоже прописывать
 	local line = math.random(tbl.ini:line_count(tbl.section)) - 1
-	local _, key, values_str = tbl.ini:r_line(tbl.section, line)
+	local _, key, values_str = tbl.ini:r_line_ex(tbl.section, line)
 	-- delete newline char
 	values_str = string.match(values_str, "^%s*(%S.+)%s*")
 	local value = values_str and parse_values(values_str) or key

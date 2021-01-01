@@ -22,7 +22,7 @@ end
 
 function get_player_tier()
 	local player_rank = db.actor:character_rank()
-	local tiers = igi_db.TableView.new("tiers.ltx", "player_tiers")
+	local tiers = igi_db.SectionView.new("tiers.ltx", "player_tiers")
 	for tier, bounds in pairs(tiers:as_table()) do
 		if player_rank >= bounds[1] and player_rank <= bounds[2] then
 			return tier
@@ -118,7 +118,7 @@ function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] on
 	-- and returns a table of suitable smarts
 	assert(type(smarts_table) == 'table', 'gt: check_smarts: not a table given')
 	local return_list = {}
-	local blacklisted_maps = igi_db.TableView.new("blacklist.ltx", "maps"):as_set()
+	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps"):as_set()
 	local t = profile_timer()
 	local m = profile_timer()
 	
@@ -317,7 +317,7 @@ itms_manager.igi_use_package = function (obj)
 	local possible_content_key = ini_sys:r_string_ex(sec,"possible_content")
 	if not possible_content_key then return end
 
-	local possible_content = igi_db.TableView.new('item_types.ltx', igi_helper.scale_value(possible_content_key))
+	local possible_content = igi_db.SectionView.new('item_types.ltx', igi_helper.scale_value(possible_content_key))
 	local content = {}
 	for i=1, ini_sys:r_float_ex(sec, "amount_content") do
 		local v = possible_content:random()

@@ -15,13 +15,13 @@ local function print_variables(...)
 	printf(str)
 end
 
-local function get_daytime_bounds(daytime)
-	local bounds = igi_db.TableView.new("daytime.ltx", "daytime_bounds")
+--[[local function get_daytime_bounds(daytime)
+	local bounds = igi_db.SectionView.new("daytime.ltx", "daytime_bounds")
 	return bounds[daytime]
 end
 -----------------<Preconditions>----------------------------
 local function rank_precondition(tier)
-	local quest_tiers = igi_db.TableView.new("tiers.ltx", "player_tiers")
+	local quest_tiers = igi_db.SectionView.new("tiers.ltx", "player_tiers")
 	assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
 			"Igi: Invalid quest tier")
 
@@ -75,7 +75,7 @@ function check_preconditions(preconditions)
 	end
 
 	return true
-end
+end]]
 -----------------<Task conditions>----------------------------
 -- Fuck CTime, better luck next time
 --[[local function setup_timer(arg)

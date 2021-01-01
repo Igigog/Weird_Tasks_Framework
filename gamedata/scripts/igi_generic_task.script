@@ -35,14 +35,15 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	if igi_db.get_value("task_info.ltx", task_name.."_preconditions", "disabled") then
 		return false
 	end
-
-	local preconditions = igi_db.TableView.new("task_info.ltx", task_name.."_preconditions")
-	--local preconditions = igi_db.TableView.new("task_info_debug.ltx", task_name.."_preconditions")
-	if not igi_conditions.check_preconditions(preconditions) then
+	printf("Пока не проебались")
+	--local preconditions = igi_db.SectionView.new("task_info.ltx", task_name.."_preconditions")
+	local preconditions = igi_db.SectionView.new("task_info_debug.ltx", task_name.."_preconditions")
+	if not igi_precondition.check(preconditions) then
 		return false
 	end
-	
+	printf("I tut")
 	TASKS_CACHE[task_id] = TASKS_CACHE[task_id] or igi_setup.setup_quest(task_name)
+	printf("A tut "..tostring(TASKS_CACHE[task_id]))
 	return TASKS_CACHE[task_id] and true or false
 end
 

@@ -47,7 +47,7 @@ local function change_squad_faction(se_squad, faction)
 end
 
 local function change_squad_role(squad_data, se_obj, role, CACHE)
-	local factions = igi_db.TableView.new("squads\\squad_guard.ltx", "guard")
+	local factions = igi_db.SectionView.new("squads\\squad_guard.ltx", "guard")
 	if not CACHE.factions[role] and not factions[role] then
 		printf("IGI: change role: role unknown")
 		return

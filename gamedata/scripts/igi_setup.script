@@ -1,205 +1,45 @@
+function get_player_tier()
+	local player_rank = db.actor:character_rank()
+	local tiers = igi_db.SectionView.new("tiers.ltx", "player_tiers")
+	for tier, bounds in pairs(tiers:as_table()) do
+		if player_rank >= bounds[1] and player_rank <= bounds[2] then
+			return tier
+		end
+	end
+	return "endgame"
+end
+
+function scale_value(str)
+	local player_tier = igi_helper.get_player_tier()
+	return string.gsub(str, "scalable", player_tier)
+end
+
 ------------------------------------------------
--- Object finder functions
-
-local function is_online(object)	-- TODO: rename
-	player_level_id = igi_helper.get_object_level_id(db.player)
-	object_level_id = igi_helper.get_object_level_id(object)
-	return player_level_id == object_level_id
+--[[function create_TaskData(task_name)
+	local tbl = {}
+	tbl._cls = 'TaskData'
+	tbl.task_name = task_name
+	tbl.player_tier = get_player_tier()
+	tbl.setup = {}
+	tbl.entities = {}
+	return tbl
 end
 
-local function is_nearby(object)
-	local level = igi_helper.get_object_level(object)
-	if not level then return false end
-	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), level)
+TaskInterface = {}
+TaskInterface.mt = {}
+
+function TaskInterface.new(task_data)
+	assert(task_data._cls = 'TaskData', 'TaskInterface: not TaskData given')
+	local tbl = {task_data = task_data}
+	tbl:setmetatable(TaskInterface.mt)
 end
 
-local function is_on_blacklisted_map(object, sim, gg)
-	object_lvl = igi_helper.get_object_level(object, sim, gg)
-	local blacklisted_maps = igi_db.TableView.new("blacklist.ltx", "maps")
-	if blacklisted_maps[object_lvl] then return true
-	else return false end
-end
+]]
 
-local function has_ending_in_list(object, ending_list)
-	if not ending_list then return nil end
-	local sec = object:section_name()
-	
-	for _, ending in pairs(ending_list:as_table()) do
-		if string.find(sec, ending) then
-			return true end
-	end
-	return false
-end
-
-local function object_in_world(se_obj)
-	return se_obj and se_obj.parent_id == 65535
-end
-
-local function object_in_npc_inventory(se_obj)
-	if not se_obj then return end
-	return igi_helper.check_common_npc(se_obj.parent_id)
-end
-
-local function check_object_by_args(se_object, args)
-	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
-			"Igi: Check object: enemy but not in_npc_inv")
-
-	if args.in_world and object_in_npc_inventory(se_object) or
-			args.in_npc_inv and 
-			(object_in_world(se_object) or not 
-				igi_helper.check_common_npc(se_object.parent_id)) then
-		return false 
-	end
-	if args.only_enemies then
-		local my_faction = igi_helper.get_community(args.enemy_to or db.actor)
-		local npc_faction = igi_helper.get_community(igi_helper.alife_obj(se_object.parent_id))
-
-		if npc_faction == "monolith" then return false end
-		if not game_relations.is_factions_enemies(my_faction, npc_faction) then
-			return false
-		end
-	end
-	if args.is_online and not is_online(se_object) then
-		return false 
-	end
-	if args.is_nearby and not is_nearby(se_object) then
-		return false
-	end
-	return true
-end
-
-local item_names_cache = {}
-local item_endings_cache = {}
-local function get_item_names()
-	-- there are many IO calls so we cache this function (cache resets on level change)
-	-- I think I want to check function time cached vs uncached
-	if next(item_names_cache) then return item_names_cache, item_endings_cache end
-
-	local name_sections = igi_db.TableView.new("item_types.ltx", "igi_item_types_sections")
-	local endings_sections = igi_db.TableView.new("endings.ltx", "igi_endings_sections")
-
-	for _, section in pairs(name_sections:as_table()) do
-		local name_set = igi_db.TableView.new("item_types.ltx", section):as_set()
-		item_names_cache[section] = name_set 
-	end
-
-	for _, section in pairs(endings_sections:as_table()) do
-		local name_set = igi_db.TableView.new("endings.ltx", section):as_set()
-		item_endings_cache[section] = name_set
-	end
-	--utils_data.print_table(item_names_cache, "item_names")
-	--utils_data.print_table(item_endings_cache, "item_endings")
-	return item_names_cache, item_endings_cache
-end
-
-local function find_set_of_name(sec_name)
-	local item_names, item_endings = get_item_names()
-	local actual_name = sec_name
-	local ending_section
-	
-	for section, endings in pairs(item_endings) do
-		for ending, _ in pairs(endings) do
-			if string.find(sec_name, ending) then
-				actual_name = string.gsub(sec_name, ending, "")
-				ending_section = section
-				break
-			end
-		end
-	end
-	for section, name_set in pairs(item_names) do
-		if name_set[actual_name] then
-			return section, ending_section
-		end
-	end
-end
-
-local function sort_objects()
-	-- Well, this slow shit func makes what it need to make the most slow way possible
-	local obj_lists = {}
-	local endings_obj_lists = {}
-	local name_sets = get_item_names()
-
-	for id=1, 65534 do
-		local se_obj = igi_helper.alife_obj(id)
-		if se_obj then
-			local name_set, ending_section = find_set_of_name(se_obj:section_name())
-			if name_set and ending_section then
-				if not endings_obj_lists[name_set] then 
-					endings_obj_lists[name_set] = {}
-				end
-				
-				if not endings_obj_lists[name_set][ending_section] then
-					endings_obj_lists[name_set][ending_section] = {}
-				end
-				
-				table.insert(endings_obj_lists[name_set][ending_section], se_obj)
-			elseif name_set then
-				if not obj_lists[name_set] then
-					obj_lists[name_set] = {}
-				end
-				
-				table.insert(obj_lists[name_set], se_obj)
-			end
-		end
-	end
-
-	return obj_lists, endings_obj_lists
-end
-
-local objects_cache = {}
-local ending_objects_cache = {}
-local function clear_cache()
-	objects_cache = {}
-	ending_objects_cache = {}
-	return true
-end
-
-local function renew_objects_cache()
-	objects_cache, ending_objects_cache = sort_objects()
-	-- Engine can't run time events before task script ends
-	CreateTimeEvent("igi_clear_cache", "clear_cache", 0, clear_cache)
-end
-
-local function get_items_of_type(typ)
-	renew_objects_cache()
-	return objects_cache[typ]
-end
-
-local function get_ending_items_of_type(typ, ending)
-	renew_objects_cache()
-	return ending_objects_cache[typ] and ending_objects_cache[typ][ending]
-end
-
-local function filter_by_args(items_pool, args)
-	for k, se_obj in pairs(items_pool) do
-		if not check_object_by_args(se_obj, args) then
-			items_pool[k] = nil
-		end
-	end
-
-	return items_pool
-end
-
-local function get_items_by_args(typ, args, ending, only_ending)
-	local items_pool = {}
-	assert(ending or not only_ending, "Igi: setup: only_ending but no ending")
-	if not only_ending then
-		local items_of_typ = get_items_of_type(typ)
-		igi_utils.extend_list(items_pool, items_of_typ)
-	end
-	
-	if ending then
-		local ending_items = get_ending_items_of_type(typ, ending)
-		igi_utils.extend_list(items_pool, ending_items)
-	end
-	-- extend for new pool of indexes
-	return igi_utils.extend_list({}, filter_by_args(items_pool, args))
-end
-------------------------------------------------
 local function get_faction_enemies(faction, --[[optional]] monolith_included)
 	monolith_included = monolith_included or false
 	local enemies_set = {}
-	factions = igi_db.TableView.new('squad_base.ltx', 'guard')
+	factions = igi_db.SectionView.new('squad_base.ltx', 'guard')
 	
 	for enemy_faction in pairs(factions:as_table()) do
 		if (game_relations.is_factions_enemies(faction, enemy_faction)) then
