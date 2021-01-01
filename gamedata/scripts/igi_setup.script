@@ -63,11 +63,11 @@ local function get_faction_setup()	-- TODO: implement factions
 	}
 	
 	local task_giver = mob_trade.GetTalkingNpc()
-	faction_list["task_giver"] = character_community(task_giver)
-	faction_list["actor"] = character_community(db.actor)
+	faction_list.task_giver = character_community(task_giver)
+	faction_list.actor = character_community(db.actor)
 	
-	local player_enemies = get_faction_enemies(faction_list['actor'])
-	local task_giver_enemies = get_faction_enemies(faction_list["task_giver"])
+	local player_enemies = get_faction_enemies(faction_list.actor)
+	local task_giver_enemies = get_faction_enemies(faction_list.task_giver)
 	
 	-- set enemy - must be enemy for both player and task giver
 	tmp_enemies = {}	
@@ -258,40 +258,6 @@ local function setup_item(item_data, factions)
 end
 
 function setup_quest(task_name)
-	--[[		OUTDATED 
-	-- This is generic function that sets everything you need for a quest
-	-- Possible args:
-	-- smarts (table) : {amount (int) - how many smarts to prepare,
-	--					 is_nearby, is_online (bool) - smart attributes,
-	--					 to_description (int) - n-th smart used for description}
-	-- squads (table of tables) : {{amount (int),
-	--								faction (string) OR		- can be any faction in game
-	--								faction_type (string) - can be "enemy", "client" or "quest_giver",
-	--								type (string) - can be "guard" or "heavy",
-	--								target (string) - can be "kill", "save" or "contact"; default: kill,
-	--								to_description (bool) - set squad faction as one of description factions, default: true
-	--								}
-	--								{*squads of another type with the same fields*}}
-	-- packages (table of tables): {{amount (int), default: standart amount for this quest type
-	--								 package_type (string) OR - must be in igi_db.PACKAGE,
-	--								 quest_type (string) - see igi_db.QUEST_TO_POSSIBLE_GOODS,
-	--								 smart_to_create (int) - if create: create in n-th smart, default: smarts[1]
-	--								 target (string) - 'return', 'take' or 'open',
-	--								 to_description (bool) - set package_type as one of description targets; default: true
-	--},
-	--								{*packages of another types with the same fields*}}
-	-- items (table of tables): {{amount (int),
-	--							  item_type (string) - only "artifact" and "weapon_*lowcost, midgame, endgame or legend*" rn OR
-	--							  item_list (list) 	- search/create random item from list
-	--							  to_create (bool) - TODO, if not create - then find
-	--							  in_npc_inv (bool) - create(search) in npc inventories,
-	--							  npc_identity (string) - 'friend', 'enemy', 'all' or faction
-	--							  in_world (bool) - create(search) in world,
-	--							  enemy_to (string) - if only_enemies then faction or "client" or "enemy" or "quest_giver"; default: player
-	--							  npc_to_create (int) - TODO, if create: create in inventory of npc with this squad group,
-	--							  smart_to_create (smart) - if create: create in n-th smart, default: 1},
-	--							 {*items of another types with the same fields*}}
-	--]]
 	local constructor = init_constructor(task_name)
 	CACHE = {["setup"] = {},}
 	CACHE.task_name = task_name

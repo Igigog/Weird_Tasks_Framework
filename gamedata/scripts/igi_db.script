@@ -8,29 +8,7 @@ TEXT_HEADER = "gt_task_text_"
 local database_folder = "igi_tasks\\"
 
 --------------------------------------------
-function get_artifact_names()
-	-- creates a list of all artifacts in game
 
-	local ARTIFACT_NAMES = {}
-	local ini = ini_file("items\\settings\\artefacts.ltx")
-	local n = ini:line_count("artefact_groups")
-	for i=0,n-1 do -- for every artefact group:
-		_, group_name = ini:r_line_ex("artefact_groups",i,"","")  -- write group id
-		if ini:section_exist(group_name) then
-			local m = ini:line_count(group_name)
-			for j=0,m-1 do
-				_, artifact_name = ini:r_line_ex(group_name,j,"","")
-				if artifact_name and ini_sys:section_exist(artifact_name) then
-					ARTIFACT_NAMES[#ARTIFACT_NAMES + 1] = artifact_name -- for every artifact in group: add it's id as key
-					--printf("GhenTuong: load artifact: %s", artifact_id)
-				else
-					printf("GhenTuong: load artifact from artefacts.ltx| incorrect section name: %s", artifact_id)
-				end
-			end
-		end
-	end
-	return ARTIFACT_NAMES
-end
 
 local function parse_values(str)
 	if not str then return nil end
