@@ -1,0 +1,11 @@
+[
+	{
+	"entity_type":"smart",
+	"is_online":true
+	},
+	
+	{
+	"entity_type":"squad",
+	"type":"mutant_scalable"
+	}
+]

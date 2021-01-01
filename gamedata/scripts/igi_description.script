@@ -83,10 +83,11 @@ function get_postpone_intel(task_name, desc, entities)
 	local targets = delete_duplicates(desc.target)
 	
 	local postpone_data = setup_postpone_data(targets, factions, locations)
+	local task_info = igi_db.SectionView.new('task_info.ltx', task_name)
 	local postpone_intel = {
 		caption = game.translate_string(igi_db.TEXT_HEADER .. task_name .. "_title"),
 		text = get_target_descript(postpone_data),
-		icon = igi_db.TableView.new('task_info.ltx', task_name).icon
+		icon = task_info and task_info.icon or "ui_iconsTotal_mutant"
 	}
 	return postpone_intel
 end

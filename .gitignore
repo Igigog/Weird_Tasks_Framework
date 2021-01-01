@@ -1,0 +1,4 @@
+*.zip
+*.rar
+taskmaker/task
+taskmaker/__pycache__

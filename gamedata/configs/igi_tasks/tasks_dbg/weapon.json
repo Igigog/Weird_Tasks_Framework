@@ -1,0 +1,13 @@
+[
+	{
+	"only_enemies":true,
+	"target":"get",
+	"online_activities":
+		{"if_low_condition":
+			{"repair":true}
+		},
+	"in_npc_inv":true,
+	"item_type":"weapon_scalable",
+	"entity_type":"item"
+	}
+]

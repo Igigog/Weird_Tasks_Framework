@@ -121,7 +121,14 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 		if (tsk.stage == 2) then
 			text = game.translate_string(igi_db.TEXT_HEADER .. "done")
 		else
-			text = game.translate_string(igi_db.TEXT_HEADER .. CACHE.task_name .. "_descr")
+			local descr_tag = igi_db.TEXT_HEADER..task_id.."_descr"
+			local basic_descr = igi_db.TEXT_HEADER..CACHE.task_name.."_descr"
+
+			-- description by task id; if there's none, then basic description for this task type
+			text = game.translate_string(descr_tag)
+			if text = descr_tag then
+				text = game.translate_string(basic_descr)
+			end
 		end
 		local description = igi_description.get_postpone_intel(CACHE.task_name, CACHE.description, CACHE.setup).text
 		return (text .. "\\n " .. description) or ""

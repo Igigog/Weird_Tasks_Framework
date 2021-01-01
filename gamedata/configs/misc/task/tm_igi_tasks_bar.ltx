@@ -165,3 +165,29 @@ on_fail               = %=igi_task_generic_finish(bar_dolg_medic_task_11:false))
 condlist_0            = {!task_giver_alive(bar_dolg_medic_task_11)} fail
 ;------------------------------------------------
                     
+;============================================================
+;                          BARKEEP 
+;            bar_visitors_barman_stalker_trader
+;============================================================
+[bar_visitors_barman_stalker_trader_task_10]
+icon                  = ui_iconsTotal_mutant
+storyline             = false
+prior                 = 2000
+repeat_timeout        = 16200
+precondition          = {=validate_generic_task(bar_visitors_barman_stalker_trader_task_10:assault_monster_online)} true, false
+
+title_functor         = igi_task_generic_text
+descr_functor         = igi_task_generic_text
+job_descr             = gt_task_text_assault_monster_online_job_descr
+task_complete_descr   = gt_task_text_assault_monster_online_finish
+                    
+stage_complete        = 2
+status_functor        = igi_task_generic_status
+target_functor        = igi_task_generic_target
+on_job_descr          = %=igi_task_generic_setup(bar_visitors_barman_stalker_trader_task_10)%
+
+on_complete           = %=igi_task_generic_finish(bar_visitors_barman_stalker_trader_task_10:true)%
+on_fail               = %=igi_task_generic_finish(bar_visitors_barman_stalker_trader_task_10:false))%
+condlist_0            = {!task_giver_alive(bar_visitors_barman_stalker_trader_task_10)} fail
+;------------------------------------------------
+                    

@@ -104,7 +104,7 @@ end
 --------------------<Test dependencies>--------------------
 local function get_entities_test_order(entities)
 	entities = assign_group_id(entities)
-	entities = set_default_deps(entities)
+	-- entities = set_default_deps(entities)
 	local objs = {}
 	local order = {}
 	local changes = true

@@ -264,35 +264,64 @@ end
 
 local function setup_squad(squad_info, factions)
 	--printf("SQUAD START")
-	local squads = assert(igi_db.TableView.new("squad_base.ltx", squad_info.type),
-			"Igi: setup squad: Unknown squad type")
 
 	local squad_name
 	local squad_type
 	local faction
+	local squad_data
 
-	if string.find(squad_info.type, "mutant") then
-		squad_name, squad_type = squads:random()
-	else
-		assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
-		faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
-		squad_name = squads[faction]
-	end
+	if squad_info.to_create then
+		local squads = assert(igi_db.SectionView.new("squad_base.ltx", squad_info.type),
+			"Igi: setup squad: Unknown squad type")
+		if string.find(squad_info.type, "mutant") then
+			squad_name, squad_type = squads:random()
+		else
+			assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
+			faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
+			squad_name = squads[faction]
+		end
 
-	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
-	-- set all default
-	local squad_data = {
-		["location"] = squad_info.location or "$smart_1_1$",
-		["name"] = squad_name, 
-		["faction"] = faction or "mutant",
-		['description_data'] = {
-			["faction"] = faction or nil,	-- none for mutant
-			["target"] = squad_type and igi_db.TEXT_HEADER .. squad_type or nil,	-- none for stalkers
+		assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
+		-- set all default
+		squad_data = {
 			["location"] = squad_info.location or "$smart_1_1$",
-		},
-		['target'] = squad_info.target or "kill",
-		['amount'] = squad_info.amount or 1,
-	}
+			["name"] = squad_name, 
+			["faction"] = faction or "mutant",
+			['description_data'] = {
+				["faction"] = faction or nil,	-- none for mutant
+				["target"] = squad_type and igi_db.TEXT_HEADER .. squad_type or nil,	-- none for stalkers
+				["location"] = squad_info.location or "$smart_1_1$",
+			},
+			['target'] = squad_info.target or "kill",
+			['amount'] = squad_info.amount or 1,
+		}
+	else
+		local finder = igi_finder.get_finder()
+		local factions
+		if squad_info.type == "mutant" then
+			factions = igi_db.SectionView.new(
+					"finder\\squad_types.ltx", "monster_types"
+					):as_set()
+		else
+			factions = get_faction_enemies(factions.actor)
+		end
+		utils_data.print_table(squad_info, "squad_info")
+		local squads = finder:get_squads_by_args(squad_info, factions)
+		utils_data.print_table(squads, "squads")
+		local targets = igi_utils.get_random_items(squads, squad_info.amount or 1)
+		squad_data = {
+			name = "predefined_squad",
+			ids = targets,
+			faction = faction or "mutant",
+			description_data = {
+				-- TODO
+				faction = faction or nil,	-- none for mutant
+				target = squad_type and igi_db.TEXT_HEADER .. squad_type or nil,	-- none for stalkers
+				-- location = squad_info.location or "$smart_1_1$",
+			},
+			target = squad_info.target or "kill",
+		}
+	end
 	--printf("SQUAD END")
 	return squad_data
 end
@@ -348,19 +377,22 @@ local function setup_item(item_data, factions)
 	--printf("ITEM START")
 	assert(item_data.item_type, "Igi: setup_item: No item list given")
 
-	local item_set = igi_db.TableView.new("item_types.ltx", 
+	local item_set = igi_db.SectionView.new("item_types.ltx", 
 			igi_helper.scale_value(item_data.item_type)):as_set()
 	assert(item_set, "Igi: setup_item: No item_list")
-	item_data.endings_list = igi_db.TableView.new("endings.ltx", item_data.possible_endings)
 
 	local object_data = {}
 	if item_data.to_create then
 		printf("TODO")		-- TODO
 	else
+		local finder = igi_finder.get_finder()
 		item_data.enemy_to = factions[item_data.enemy_to] or item_data.enemy_to 
-		objects = get_items_by_args(igi_helper.scale_value(item_data.item_type), item_data, 
+		objects = finder:get_items_by_args(igi_helper.scale_value(item_data.item_type), item_data, 
 				item_data.possible_endings, item_data.only_endings)
-		if not next(objects) then return nil end
+		if not next(objects) then 
+			printf("Igi: no objects")
+			return nil 
+		end
 
 		objects = igi_utils.get_random_items(objects, item_data.amount or 1)
 		

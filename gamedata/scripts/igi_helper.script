@@ -158,25 +158,25 @@ end
 
 function is_on_blacklisted_map(object, sim, gg)
 	object_lvl = igi_helper.get_object_level(object, sim, gg)
-	local blacklisted_maps = igi_db.TableView.new("blacklist.ltx", "maps")
+	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps")
 	if blacklisted_maps[object_lvl] then return true
 	else return false end
 end
 
 function pick_quest_goods(quest_type)
-	local possible_goods = igi_db.TableView.new("quest_goods.ltx", quest_type)
+	local possible_goods = igi_db.SectionView.new("quest_goods.ltx", quest_type)
 	local goods_type = possible_goods:random()
 	return goods_type
 end
 
 function change_goodwill(faction, task_name, task_successful)
 	if not faction then return nil, "gt_goodwill: no faction given" end
-	local task_info = igi_db.TableView.new("task_info.ltx", task_name)
+	local task_info = igi_db.SectionView.new("task_info.ltx", task_name)
 	local value
 	if task_successful then 
-		value = task_info.reward_goodwill or 50
+		value = task_info and task_info.reward_goodwill or 50
 	else 
-		value = task_info.fail_goodwill or -50
+		value = task_info and task_info.fail_goodwill or -50
 	end
 
 	xr_effects.complete_task_inc_goodwill(a, b, {value, faction})
@@ -212,8 +212,8 @@ function reward_quest_money(task_name)
 		['midgame'] = 2000,
 		['endgame'] = 4000,
 	}
-	local task_info = igi_db.TableView.new("task_info.ltx", task_name)
-	local sum_money = task_info.reward_money
+	local task_info = igi_db.SectionView.new("task_info.ltx", task_name)
+	local sum_money = task_info and task_info.reward_money or 3000
 	if sum_money == 0 then return end
 	
 	local player_tier = get_player_tier()

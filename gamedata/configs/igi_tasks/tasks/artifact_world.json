@@ -1,0 +1,8 @@
+[
+	{
+	"target":"get",
+	"item_type":"artifact_scalable",
+	"where":["in_world"],
+	"entity_type":"item"
+	}
+]

@@ -60,7 +60,20 @@ function extend_list(orig, val)
 	return orig
 end
 
+function add_to_list_recursive(tbl, val, ...)
+	if not tbl then return end
 
+	local args = {...}
+	for k, v in pairs(args) do
+		if not tbl[v] then
+			tbl[v] = {}
+		end
+		tbl = tbl[v]
+		if k == #args then
+			table.insert(tbl, val)
+		end
+	end
+end
 
 
 

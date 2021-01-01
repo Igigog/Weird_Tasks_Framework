@@ -6,6 +6,7 @@ locations = {
     "bar": {
         "bar_visitors_stalker_mechanic": "MECHANIC",
         "bar_dolg_medic": "MEDIC",
+        "bar_visitors_barman_stalker_trader": "BARKEEP",
     },
     "darkscape": {
         "dasc_tech_mlr": "MECHANIC",
@@ -67,5 +68,8 @@ quests = {
     "MEDIC": {
         "artifact_world": "ui_inGame2_Kontrakt_s_uchenimi",
         "artifact_stalker": "ui_inGame2_Kontrakt_s_uchenimi",
+    },
+    "BARKEEP": {
+        "assault_monster_online": "ui_iconsTotal_mutant"
     },
 }

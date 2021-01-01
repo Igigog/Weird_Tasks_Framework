@@ -1,0 +1,7 @@
+[
+	{
+	"entity_type":"squad",
+	"type":"mutant",
+	"where":["online"]
+	}
+]

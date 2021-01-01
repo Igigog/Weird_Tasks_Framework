@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!-- This file contains text for tasks from base anomaly -->
+<!-- If task has exclusive text, then it's not here -->
+<string_table>
+	<!-- mutant -->
+	<string id="igi_task_text_assault_monster_online_title">
+		<text>Eliminate dangerous mutants</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_descr">
+		<text>My job is to eliminate mutants in this area.</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_job_descr">
+		<text>Recently some mutants have appeared and are threatening our operations. The commander is seeking someone who can take care of them. Here, take a look.</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_finish">
+		<text>Great job! They didn't let our teams work...</text>
+	</string>
+</string_table>
