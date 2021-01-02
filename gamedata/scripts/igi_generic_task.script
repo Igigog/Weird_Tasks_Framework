@@ -23,7 +23,7 @@ end
 xr_conditions.validate_generic_task = function(actor, npc, p)
 	assert(p and p[1], "No task id given")
 	local task_id = p[1]
-	local task_name = task_id:match(".*task_(.*)")
+	local task_name = igi_helper.get_task_name(task_id)
 	assert(task_name and task_id and igi_db.get_task_data(task_name), "Igi: validate_task: task_name invalid")
 
 	local task_giver = mob_trade.GetTalkingNpc()
