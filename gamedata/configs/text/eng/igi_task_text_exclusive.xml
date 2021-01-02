@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!-- This file contains text for tasks from base anomaly -->
+<!-- If task has exclusive text, then it's here -->
+<!-- Pattern for text: *task_id*_*whatever part* -->
+<string_table>
+	<!-- Barkeep -->
+	<string id="igi_task_text_bar_visitors_barman_stalker_trader_task_assault_monster_online_title">
+		<text>Destroy the Mutants</text>
+	</string>
+	<string id="igi_task_text_bar_visitors_barman_stalker_trader_task_assault_monster_online_descr">
+		<text>Barkeep has hired me to clear out a lair of mutants.</text>
+	</string>
+	<string id="igi_task_text_bar_visitors_barman_stalker_trader_task_assault_monster_online_job_descr">
+		<text>Some of my boys got torn up real bad by mutants on the way back from their last expedition. Duty promised to purge the lair in retaliation, but they just haven't gotten around to it. Will you take this on for me?</text>
+	</string>
+	<string id="igi_task_text_bar_visitors_barman_stalker_trader_task_assault_monster_online_finish">
+		<text>Sweet vengeance. Good work, here's the money.</text>
+	</string>
+</string_table>

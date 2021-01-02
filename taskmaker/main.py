@@ -41,8 +41,8 @@ precondition {" "*(SPACE_COUNT-len("precondition"))}= {op + f"=validate_generic_
 
 title_functor {" "*(SPACE_COUNT-len("title_functor"))}= igi_task_generic_text
 descr_functor {" "*(SPACE_COUNT-len("descr_functor"))}= igi_task_generic_text
-job_descr {" "*(SPACE_COUNT-len("job_descr"))}= {TEXT_HEADER}{task_name}_job_descr
-task_complete_descr {" "*(SPACE_COUNT-len("task_complete_descr"))}= {TEXT_HEADER}{task_name}_finish
+job_descr {" "*(SPACE_COUNT-len("job_descr"))}= {TEXT_HEADER}{task_id}_job_descr
+task_complete_descr {" "*(SPACE_COUNT-len("task_complete_descr"))}= {TEXT_HEADER}{task_id}_finish
                     
 stage_complete {" "*(SPACE_COUNT-len("stage_complete"))}= {STAGES}
 status_functor {" "*(SPACE_COUNT-len("status_functor"))}= igi_task_generic_status

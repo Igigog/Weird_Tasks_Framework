@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<!-- mutant -->
+	<string id="igi_task_text_assault_monster_online_title">
+		<text>Уничтожение опасных мутантов</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_descr">
+		<text>Моя задача убивать мутантов в этой области.</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_job_descr">
+		<text>В последнее время стали появляться опасные мутанты, угрожающие нашим операциям. Главный ищет тех, кто может о них позаботиться. Вот, посмотри.</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_finish">
+		<text>Отличная работа! Они не давали нашим отрядам работать...</text>
+	</string>
+</string_table>

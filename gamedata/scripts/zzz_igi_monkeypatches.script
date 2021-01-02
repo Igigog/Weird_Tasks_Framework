@@ -1,0 +1,20 @@
+
+local old_get_task_complete_text = axr_task_manager.get_task_complete_text
+function axr_task_manager.get_task_complete_text(task_id)
+	local task_complete_descr = old_get_task_complete_text(task_id)
+	if task_complete_descr:find(igi_db.TEXT_HEADER) then
+		local task_name = task_id:match(".*task_(.*)")
+		return game.translate_string(igi_db.TEXT_HEADER..task_name.."_task_complete_descr")
+	end
+	return task_complete_descr
+end
+
+local old_get_task_job_description = axr_task_manager.get_task_job_description
+function axr_task_manager.get_task_job_description( task_id )
+	local job_descr = old_get_task_job_description(task_id)
+	if job_descr:find(igi_db.TEXT_HEADER) then
+		local task_name = task_id:match(".*task_(.*)")
+		return game.translate_string(igi_db.TEXT_HEADER..task_name.."_job_descr")
+	end
+	return job_descr
+end
