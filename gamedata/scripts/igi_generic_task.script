@@ -21,12 +21,10 @@ end
 
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
-	printf("Igi: task "..p[2].." loading, but before p")
-	if not p and p[1] and p[2] then return false end
+	assert(p and p[1], "No task id given")
 	local task_id = p[1]
-	local task_name = p[2]
+	local task_name = task_id:match(".*task_(.*)")
 	assert(task_name and task_id and igi_db.get_task_data(task_name), "Igi: validate_task: task_name invalid")
-	printf("Igi: task "..task_name.." loading")
 
 	local task_giver = mob_trade.GetTalkingNpc()
 	local squad = get_object_squad(task_giver) --Task count for squad. Not NPC.

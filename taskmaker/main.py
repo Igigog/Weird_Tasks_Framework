@@ -3,7 +3,6 @@ import os
 
 op = "{"
 cl = "}"
-COUNT_START = 10
 TEXT_HEADER = "igi_task_text_"
 STAGES = 2
 SPACE_COUNT = 21
@@ -24,7 +23,6 @@ def main():
         with open(f"task/tm_igi_tasks_{location}.ltx", 'w') as f:
             f.write(FILE_HEADER)
             for npc, typ in npcs.items():
-                count = COUNT_START
                 tasks = db.quests[typ]
                 f.write(f"""
 ;============================================================
@@ -32,14 +30,14 @@ def main():
 ;{" "*(29-len(npc)//2)}{npc}
 ;============================================================""")
                 for task_name, icon in tasks.items():
-                    task_id = f"{npc}_task_{count}"
+                    task_id = f"{npc}_task_{task_name}"
                     f.write(f"""
 [{task_id}]
 icon {" "*(SPACE_COUNT-len("icon"))}= {icon}
 storyline {" "*(SPACE_COUNT-len("storyline"))}= false
 prior {" "*(SPACE_COUNT-len("prior"))}= 2000
 repeat_timeout {" "*(SPACE_COUNT-len("repeat_timeout"))}= 16200
-precondition {" "*(SPACE_COUNT-len("precondition"))}= {op + f"=validate_generic_task({task_id}:{task_name})" + cl} true, false
+precondition {" "*(SPACE_COUNT-len("precondition"))}= {op + f"=validate_generic_task({task_id})" + cl} true, false
 
 title_functor {" "*(SPACE_COUNT-len("title_functor"))}= igi_task_generic_text
 descr_functor {" "*(SPACE_COUNT-len("descr_functor"))}= igi_task_generic_text
@@ -56,7 +54,6 @@ on_fail {" "*(SPACE_COUNT-len("on_fail"))}= %=igi_task_generic_finish({task_id}:
 condlist_0 {" "*(SPACE_COUNT-len("condlist_0"))}= {op + f"!task_giver_alive({task_id})" + cl} fail
 ;------------------------------------------------
                     """)
-                    count += 1
 
 
 if __name__ == '__main__':
