@@ -52,7 +52,7 @@ xr_effects.igi_task_generic_setup = function(actor,npc,p)
 	--Setup
 	local CACHE = assert(TASKS_CACHE[task_id], "Igi: task "..task_id.." : CACHE not initialised")
 	--Give message
-	local description = igi_description.get_postpone_intel(CACHE.task_name, CACHE.description, CACHE.setup)
+	local description = igi_description.get_postpone_intel(task_id, CACHE.description, CACHE.setup)
 	--Print the message
 	CreateTimeEvent(0, "gt_task_"..CACHE.task_name.."_setup", 0, igi_description.postpone_function, description)
 end

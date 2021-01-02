@@ -75,7 +75,7 @@ local function get_target_descript(postpone_data)
 	return content
 end
 
-function get_postpone_intel(task_name, desc, entities)
+function get_postpone_intel(task_id, desc, entities)
 	local locations = link_smarts(desc.location, entities)
 	
 	local locations = delete_duplicates(locations)
@@ -83,11 +83,11 @@ function get_postpone_intel(task_name, desc, entities)
 	local targets = delete_duplicates(desc.target)
 	
 	local postpone_data = setup_postpone_data(targets, factions, locations)
-	local task_info = igi_db.SectionView.new('task_info.ltx', task_name)
+	local icon = task_manager.task_ini:r_string_ex(task_id, "icon")
 	local postpone_intel = {
 		caption = game.translate_string(igi_db.TEXT_HEADER .. task_name .. "_title"),
 		text = get_target_descript(postpone_data),
-		icon = task_info and task_info.icon or "ui_iconsTotal_mutant"
+		icon = icon or "ui_iconsTotal_mutant"
 	}
 	return postpone_intel
 end
