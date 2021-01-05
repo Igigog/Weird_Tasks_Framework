@@ -23,13 +23,17 @@ def main():
         with open(f"task/tm_igi_tasks_{location}.ltx", 'w') as f:
             f.write(FILE_HEADER)
             for npc, typ in npcs.items():
-                tasks = db.quests[typ]
+                try:
+                    tasks = db.quests[typ]
+                except KeyError:
+                    continue
                 f.write(f"""
 ;============================================================
 ;{" "*(29-len(typ)//2)}{typ} 
 ;{" "*(29-len(npc)//2)}{npc}
 ;============================================================""")
-                for task_name, icon in tasks.items():
+                for task_name in tasks:
+                    icon = db.icons[task_name]
                     task_id = f"{npc}_task_{task_name}"
                     f.write(f"""
 [{task_id}]
