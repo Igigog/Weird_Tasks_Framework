@@ -1,7 +1,8 @@
 [
 	{
 	"target":"get",
-	"where": ["in_npc_inv"],
+	"look_in": "npc_inv",
+	"where": "everywhere",
 	"only_enemies":true,
 	"item_type":"artifact_scalable",
 	"possible_endings":"artifact_boxes",

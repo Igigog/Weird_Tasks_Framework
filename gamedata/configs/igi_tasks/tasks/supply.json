@@ -1,14 +1,15 @@
 [
 	{
 	"entity_type":"smart",
-	"is_nearby":true
+	"where":"nearby",
 	},
 	
 	{
 	"amount":2,
 	"faction_type":"enemy",
 	"entity_type":"squad",
-	"type":"guard"
+	"type":"guard",
+	"to_create":true,
 	},
 	
 	{
@@ -16,6 +17,5 @@
 	"quest_type":"supply",
 	"target":"return",
 	"entity_type":"package",
-	"in_world":true
 	}
 ]

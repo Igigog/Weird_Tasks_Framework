@@ -1,7 +1,7 @@
 [
 	{
-	"amount":2,
-	"is_nearby":true,
+	"amount":1,
+	"where":"nearby",
 	"entity_type":"smart"
 	},
 	
@@ -12,17 +12,18 @@
 			{"change_faction":"enemy"}
 		},
 	"type":"guard",
-	"entity_type":"squad"
+	"entity_type":"squad",
+	"to_create":true,
 	},
 	
 	{
 	"faction_type":"enemy",
 	"type":"guard",
-	"entity_type":"squad"
+	"entity_type":"squad",
+	"to_create":true,
 	},
 	
 	{
-	"location":"$smart_1_1$",
 	"entity_type":"package",
 	"amount":2,
 	"quest_type":"transaction",

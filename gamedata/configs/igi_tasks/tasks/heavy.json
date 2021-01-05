@@ -1,12 +1,9 @@
 [
 	{
-	"is_nearby":true,
-	"entity_type":"smart"
-	},
-	
-	{
 	"entity_type":"squad",
 	"type":"heavy_scalable",
-	"faction_type":"enemy"
+	"faction_type":"enemy",
+	"to_create":true,
+	"where":"nearby",
 	}
 ]

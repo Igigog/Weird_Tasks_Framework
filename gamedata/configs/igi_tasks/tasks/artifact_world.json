@@ -2,7 +2,8 @@
 	{
 	"target":"get",
 	"item_type":"artifact_scalable",
-	"where":["in_world"],
+	"look_in":"world",
+	"where":"everywhere",
 	"entity_type":"item"
 	}
 ]

@@ -6,9 +6,9 @@
 		{"if_low_condition":
 			{"repair":true}
 		},
-	"in_npc_inv":true,
+	"look_in":["npc_inv"],
 	"item_type":"weapon_scalable",
 	"entity_type":"item",
-	"is_nearby":true
+	"where":"nearby",
 	}
 ]
