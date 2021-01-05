@@ -14,6 +14,7 @@ function make_link(typ, group_id, obj_id)
 end
 
 local function is_dependency(str)
+	if not type(str) == "string" then return end
 	return string.find(str, "^%$%D+_%d+_-%d*%$")
 end
 

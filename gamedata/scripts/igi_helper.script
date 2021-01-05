@@ -120,11 +120,9 @@ function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] on
 	--> - smart is not in blacklisted_maps
 	--> - (optional) online and on level of player (nearby)
 	-- and returns a table of suitable smarts
-	assert(type(smarts_table) == 'table', 'gt: check_smarts: not a table given')
+	assert(type(smarts_table) == 'table', 'Igi: check_smarts: not a table given')
 	local return_list = {}
 	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps"):as_set()
-	local t = profile_timer()
-	local m = profile_timer()
 	
 	for smart_name, smart_data in pairs(smarts_table) do
 		if simulation_objects.available_by_id[smart_data.id] and	-- availability check
@@ -165,12 +163,6 @@ function is_on_blacklisted_map(object, sim, gg)
 	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps")
 	if blacklisted_maps[object_lvl] then return true
 	else return false end
-end
-
-function pick_quest_goods(quest_type)
-	local possible_goods = igi_db.SectionView.new("quest_goods.ltx", quest_type)
-	local goods_type = possible_goods:random()
-	return goods_type
 end
 
 function change_goodwill(faction, task_name, task_successful)
