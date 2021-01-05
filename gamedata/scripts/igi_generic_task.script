@@ -92,10 +92,18 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	end
 	---------------------------<STAGE>----------------------
 	-- If no more instant objectives: stage = 1; if all continuous are ready: stage = 2
-	if tsk.stage == 0 and not next(CACHE.subtasks.instant) then
+	
+	-- skip stage 1 if task has no continuous
+	local instant_done = not next(CACHE.subtasks.instant)
+	local continuous_done = not igi_subtask.check_continuous_running(CACHE.subtasks.continuous)
+	if instant_done and continuous_done then
+		tsk.stage = 2
+	end
+	
+	if tsk.stage == 0 and instant_done then
 		tsk.stage = 1
 	end
-	if tsk.stage == 1 and not igi_subtask.check_continuous_running(CACHE.subtasks.continuous) then
+	if tsk.stage == 1 and not continuous_done then
 		tsk.stage = 2
 	end
 	if tsk.stage == 2 then
