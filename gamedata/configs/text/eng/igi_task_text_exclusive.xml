@@ -16,4 +16,83 @@
 	<string id="igi_task_text_bar_visitors_barman_stalker_trader_task_assault_monster_online_finish">
 		<text>Sweet vengeance. Good work, here's the money.</text>
 	</string>
+	
+	<!-- OLIVIUS -->
+	<string id="igi_task_text_val_smart_terrain_7_4_bandit_trader_stalker_task_assault_monster_online_title">
+		<text>Eliminate Mutant Threat in Dark Valley</text>
+	</string>
+	<string id="igi_task_text_val_smart_terrain_7_4_bandit_trader_stalker_task_assault_monster_online_descr">
+		<text>Mutants have been spotted near this location making the area dangerous. You have been tasked to eliminate the mutant threat within the area. Report back to Olivius after the job is done.</text>
+	</string>
+	<string id="igi_task_text_val_smart_terrain_7_4_bandit_trader_stalker_task_assault_monster_online_job_descr">
+		<text>We've been looking for someone with enough balls to clear out mutants in a few places. Stalkers aren't coming around here because they are too afraid. If we don't do something about it we won't have anyone left to 'borrow' any goods from, then we will have to move out of this territory.</text>
+	</string>
+	<string id="igi_task_text_val_smart_terrain_7_4_bandit_trader_stalker_task_assault_monster_online_finish">
+		<text>Fantastic! Here is your payment. I'll make sure to put a good word in for you with the boss.</text>
+	</string>
+	<!-- WOLF -->
+	<string id="igi_task_text_esc_2_12_stalker_wolf_task_assault_monster_online_title">
+		<text>Eliminate the Mutant Threat from Cordon</text>
+	</string>
+	<string id="igi_task_text_esc_2_12_stalker_wolf_task_assault_monster_online_descr">
+		<text>I've agreed to clear out a mutant lair for Wolf, which will no doubt make life much easier for stalkers in Cordon. I'll need to return to him for payment once the job is complete.</text>
+	</string>
+	<string id="igi_task_text_esc_2_12_stalker_wolf_task_assault_monster_online_job_descr">
+		<text>Though this is the border of the Zone, newbies have it tough even here. The bandits are only half the problem - they at least understand Russian. But the mutants - it's really tough with them. If you're an able hunter, there's a mutant lair not far from here that needs to be cleared out. If you manage to do this, I'll owe you.</text>
+	</string>
+	<string id="igi_task_text_esc_2_12_stalker_wolf_task_assault_monster_online_finish">
+		<text>Thank you, stalker. Maybe the rookies around here will take this chance to learn a thing or two before becoming pig food. Ah, right. I said I'd owe you. Here's your payment.</text>
+	</string>
+	<!-- FANATIC -->
+	<string id="igi_task_text_esc_2_12_stalker_fanat_task_assault_monster_online_title">
+		<text>Destroy the Mutant Lair</text>
+	</string>
+	<string id="igi_task_text_esc_2_12_stalker_fanat_task_assault_monster_online_descr">
+		<text>I've agreed with Fanatic to destroy a mutant lair for the sake of the stalkers in Cordon.</text>
+	</string>
+	<string id="igi_task_text_esc_2_12_stalker_fanat_task_assault_monster_online_job_descr">
+		<text>Yeah, there's a small issue that needs sorting out. Cordon is supposed to be one of the safest places in the Zone, yet a new mutant lair has sprung up not too far from here. It needs to be cleared before it gets too large - otherwise, the rookies here will be in for a grave time. So, what do you say? Will you do it?</text>
+	</string>
+	<string id="igi_task_text_esc_2_12_stalker_fanat_task_assault_monster_online_finish">
+		<text>Great work. Thanks to you, the rookies will have more room to breathe without being thrown into the deep end. Here's your payment - they all contributed a little to it. </text>
+	</string>
+	<!-- BUTCHER -->
+	<string id="igi_task_text_hunter_gar_trader_task_assault_monster_online_title">
+		<text>Cull Hunting</text>
+	</string>
+	<string id="igi_task_text_hunter_gar_trader_task_assault_monster_online_descr">
+		<text>Butcher isn't happy with the frequency of mutant activity around here. I've agreed to thin the herd in return for a reward.</text>
+	</string>
+	<string id="igi_task_text_hunter_gar_trader_task_assault_monster_online_job_descr">
+		<text>Some of the mutant species around here are getting too large in numbers for my liking. It's necessary to keep their populations from getting too high, or animal aggression levels could spike, overwhelming local stalkers. If you are capable enough to do this for me, I'll compensate you for your skill. Don't forget to bring back any meat or trophies you find, to sell for a bonus! </text>
+	</string>
+	<string id="igi_task_text_hunter_gar_trader_task_assault_monster_online_finish">
+		<text>Once again the local ecosystem is in balance, and hunting can remain a useful pastime, rather than a dire necessity. Here's your reward for a job well done.</text>
+	</string>
+	<!-- TRAPPER -->
+	<string id="igi_task_text_jup_b220_trapper_task_assault_monster_online_title">
+		<text>Clear area of mutants</text>
+	</string>
+	<string id="igi_task_text_jup_b220_trapper_task_assault_monster_online_descr">
+		<text>Mutants have been spotted near this location making the area dangerous for some of the locals. You have been tasked to lead a hunting party to reduce the mutant threat within the area. Report back to Trapper after the job is done.</text>
+	</string>
+	<string id="igi_task_text_jup_b220_trapper_task_assault_monster_online_job_descr">
+		<text>I have organized a hunt to help keep the area around Yanov a bit safer by depopulating the various mutant lairs found in area. I need someone experienced to lead it. Would you like the job?</text>
+	</string>
+	<string id="igi_task_text_jup_b220_trapper_task_assault_monster_online_finish">
+		<text>Thank you, stalker. The area will be much safer for others because of you. Here is your payment.</text>
+	</string>
+	<!-- BEARD -->
+	<string id="igi_task_text_zat_a2_stalker_barmen_task_assault_monster_online_title">
+		<text>Clear area of mutants</text>
+	</string>
+	<string id="igi_task_text_zat_a2_stalker_barmen_task_assault_monster_online_descr">
+		<text>Mutants are about. Hunt them down and clear the area.</text>
+	</string>
+	<string id="igi_task_text_zat_a2_stalker_barmen_task_assault_monster_online_job_descr">
+		<text>Shh... Listen, hear that? Some mutants howling. Still gives me the chills after all this time. How about you go out there and take care of them? I'll make it worth your while.</text>
+	</string>
+	<string id="igi_task_text_zat_a2_stalker_barmen_task_assault_monster_online_finish">
+		<text>Haha! Well done, stalker! Have a drink on Beard!</text>
+	</string>
 </string_table>
