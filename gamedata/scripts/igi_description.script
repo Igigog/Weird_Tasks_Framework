@@ -27,66 +27,92 @@ local function delete_duplicates(tbl)
 	return new_tbl
 end
 
-local function setup_postpone_data(targets, factions, locations)
-	local postpone_data = {}
-	if targets and targets[1] then
-		postpone_data["target"] = targets
+function TaskDescription._delete_duplicates(self)
+	for _, field in pairs(self.fields) do
+		self[field] = self._delete_duplicates_in_list(self[field])
 	end
-	
-	if factions and factions[1] then
-		postpone_data["faction"] = factions
-	end
-	
-	if locations and locations[1] then
-		local locs = {}
-		for _, location in pairs(locations) do
-			if string.find(location, "!smart_") then
-				table.insert(locs, "st_"..string.gsub(location, "!smart_", "").."_name")
-			else
-				table.insert(locs, location)
-			end
-		end
-		postpone_data["location"] = locs
-	end
-	return postpone_data
 end
 
-local function get_target_descript(postpone_data)
-	local content = ""
-	local function text_line(name, detail)
-		return "%c[d_orange]" .. name .. ": " .. "%c[0,255,255,255]" .. detail
+function TaskDescription._delete_empty(self)
+	for _, field in pairs(self.fields) do
+		if not next(self[field]) then self[field] = nil end
 	end
-	
-	for k, v in pairs(postpone_data) do
-		local label = game.translate_string(igi_db.TEXT_HEADER .. k)
+end
+
+function TaskDescription._text_line(name, detail)
+	return "%c[d_orange]"..name..": ".."%c[0,255,255,255]"..detail
+end
+
+function TaskDescription._setup_description(self)
+	local content = ""
+
+	for k, v in pairs(self) do
+		local label = game.translate_string(igi_db.TEXT_HEADER..k)
 		local details = ""
 		
-		if type(v) == "table" then		-- if value is list: add every item in list
-			for key, value in pairs(v) do
-				if key > 1 then details = details .. ', ' end
-				details = details .. game.translate_string(value)
-			end
-		else details = game.translate_string(v) end
+		for key, value in pairs(v) do
+			if key > 1 then details = details .. ', ' end
+			details = details .. game.translate_string(value)
+		end
 
-		local text = text_line(label, details)
-		content = content .. text .. "\\n"
+		local text = self._text_line(label, details)
+		content = content .. text .. "\\n "
+		self[k] = nil
 	end
 
 	return content
 end
 
-function get_postpone_intel(task_id, desc, entities)
-	local locations = link_smarts(desc.location, entities)
+function TaskDescription.get_description(self, cache)
+	self:_link(cache.setup)
+	self:_delete_duplicates()
+	self:_delete_empty()
+
+	return self:_setup_description()
+end
+
+function TaskDescription._link(self, setup_entities)
+	if not setup_entities then return end
 	
-	local locations = delete_duplicates(locations)
-	local factions = delete_duplicates(desc.faction)
-	local targets = delete_duplicates(desc.target)
+	for k, location in pairs(self.locations) do
+		if string.find(location, "%$smart") then
+			group, id = string.match(location, "_(%d+)_(%d+)")
+			assert(group and id, "Igi: description: smart unlinkable: "..location)
+
+			local smart_name = setup_entities["$smart_"..group.."$"].names[tonumber(id)]
+			self.locations[k] = "st_"..smart_name.."_name"
+		end
+	end
+end
+
+------------------------------------------------------------
+
+function get_task_text(task_id, field)
+	-- returns exclusive task text if exist; basic otherwise
+	local text_id = igi_db.TEXT_HEADER..task_id.."_"..field
+	local text = game.translate_string(text_id)
 	
-	local postpone_data = setup_postpone_data(targets, factions, locations)
+	-- fallback to basic field for this task type
+	if text == text_id then
+		local task_name = igi_helper.get_task_name(task_id)
+		local text_id = igi_db.TEXT_HEADER..task_name.."_"..field
+		text = game.translate_string(text_id)
+
+		-- fallback to basic field
+		if text == text_id then
+			text = game.translate_string(igi_db.TEXT_HEADER..field)
+		end
+	end
+	return text
+end
+
+function get_postpone_intel(task_id, desc)
+	local task_name = igi_helper.get_task_name(task_id)
 	local icon = task_manager.task_ini:r_string_ex(task_id, "icon")
+
 	local postpone_intel = {
-		caption = game.translate_string(igi_db.TEXT_HEADER .. task_name .. "_title"),
-		text = get_target_descript(postpone_data),
+		caption = get_task_text(task_id, "title"),
+		text = desc,
 		icon = icon or "ui_iconsTotal_mutant"
 	}
 	return postpone_intel

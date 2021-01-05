@@ -1,10 +1,11 @@
+local get_task_text = igi_description.get_task_text
 
 local old_get_task_complete_text = axr_task_manager.get_task_complete_text
 function axr_task_manager.get_task_complete_text(task_id)
 	local task_complete_descr = old_get_task_complete_text(task_id)
+
 	if task_complete_descr:find(igi_db.TEXT_HEADER) then
-		local task_name = task_id:match(".*task_(.*)")
-		return game.translate_string(igi_db.TEXT_HEADER..task_name.."_task_complete_descr")
+		task_complete_descr = get_task_text(task_id, "finish")
 	end
 	return task_complete_descr
 end
@@ -12,9 +13,20 @@ end
 local old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
 	local job_descr = old_get_task_job_description(task_id)
+
 	if job_descr:find(igi_db.TEXT_HEADER) then
-		local task_name = task_id:match(".*task_(.*)")
-		return game.translate_string(igi_db.TEXT_HEADER..task_name.."_job_descr")
+		job_descr = get_task_text(task_id, "job_descr")
 	end
 	return job_descr
+end
+
+local old_text_npc_has_task = dialogs.text_npc_has_task
+function dialogs.text_npc_has_task(a,b)
+	local text = old_text_npc_has_task(a, b)
+	
+	if text:find(igi_db.TEXT_HEADER) then
+		local task_id = text:match("(.*)_job_descr")
+		text = get_task_text(task_id, "job_descr")
+	end
+	return text
 end
