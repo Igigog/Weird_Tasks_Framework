@@ -1,19 +1,34 @@
-local function link_smarts(locations, entities)
-	if not locations or not entities then return end
+-- TaskDescription class
+-- Takes care of all description preparations, get_description will return description string
+
+TaskDescription = {}
+TaskDescription.fields = {
+	"targets", 
+	"locations", 
+	"factions",
+}
+
+function TaskDescription.new()
+	local tbl = {
+		targets = {},
+		locations = {},
+		factions = {},
+	}
 	
-	for k, location in pairs(locations) do
-		if string.find(location, "%$smart") then
-			group, id = string.match(location, "_(%d+)_(%d+)")
-			assert(group and id, "Igi: description: smart unlinkable: "..location)
-			-- entities = CACHE.setup, so: entities[group_id].names[obj_id]
-			local smart_name = entities["$smart_"..group.."$"].names[tonumber(id)]
-			locations[k] = "!smart_"..smart_name
-		end
-	end
-	return locations
+	setmetatable(tbl, {__index = TaskDescription})
+	return tbl
 end
 
-local function delete_duplicates(tbl)
+function TaskDescription.add_entries(self, tbl)
+	if not tbl then return end
+	assert(tbl._cls == "DescriptionData")
+	
+	for _, field in pairs(self.fields) do
+		igi_utils.extend_list(self[field], tbl[field])
+	end
+end
+
+function TaskDescription._delete_duplicates_in_list(tbl)
 	if not tbl then return nil end
 	
 	local values_set = {}
