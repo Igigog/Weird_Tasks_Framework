@@ -54,7 +54,7 @@ function assign_group_id(entities)
 		counters[entity.entity_type] = counters[entity.entity_type] and counters[entity.entity_type] + 1 or 1
 		entities[k].group_id = counters[entity.entity_type]
 	end
-	return entities
+	return entities, counters
 end
 
 local function assign_ids(entities)
@@ -101,10 +101,70 @@ local function is_dependencies_resolved(dep_list, objs_set)
     return true
 end
 
+local function get_entity_links(task_table)
+	local tbl, counter = assign_group_id(task_table)
+	tbl = assign_ids(tbl)
+	return tbl, counter
+end
+
+local function wrap_where(task_table)
+	local array_keys = {"where", "look_in"}
+	for _, entity in pairs(task_table) do
+		for _, k in pairs(array_keys) do
+			local val = entity[k]
+
+			if type(val) == "string" and not is_dependency(val) then
+				entity[k] = {entity[k]}
+			end
+		end
+	end
+end
+
+function setup_task_locations(task_table)	-- REFACTOR
+	local creatable_entities = {
+		["package"] = true,
+	}
+	
+	local where_conditions = {
+		['nearby'] = true,
+		['online'] = true,
+		['far'] = true,
+	}
+	local links, count_entities = get_entity_links(task_table)
+	count_entities.smart = count_entities.smart or 0
+	local new_smarts = {}
+	
+	for _, entity in pairs(task_table) do
+		if entity.to_create or creatable_entities[entity.entity_type] then
+			if entity.where == nil then
+				if not links["$smart_1_1$"] then
+					utils_data.print_table(task_table, "Igi: Task table sucked")
+					assert(nil, "IGI: task locations setup failed")
+				end
+
+				entity.where = "$smart_1_1$"
+
+			elseif type(entity.where) == "table" or where_conditions[entity.where] then
+				local smart = {
+					entity_type = "smart",
+					where = entity.where,
+				}
+
+				table.insert(new_smarts, smart)
+				count_entities["smart"] = count_entities["smart"] + 1
+				entity.where = "$smart_"..tostring(count_entities["smart"]).."_1$"
+			end
+		end
+	end
+	
+	igi_utils.extend_list(task_table, new_smarts)
+	wrap_where(task_table)
+end
+
 --------------------<Test dependencies>--------------------
 local function get_entities_test_order(entities)
 	entities = assign_group_id(entities)
-	-- entities = set_default_deps(entities)
+
 	local objs = {}
 	local order = {}
 	local changes = true

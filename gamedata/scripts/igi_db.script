@@ -168,10 +168,14 @@ local function read_task_json(task_name)
 end
 
 local json = igi_json.get_json()
+local function get_task_table(task_name)
+	return json.decode(read_task_json(task_name))
+end
+
 -- this function is memoized, so no additional cost for all calls after first.
 function get_task_data(task_name)
-	local data = read_task_json(task_name)
-	local tbl = json.decode(data)
+	local tbl = get_task_table(task_name)
+	igi_linker.setup_task_locations(tbl)
 	return tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data)
