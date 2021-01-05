@@ -75,7 +75,18 @@ function add_to_list_recursive(tbl, val, ...)
 	end
 end
 
-
+function memoize_one_variable(f)
+    local cache = {}
+    return function (arg)
+        if cache[arg] then
+            return cache[arg]
+        else
+            local y = f(arg)
+            cache[arg] = y
+            return y
+        end
+    end
+end
 
 
 

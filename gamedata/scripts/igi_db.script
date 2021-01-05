@@ -149,19 +149,6 @@ end
 
 -------------------------------------------------------
 
-local function memoize_one_variable(f)
-    local cache = {}
-    return function (arg)
-        if cache[arg] then
-            return cache[arg]
-        else
-            local y = f(arg)
-            cache[arg] = y
-            return y
-        end
-    end
-end
-
 local function get_configs_path()
   local info = debug.getinfo(1,'S');
   local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
@@ -187,7 +174,7 @@ function get_task_data(task_name)
 	local tbl = json.decode(data)
 	return tbl
 end
-get_task_data = memoize_one_variable(get_task_data)
+get_task_data = igi_utils.memoize_one_variable(get_task_data)
 
 
 
