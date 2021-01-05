@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <string_table>
 	<!-- UI -->
-	<string id="igi_task_text_target">
+	<string id="igi_task_text_targets">
 		<text>Цель</text>
 	</string>
-	<string id="igi_task_text_faction">
+	<string id="igi_task_text_factions">
 		<text>Группировка</text>
 	</string>
-	<string id="igi_task_text_location">
+	<string id="igi_task_text_locations">
 		<text>Место</text>
 	</string>
 	
