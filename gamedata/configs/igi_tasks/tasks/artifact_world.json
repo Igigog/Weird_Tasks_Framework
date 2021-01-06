@@ -1,9 +1,14 @@
-[
-	{
-	"target":"get",
-	"item_type":"artifact_scalable",
-	"look_in":"world",
-	"where":"everywhere",
-	"entity_type":"item"
-	}
-]
+{
+	"preconditions": {
+	},
+	"disabled":false,
+	"setup": [
+		{
+		"target":"get",
+		"item_type":"artifact_scalable",
+		"look_in":"world",
+		"where":"everywhere",
+		"entity_type":"item"
+		}
+	],
+}

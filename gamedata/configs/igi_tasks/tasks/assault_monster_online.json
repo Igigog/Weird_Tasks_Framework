@@ -1,7 +1,12 @@
-[
-	{
-	"entity_type":"squad",
-	"type":"mutant",
-	"where":"online",
+{
+	"preconditions": {
 	},
-]
+	"disabled":false,
+	"setup": [
+		{
+		"entity_type":"squad",
+		"type":"mutant",
+		"where":"online",
+		},
+	],
+}

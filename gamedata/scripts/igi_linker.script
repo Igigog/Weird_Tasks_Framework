@@ -15,7 +15,7 @@ function make_entity_link(entity, obj_id)
 	return make_link(entity.entity_type, entity.group_id, obj_id)
 end
 
-local function is_dependency(str)
+function is_dependency(str)
 	if not type(str) == "string" then return end
 	return string.find(str, "^%$%D+_%d+_-%d*%$")
 end
@@ -104,7 +104,7 @@ local function is_dependencies_resolved(dep_list, objs_set)
     return true
 end
 
-local function get_entity_links(task_table)
+function get_entity_links(task_table)
 	local tbl, counter = assign_group_id(task_table)
 	tbl = assign_ids(tbl)
 	return tbl, counter
@@ -160,7 +160,7 @@ end
 
 --------------------<Globals>--------------------
 function get_order(task_name)
-	local task_data = igi_db.get_task_data(task_name)
+	local task_data = igi_taskdata.get_task_setup(task_name)
 	local constructor = {}
 	copy_table(constructor, task_data)
 	return assert(set_group_order(constructor))

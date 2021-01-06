@@ -1,32 +1,37 @@
-[
-	{
-	"where":"nearby",
-	"entity_type":"smart"
+{
+	"preconditions": {
 	},
-	
-	{
-	"faction_type":"client",
-	"online_activities":
-		{"is_online":
-			{"change_faction":"enemy"}
+	"disabled":false,
+	"setup": [
+		{
+		"where":"nearby",
+		"entity_type":"smart"
 		},
-	"type":"guard",
-	"entity_type":"squad",
-	"to_create":true,
-	},
-	
-	{
-	"faction_type":"enemy",
-	"type":"guard",
-	"entity_type":"squad",
-	"to_create":true,
-	},
-	
-	{
-	"entity_type":"item",
-	"amount":2,
-	"section":["igi_package_weapon", "igi_package_artifact"],
-	"target":"return",
-	"to_create":true,
-	}
-]
+		
+		{
+		"faction_type":"client",
+		"online_activities":
+			{"is_online":
+				{"change_faction":"enemy"}
+			},
+		"type":"guard",
+		"entity_type":"squad",
+		"to_create":true,
+		},
+		
+		{
+		"faction_type":"enemy",
+		"type":"guard",
+		"entity_type":"squad",
+		"to_create":true,
+		},
+		
+		{
+		"entity_type":"item",
+		"amount":2,
+		"section":["igi_package_weapon", "igi_package_artifact"],
+		"target":"return",
+		"to_create":true,
+		},
+	],
+}

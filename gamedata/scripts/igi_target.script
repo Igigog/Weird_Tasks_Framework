@@ -51,6 +51,9 @@ end
 
 local function create_item(group_data)	-- REFACTOR
 	local items = {}
+	for k, v in pairs(group_data) do
+		printf(k..": "..tostring(v))
+	end
 	if group_data.ids then
 		for i, id in pairs(group_data.ids) do
 			local se_obj = igi_helper.alife_obj(id)

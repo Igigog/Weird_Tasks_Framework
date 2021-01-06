@@ -113,61 +113,9 @@ function get_object_level(obj, sim, gg)
 	return alife():level_name(igi_helper.get_object_level_id(object))
 end
 
-function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] online_req)
-	-- This function checks table of smarts for
-	-->	- availability
-	-->	- smart is not a base
-	--> - smart is not in blacklisted_maps
-	--> - (optional) online and on level of player (nearby)
-	-- and returns a table of suitable smarts
-	assert(type(smarts_table) == 'table', 'Igi: check_smarts: not a table given')
-	local return_list = {}
-	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps"):as_set()
-	
-	for smart_name, smart_data in pairs(smarts_table) do
-		if simulation_objects.available_by_id[smart_data.id] and	-- availability check
-				not simulation_objects.base_smarts[smart_name] then	-- base smart check
-			local smart_level = alife():level_name(game_graph():vertex(smart_data.m_game_vertex_id):level_id())
-			
-			
-			if not blacklisted_maps[smart_level] and not smart_data.squads then						-- blacklist check
-				local is_online = smart_data.online
-				local is_nearby = string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), smart_level)
-				
-				if (nearby_req == nil and online_req == nil) or		-- any OR
-						((nearby_req and online_req) and (is_online or is_nearby)) or	-- nearby + online OR
-						(not is_nearby == not nearby_req) and 		-- specified
-						(not is_online == not online_req) then		-- not is used to convert to boolean
-					return_list[#return_list + 1] = smart_name
-				end
-			end
-		end
-	end
-	return return_list
-end
-
-function is_online(object)	-- TODO: rename
-	player_level_id = igi_helper.get_object_level_id(db.player)
-	object_level_id = igi_helper.get_object_level_id(object)
-	return player_level_id == object_level_id
-end
-
-function is_nearby(object)
-	local level = get_object_level(object)
-	if not level then return false end
-	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), level)
-end
-
-function is_on_blacklisted_map(object, sim, gg)
-	object_lvl = igi_helper.get_object_level(object, sim, gg)
-	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps")
-	if blacklisted_maps[object_lvl] then return true
-	else return false end
-end
-
 function change_goodwill(faction, task_name, task_successful)
 	if not faction then return nil, "gt_goodwill: no faction given" end
-	local task_info = igi_db.SectionView.new("task_info.ltx", task_name)
+	local task_info = igi_taskdata.get_task_info(task_name)
 	local value
 	if task_successful then 
 		value = task_info and task_info.reward_goodwill or 50
@@ -208,7 +156,7 @@ function reward_quest_money(task_name)
 		['midgame'] = 2000,
 		['endgame'] = 4000,
 	}
-	local task_info = igi_db.SectionView.new("task_info.ltx", task_name)
+	local task_info = igi_taskdata.get_task_info(task_name)
 	local sum_money = task_info and task_info.reward_money or 3000
 	if sum_money == 0 then return end
 	

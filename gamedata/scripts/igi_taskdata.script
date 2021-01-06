@@ -79,22 +79,31 @@ function get_task_data(task_name)
 	local task_tbl = get_task_table(task_name)
 	assert(task_tbl, "Igi: no such task: "..tostring(task_name or "nil"))
 
-	add_defaults(task_tbl, task_name)
-	wrap_array_keys(task_tbl)
-	setup_task_locations(task_tbl)
+	add_defaults(task_tbl.setup, task_name)
+	wrap_array_keys(task_tbl.setup)
+	setup_task_locations(task_tbl.setup)
+	utils_data.print_table(task_tbl, "task_name")
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data)
 
+function get_task_setup(task_name)
+	return get_task_data(task_name).setup
+end
+
+function get_task_info(task_name)
+	return get_task_data(task_name).info
+end
+
 function construct_task(task_name)
-	local task_data = {}
+	local task_setup = {}
 
-	local tbl = igi_db.get_task_data(task_name)
-	copy_table(task_data, tbl)
+	local tbl = get_task_data(task_name)
+	copy_table(task_setup, tbl.setup)
 
-	task_data = igi_helper.scale_to_rank(task_data)
-	task_data = igi_linker.assign_group_id(task_data)
-	return task_data
+	task_setup = igi_helper.scale_to_rank(task_setup)
+	task_setup = igi_linker.assign_group_id(task_setup)
+	return task_setup
 end
 
 

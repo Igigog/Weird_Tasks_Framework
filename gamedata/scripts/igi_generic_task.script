@@ -24,22 +24,20 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	assert(p and p[1], "No task id given")
 	local task_id = p[1]
 	local task_name = igi_helper.get_task_name(task_id)
-	assert(task_name and task_id and igi_db.get_task_data(task_name), "Igi: validate_task: task_name invalid")
+	printf("setup "..task_name)
+	assert(task_name and task_id and igi_taskdata.get_task_data(task_name), 
+		"Igi: validate_task: task_name invalid")
 
 	local task_giver = mob_trade.GetTalkingNpc()
 	local squad = get_object_squad(task_giver) --Task count for squad. Not NPC.
 	if not task_giver or not squad then return false end
-	--local giver_task_count = utils.load_var(db.actor, "drx_sl_task_giver_" .. squad.id, 0)
+	--local giver_task_count = utils.load_var(db.actor, "drx_sl_task_giver_" .. squad.id, 0)	REWORKABLE, DO AT SOME POINT
 	--if giver_task_count >= MAX_TASK then return false end
 	
-	if igi_db.get_value("task_info.ltx", task_name.."_preconditions", "disabled") then
-		return false
-	end
-	--local preconditions = igi_db.SectionView.new("task_info.ltx", task_name.."_preconditions")
-	local preconditions = igi_db.SectionView.new("task_info_debug.ltx", task_name.."_preconditions")
-	if not igi_precondition.check(preconditions) then
-		return false
-	end
+	local task_data = igi_taskdata.get_task_data(task_name)
+	if task_data.disabled then return false end
+	if not igi_precondition.check(task_data.preconditions) then return false end
+	printf("conditions done")
 	TASKS_CACHE[task_id] = TASKS_CACHE[task_id] or igi_setup.setup_quest(task_name)
 	return TASKS_CACHE[task_id] and true or false
 end

@@ -124,8 +124,7 @@ end
 
 function update_marks(entities)
 	local marks = {
-		["package"] = "treasure_unique",
-		["item"] = "item_misc",
+		item = "treasure_unique",
 	}
 	
 	for entity_name, entity in pairs(entities) do
@@ -138,8 +137,7 @@ end
 
 function unmark_all(entities)
 	local marks = {
-		["package"] = "treasure_unique",
-		["item"] = "item_misc",
+		item = "treasure_unique",
 	}
 	
 	for entity_name, entity in pairs(entities) do

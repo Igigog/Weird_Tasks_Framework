@@ -42,7 +42,7 @@ local function is_far(se_obj, sim, gg)
 	return not (is_online(se_obj, sim, gg) or is_nearby(se_obj, sim, gg))
 end
 
-local blacklist = igi_db.SectionView.new("blacklist.ltx", "maps"):as_set()
+local blacklist = igi_db.SectionView.new("map_config.ltx", "blacklist"):as_set()
 local function is_not_on_blacklisted_map(se_obj, sim, gg)
 	local object_lvl = igi_helper.get_object_level(se_obj, sim, gg)
 	return not blacklist[object_lvl]
@@ -292,13 +292,14 @@ function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
 	if with_ending and not only_ending then
 		igi_utils.extend_list(items_pool, self:get_items(typ))
 	end
-
+	printf("filter")
 	-- extend for new indexes
 	return igi_utils.extend_list({}, self:_filter_by_args(items_pool, args))
 end
 
 function Finder.get_items(self, typ, has_ending)
 	if not next(self.pure_objects) then self:_sort_objects() end
+	printf("sort works")
 	return has_ending and self.ending_objects[typ] or self.pure_objects[typ]
 end
 

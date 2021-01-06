@@ -12,6 +12,7 @@ function create_CACHE()
 		activities = {},
 		group_counter = {},
 	}
+	return tbl
 end
 
 function create_DescriptionData(faction, target, location)
@@ -46,11 +47,9 @@ end
 
 function create_GroupData(entity_data, target, amount)
 	assert(entity_data._cls == "EntityData", "Igi: setup: entity_data in not EntityData")
-
-	local default_target = igi_db.SectionView.new("defaults.ltx", "default_target")
 	
-	entity_data.target = target or default_target[entity_data.typ]
-	entity_data.amount = amount or 1
+	entity_data.target = target
+	entity_data.amount = amount
 
 	return entity_data
 end
@@ -60,7 +59,8 @@ function create_ItemData(ids, sec_name, location)
 		_cls = "EntityData",
 		ids = ids,
 		section_name = sec_name,
-		location = location,
+		where = location,
+		amount = amount,
 	}
 	return tbl
 end

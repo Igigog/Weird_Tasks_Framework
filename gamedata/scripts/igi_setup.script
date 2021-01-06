@@ -72,14 +72,6 @@ local function get_faction_setup()	-- TODO: implement factions
 	return faction_list
 end
 
-local function pick_quest_goods(quest_type)
-	if not quest_type then return end
-
-	local possible_goods = igi_db.SectionView.new("quest_goods.ltx", quest_type)
-	local goods_type = possible_goods:random()
-	return goods_type
-end
-
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 	local squad_name, squad_type, faction
@@ -145,7 +137,7 @@ local function fetch_item_description(objects, item_type)
 		targets[#targets+1] = parent_npc and parent_npc:character_name() or desc_target
 		locations[#locations+1] = igi_helper.get_object_location_description(se_obj)
 	end
-	return create_DescriptionData(factions, targets, locations)
+	return igi_models.create_DescriptionData(factions, targets, locations)
 end
 
 local function find_objects(object_data, amount)
@@ -155,7 +147,7 @@ local function find_objects(object_data, amount)
 		object_data, 
 		object_data.possible_endings, 
 		object_data.only_endings)
-
+	printf("finder not fucked up")
 	if not next(objects) then 
 		printf("Igi: no objects")
 		return nil 
@@ -178,6 +170,7 @@ local function create_item_data(item_info, factions)
 end
 
 local function fetch_item_data(item_info, factions)
+	printf("item start")
 	assert(item_info.item_type, "Igi: setup_item: No item list given")
 	item_info.enemy_to = factions[item_info.enemy_to] or item_info.enemy_to
 
@@ -188,7 +181,7 @@ local function fetch_item_data(item_info, factions)
 	for _, se_obj in pairs(objects) do
 		ids[#ids + 1] = se_obj.id
 	end
-
+	printf("item found (or not)")
 	local item_data = igi_models.create_ItemData(ids)
 	local description = fetch_item_description(objects, item_info.item_type)
 	local group_data = igi_models.create_GroupData(
@@ -248,20 +241,31 @@ local function setup_smart(smart_data)
 	return group_data
 end
 
-local function setup_item(item_data, factions)
-	local group_data, description
-	if item_data.to_create then
-		group_data, desc = create_item_data(item_data, factions)
-	else
-		group_data, description = fetch_item_data(item_data, factions)
-		if not group_data then return end
+local function setup_item(item_info, factions)
+	local item_data, description
+	printf("setup item")
+	for k, v in pairs(item_info) do
+		printf(tostring(k)..": "..tostring(v))
 	end
+	if item_info.to_create then
+		printf("lol??")
+		item_data, description = create_item_data(item_info, factions)
+	else
+		printf("fetch start")
+		item_data, description = fetch_item_data(item_info, factions)
+		if not item_data then return end
+	end
+	local group_data = igi_models.create_GroupData(
+		item_data,
+		item_info.target,
+		item_info.amount
+	)
 	return group_data, description
 end
 
 local function setup_group(entity, factions)
 	local handler = {
-		squad = setup_squad,,
+		squad = setup_squad,
 		item = setup_item,
 		smart = setup_smart,
 	}
@@ -292,13 +296,14 @@ local function setup_entities(CACHE, description)
 		description:add_entries(desc)
 		CACHE.setup[igi_linker.make_entity_link(group_preset)] = group_data
 	end
+	return true
 end
 
 function setup_quest(task_name)
-	local CACHE = setup_CACHE()
+	local CACHE = setup_CACHE(task_name)
 	local description = igi_description.TaskDescription.new()
 
-	setup_entities(CACHE, description)
+	if not setup_entities(CACHE, description) then return end
 	CACHE.description = description:get_description(CACHE)
 	return CACHE
 end

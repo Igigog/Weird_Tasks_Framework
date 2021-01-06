@@ -1,21 +1,27 @@
-[
-	{
-	"entity_type":"smart",
-	"where":"nearby",
+{
+	"preconditions": {
 	},
-	
-	{
-	"amount":2,
-	"faction_type":"enemy",
-	"entity_type":"squad",
-	"type":"guard",
-	"to_create":true,
-	},
-	
-	{
-	"amount":2,
-	"quest_type":"supply",
-	"target":"return",
-	"entity_type":"package",
-	}
-]
+	"disabled":false,
+	"setup": [
+		{
+		"entity_type":"smart",
+		"where":"nearby",
+		},
+		
+		{
+		"amount":2,
+		"faction_type":"enemy",
+		"entity_type":"squad",
+		"type":"guard",
+		"to_create":true,
+		},
+		
+		{
+		"entity_type":"item",
+		"amount":2,
+		"section":["igi_package_medicine", "igi_package_ammunition"],
+		"target":"return",
+		"to_create":true,
+		},
+	],
+}

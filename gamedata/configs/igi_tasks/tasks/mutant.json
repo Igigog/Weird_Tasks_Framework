@@ -1,8 +1,13 @@
-[
-	{
-	"entity_type":"squad",
-	"type":"mutant_scalable",
-	"to_create": true,
-	"where":"nearby",
-	}
-]
+{
+	"preconditions": {
+	},
+	"disabled":false,
+	"setup": [
+		{
+		"entity_type":"squad",
+		"type":"mutant_scalable",
+		"to_create": true,
+		"where":"nearby",
+		}
+	],
+}
