@@ -39,7 +39,7 @@ local function create_squad(group_data)
 		if group_data.items then
 			local commander = igi_helper.alife_obj(squad:commander_id())
 			for item, amount in pairs(items) do
-				alife():create(item, commander:position(), commander.m_level_vertex_id, commander.m_game_vertex_id, commander:id())
+				alife_create_item(item, commander)
 			end
 		end
 		add_entry(squads, group_data.entity_type, group_data.group_id, i, squad)
@@ -49,28 +49,33 @@ local function create_squad(group_data)
 	return squads
 end
 
-local function create_package(group_data)
-	local packages = {}
-	local smart_data = SIMBOARD.smarts_by_names[group_data.location]
-	local location = vector():set( --Make sure it don't fall under the ground
-		smart_data.position.x,
-		smart_data.position.y + 1,
-		smart_data.position.z)
-	for i=1, group_data.amount or 1 do
-		local se_obj = alife_create(group_data.section_name, location, smart_data.m_level_vertex_id, smart_data.m_game_vertex_id)
-		assert(se_obj, "Igi: impossible to create package: "..group_data.section_name.." at "..group_data.location)
-
-		add_entry(packages, group_data.entity_type, group_data.group_id, i, se_obj)
-	end
-	return packages
-end
-
-local function create_item(group_data)
+local function create_item(group_data)	-- REFACTOR
 	local items = {}
 	if group_data.ids then
 		for i, id in pairs(group_data.ids) do
 			local se_obj = igi_helper.alife_obj(id)
 			add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
+		end
+	else
+		if SIMBOARD.smarts_by_names[group_data.where] then
+			local smart = SIMBOARD.smarts_by_names[group_data.where]
+			local location = vector():set( --Make sure it don't fall under the ground
+				smart_data.position.x,
+				smart_data.position.y + 1,
+				smart_data.position.z
+			)
+			
+			for i=1, group_data.amount do
+				local se_obj = alife_create(group_data.section_name, location, 
+					smart_data.m_level_vertex_id, smart_data.m_game_vertex_id)
+				add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
+			end
+		else
+			local parent = igi_helper.alife_obj(group_data.where)
+			for i=1, group_data.amount do
+				local se_obj = alife_create_item(group_data.section_name, parent)
+				add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
+			end
 		end
 	end
 	return items
@@ -88,10 +93,9 @@ end
 
 function create_target(entities_setup, task_name)
 	local handlers = {
-		["package"] = create_package,
-		["squad"] = create_squad,
-		["item"] = create_item,
-		["smart"] = check_smart,
+		squad = create_squad,
+		item = create_item,
+		smart = check_smart,
 	}
 	local targets = {}
 	local order = igi_linker.get_order(task_name)

@@ -321,3 +321,4 @@ itms_manager.igi_use_package = function (obj)
 	end
 	utils_item.delay_event(content, {obj:id()}, "medkit_ai1", true, 5)
 end
+

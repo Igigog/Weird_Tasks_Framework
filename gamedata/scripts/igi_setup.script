@@ -114,7 +114,7 @@ local function fetch_squad_data(squad_info, factions)
 		factions = get_faction_enemies(factions.actor)
 	end
 	local squads = finder:get_squads_by_args(squad_info, factions)
-	local ids = igi_utils.get_random_items(squads, squad_info.amount or 1)
+	local ids = igi_utils.get_random_items(squads, squad_info.amount)
 	if not ids then return end
 
 	local location_desc = {}
@@ -161,13 +161,27 @@ local function find_objects(object_data, amount)
 		return nil 
 	end
 
-	return igi_utils.get_random_items(objects, object_data.amount or 1)
+	return igi_utils.get_random_items(objects, object_data.amount)
+end
+
+local function create_item_data(item_info, factions)
+	local section = item_info.section
+	if type(section) == "table" then
+		section = section[math.random(#section)]
+	end
+	assert(ini_sys:section_exist(section), "Igi: bad item section: "..section or "nil")
+	
+	local item_data = igi_models.create_ItemData(nil, section, item_info.amount)
+	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..section)
+	
+	return item_data, item_info.to_description and desc or nil
 end
 
 local function fetch_item_data(item_info, factions)
+	assert(item_info.item_type, "Igi: setup_item: No item list given")
 	item_info.enemy_to = factions[item_info.enemy_to] or item_info.enemy_to
 
-	local objects = find_objects(item_info, item_info.amount or 1)
+	local objects = find_objects(item_info, item_info.amount)
 	if not objects then return nil end
 	
 	local ids = {}
@@ -234,36 +248,10 @@ local function setup_smart(smart_data)
 	return group_data
 end
 
-local function setup_package(pkg_info, factions)
-	--printf("PACKAGE START")
-	local pkg_type = pkg_info.package_type or pick_quest_goods(pkg_info.quest_type)
-	
-	if not pkg_type then
-		printf("Igi: setup_package: No package type given")
-		return nil
-	end
-
-	local section_name = "igi_package_"..pkg_type
-	local amount = pkg_info.amount or ini_sys:r_float_ex(section_name, "default_amount_package")
-	
-	local pkg_data = create_PackageData(section_name, pkg_info.where)
-	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..pkg_type)
-	
-	local group_data = igi_models.create_GroupData(
-		pkg_data,
-		pkg_info.target,
-		amount
-	)
-	--printf("PACKAGE END")
-	return group_data, desc
-end
-
 local function setup_item(item_data, factions)
-	assert(item_data.item_type, "Igi: setup_item: No item list given")
-
 	local group_data, description
 	if item_data.to_create then
-		printf("TODO")		-- TODO
+		group_data, desc = create_item_data(item_data, factions)
 	else
 		group_data, description = fetch_item_data(item_data, factions)
 		if not group_data then return end
@@ -273,8 +261,7 @@ end
 
 local function setup_group(entity, factions)
 	local handler = {
-		squad = setup_squad,
-		package = setup_package,
+		squad = setup_squad,,
 		item = setup_item,
 		smart = setup_smart,
 	}

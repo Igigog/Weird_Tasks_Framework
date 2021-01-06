@@ -55,20 +55,12 @@ function create_GroupData(entity_data, target, amount)
 	return entity_data
 end
 
-function create_PackageData(sec_name, location)
-	local tbl = {
-		_cls = "EntityData",
-		typ = "package",
-		section_name = sec_name,
-		location = location,
-	}
-	return tbl
-end
-
-function create_ItemData(ids)
+function create_ItemData(ids, sec_name, location)
 	local tbl = {
 		_cls = "EntityData",
 		ids = ids,
+		section_name = sec_name,
+		location = location,
 	}
 	return tbl
 end

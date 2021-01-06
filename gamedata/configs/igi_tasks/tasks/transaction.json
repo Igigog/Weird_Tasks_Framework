@@ -1,6 +1,5 @@
 [
 	{
-	"amount":1,
 	"where":"nearby",
 	"entity_type":"smart"
 	},
@@ -24,9 +23,10 @@
 	},
 	
 	{
-	"entity_type":"package",
+	"entity_type":"item",
 	"amount":2,
-	"quest_type":"transaction",
-	"target":"return"
+	"section":["igi_package_weapon", "igi_package_artifact"],
+	"target":"return",
+	"to_create":true,
 	}
 ]
