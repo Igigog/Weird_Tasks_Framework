@@ -1,5 +1,3 @@
-local ENTITY_ORDER_CACHE = {}
-
 --------------------<Utility>--------------------
 function make_link(typ, group_id, obj_id)
 	if not typ or not group_id then
@@ -11,6 +9,10 @@ function make_link(typ, group_id, obj_id)
 	if obj_id then id = id.."_"..tostring(obj_id) end
 	id = id.."$"
 	return id
+end
+
+function make_entity_link(entity, obj_id)
+	return make_link(entity.entity_type, entity.group_id, obj_id)
 end
 
 local function is_dependency(str)
@@ -108,60 +110,6 @@ local function get_entity_links(task_table)
 	return tbl, counter
 end
 
-local function wrap_where(task_table)
-	local array_keys = {"where", "look_in"}
-	for _, entity in pairs(task_table) do
-		for _, k in pairs(array_keys) do
-			local val = entity[k]
-
-			if type(val) == "string" and not is_dependency(val) then
-				entity[k] = {entity[k]}
-			end
-		end
-	end
-end
-
-function setup_task_locations(task_table)	-- REFACTOR
-	local creatable_entities = {
-		["package"] = true,
-	}
-	
-	local where_conditions = {
-		['nearby'] = true,
-		['online'] = true,
-		['far'] = true,
-	}
-	local links, count_entities = get_entity_links(task_table)
-	count_entities.smart = count_entities.smart or 0
-	local new_smarts = {}
-	
-	for _, entity in pairs(task_table) do
-		if entity.to_create or creatable_entities[entity.entity_type] then
-			if entity.where == nil then
-				if not links["$smart_1_1$"] then
-					utils_data.print_table(task_table, "Igi: Task table sucked")
-					assert(nil, "IGI: task locations setup failed")
-				end
-
-				entity.where = "$smart_1_1$"
-
-			elseif type(entity.where) == "table" or where_conditions[entity.where] then
-				local smart = {
-					entity_type = "smart",
-					where = entity.where,
-				}
-
-				table.insert(new_smarts, smart)
-				count_entities["smart"] = count_entities["smart"] + 1
-				entity.where = "$smart_"..tostring(count_entities["smart"]).."_1$"
-			end
-		end
-	end
-	
-	igi_utils.extend_list(task_table, new_smarts)
-	wrap_where(task_table)
-end
-
 --------------------<Test dependencies>--------------------
 local function get_entities_test_order(entities)
 	entities = assign_group_id(entities)
@@ -213,14 +161,11 @@ end
 --------------------<Globals>--------------------
 function get_order(task_name)
 	local task_data = igi_db.get_task_data(task_name)
-	assert(task_data, "Igi: Linker: Task not found: "..task_name)
-	if not ENTITY_ORDER_CACHE[task_name] then
-		local constructor = {}
-		copy_table(constructor, task_data)
-		ENTITY_ORDER_CACHE[task_name] = assert(set_group_order(constructor))
-	end
-	return ENTITY_ORDER_CACHE[task_name]
+	local constructor = {}
+	copy_table(constructor, task_data)
+	return assert(set_group_order(constructor))
 end
+get_order = igi_utils.memoize_one_variable(get_order)
 
 function link(obj_tbl, entities)
 	for k, v in pairs(obj_tbl.as_table and obj_tbl:as_table() or obj_tbl) do

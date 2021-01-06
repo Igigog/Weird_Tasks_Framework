@@ -1,0 +1,84 @@
+function create_CACHE()
+	local tbl = {
+		setup = {},
+		task_name = "",
+		factions = {},
+		description = "",
+		objects = {},
+		subtasks = {
+			instant = {},
+			continuous = {},
+		},
+		activities = {},
+		group_counter = {},
+	}
+end
+
+function create_DescriptionData(faction, target, location)
+	local tbl = {
+		_cls = "DescriptionData",
+		factions = faction,
+		targets = target,
+		locations = location,
+	}
+	return tbl
+end
+
+function create_SquadsData(ids, name, faction, location)
+	local tbl = {
+		_cls = "EntityData",
+		typ = "squad",
+		ids = ids,
+		name = name,
+		faction = faction,
+		location = location,
+	}
+	return tbl
+end
+
+function create_SmartData(names)
+	local tbl = {
+		_cls = "EntityData",
+		names = names,
+	}
+	return tbl
+end
+
+function create_GroupData(entity_data, target, amount)
+	assert(entity_data._cls == "EntityData", "Igi: setup: entity_data in not EntityData")
+
+	local default_target = igi_db.SectionView.new("defaults.ltx", "default_target")
+	
+	entity_data.target = target or default_target[entity_data.typ]
+	entity_data.amount = amount or 1
+
+	return entity_data
+end
+
+function create_PackageData(sec_name, location)
+	local tbl = {
+		_cls = "EntityData",
+		typ = "package",
+		section_name = sec_name,
+		location = location,
+	}
+	return tbl
+end
+
+function create_ItemData(ids)
+	local tbl = {
+		_cls = "EntityData",
+		ids = ids,
+	}
+	return tbl
+end
+
+function create_smart_setup(where)
+	if type(where) == "string" then where = {where} end
+
+	local smart = {
+		entity_type = "smart",
+		where = where,
+	}
+	return smart
+end

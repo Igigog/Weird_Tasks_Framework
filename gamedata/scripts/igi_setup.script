@@ -15,38 +15,6 @@ function scale_value(str)
 end
 
 ------------------------------------------------
-local function check_smarts(smarts_table, --[[optional]] nearby_req, --[[optional]] online_req)
-	-- This function checks table of smarts for
-	-->	- availability
-	-->	- smart is not a base
-	--> - smart is not in blacklisted_maps
-	--> - (optional) online and on level of player (nearby)
-	-- and returns a table of suitable smarts
-	assert(type(smarts_table) == 'table', 'Igi: check_smarts: not a table given')
-	local return_list = {}
-	local blacklisted_maps = igi_db.SectionView.new("blacklist.ltx", "maps"):as_set()
-	
-	for smart_name, smart_data in pairs(smarts_table) do
-		if simulation_objects.available_by_id[smart_data.id] and	-- availability check
-				not simulation_objects.base_smarts[smart_name] then	-- base smart check
-			local smart_level = alife():level_name(game_graph():vertex(smart_data.m_game_vertex_id):level_id())
-			
-			
-			if not blacklisted_maps[smart_level] and not smart_data.squads then						-- blacklist check
-				local is_online = smart_data.online
-				local is_nearby = string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), smart_level)
-				
-				if (nearby_req == nil and online_req == nil) or		-- any OR
-						((nearby_req and online_req) and (is_online or is_nearby)) or	-- nearby + online OR
-						(not is_nearby == not nearby_req) and 		-- specified
-						(not is_online == not online_req) then		-- not is used to convert to boolean
-					return_list[#return_list + 1] = smart_name
-				end
-			end
-		end
-	end
-	return return_list
-end
 
 local function get_faction_enemies(faction, --[[optional]] monolith_included)
 	monolith_included = monolith_included or false
@@ -112,65 +80,6 @@ local function pick_quest_goods(quest_type)
 	return goods_type
 end
 
-local function create_DescriptionData(faction, target, location)
-	local tbl = {
-		_cls = "DescriptionData",
-		factions = faction,
-		targets = target,
-		locations = location,
-	}
-	return tbl
-end
-
-local function create_SquadsData(ids, name, faction, location)
-	local tbl = {
-		_cls = "EntityData",
-		typ = "squad",
-		ids = ids,
-		name = name,
-		faction = faction,
-		location = location,
-	}
-	return tbl
-end
-
-local function create_SmartData(names)
-	local tbl = {
-		_cls = "EntityData",
-		names = names,
-	}
-	return tbl
-end
-
-local function create_GroupData(entity_data, target, amount)
-	assert(entity_data._cls == "EntityData", "Igi: setup: entity_data in not EntityData")
-
-	local default_target = igi_db.SectionView.new("defaults.ltx", "default_target")
-	
-	entity_data.target = target or default_target[entity_data.typ]
-	entity_data.amount = amount or 1
-
-	return entity_data
-end
-
-local function create_PackageData(sec_name, location)
-	local tbl = {
-		_cls = "EntityData",
-		typ = "package",
-		section_name = sec_name,
-		location = location,
-	}
-	return tbl
-end
-
-local function create_ItemData(ids)
-	local tbl = {
-		_cls = "EntityData",
-		ids = ids,
-	}
-	return tbl
-end
-
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 	local squad_name, squad_type, faction
@@ -186,9 +95,9 @@ local function create_squad_data(squad_info, factions)
 	
 	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
 	-- set all default
-	local squad_data = create_SquadsData(nil, squad_name, faction or "mutant", squad_info.where)
+	local squad_data = igi_models.create_SquadsData(nil, squad_name, faction or "mutant", squad_info.where)
 	local target_desc = squad_type and igi_db.TEXT_HEADER .. squad_type or nil
-	local description = create_DescriptionData(faction, target_desc, squad_data.location)
+	local description = igi_models.create_DescriptionData(faction, target_desc, squad_data.location)
 
 	return squad_data, description
 end
@@ -217,8 +126,8 @@ local function fetch_squad_data(squad_info, factions)
 		location_desc[#location_desc+1] = dynamic_news_helper.GetPointDescription(se_obj)
 	end
 
-	local squad_data = create_SquadsData(ids, "predefined_squad")
-	local description = create_DescriptionData(nil, comm_desc, location_desc)
+	local squad_data = igi_models.create_SquadsData(ids, "predefined_squad")
+	local description = igi_models.create_DescriptionData(nil, comm_desc, location_desc)
 	return squad_data, description
 end
 
@@ -266,9 +175,9 @@ local function fetch_item_data(item_info, factions)
 		ids[#ids + 1] = se_obj.id
 	end
 
-	local item_data = create_ItemData(ids)
+	local item_data = igi_models.create_ItemData(ids)
 	local description = fetch_item_description(objects, item_info.item_type)
-	local group_data = create_GroupData(
+	local group_data = igi_models.create_GroupData(
 		item_data,
 		item_info.target,
 		item_info.amount
@@ -282,14 +191,6 @@ local function add_predefined_values(group_data, entity_preset)
 	group_data.online_activities = entity_preset.online_activities
 end
 ------------------------------------------------
-local function init_constructor(task_name)
-	local constructor = {}
-	local tbl = igi_db.get_task_data(task_name)
-	copy_table(constructor, tbl)
-	constructor = igi_helper.scale_to_rank(constructor)
-	constructor = igi_linker.assign_group_id(constructor)
-	return constructor
-end
 
 local function setup_squad(squad_info, factions)
 	local squad_data, description
@@ -300,7 +201,7 @@ local function setup_squad(squad_info, factions)
 		if not squad_data then return end
 	end
 	
-	local group_data = create_GroupData(	-- set defaults
+	local group_data = igi_models.create_GroupData(	-- set defaults
 		squad_data, 
 		squad_info.target,
 		squad_info.amount
@@ -324,8 +225,8 @@ local function setup_smart(smart_data)
 		table.insert(smart_names, smart_data.smrt:name())
 	end
 
-	local group_data = create_GroupData(
-		create_SmartData(smart_names),
+	local group_data = igi_models.create_GroupData(
+		igi_models.create_SmartData(smart_names),
 		smart_data.target,
 		smart_data.amount
 	)
@@ -346,9 +247,9 @@ local function setup_package(pkg_info, factions)
 	local amount = pkg_info.amount or ini_sys:r_float_ex(section_name, "default_amount_package")
 	
 	local pkg_data = create_PackageData(section_name, pkg_info.where)
-	local desc = create_DescriptionData(nil, igi_db.TEXT_HEADER..pkg_type)
+	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..pkg_type)
 	
-	local group_data = create_GroupData(
+	local group_data = igi_models.create_GroupData(
 		pkg_data,
 		pkg_info.target,
 		amount
@@ -370,31 +271,47 @@ local function setup_item(item_data, factions)
 	return group_data, description
 end
 
-function setup_quest(task_name)
-	local constructor = init_constructor(task_name)
-	CACHE = {["setup"] = {},}
+local function setup_group(entity, factions)
+	local handler = {
+		squad = setup_squad,
+		package = setup_package,
+		item = setup_item,
+		smart = setup_smart,
+	}
+	local setup_func = assert(handler[entity.entity_type], 
+		"Unknown entity type: "..(entity.entity_type or "nil"))
+	
+	local group_data, desc = setup_func(entity, factions)
+	if not group_data then return end
+	
+	add_predefined_values(group_data, entity)
+	return group_data, desc
+end
+
+local function setup_CACHE(task_name)
+	local CACHE = igi_models.create_CACHE()
 	CACHE.task_name = task_name
 	CACHE.factions = get_faction_setup()
-	local description = igi_description.TaskDescription.new()
-	
-	local handlers = {
-		["squad"] = setup_squad,
-		["package"] = setup_package,
-		["item"] = setup_item,
-		["smart"] = setup_smart,
-	}
-	
-	for _, entity_preset in pairs(constructor) do
-		assert(handlers[entity_preset.entity_type], "Unknown entity_preset type: "..entity_preset.entity_type)
-		local group_data, desc = handlers[entity_preset.entity_type](entity_preset, CACHE.factions)
-		if not group_data then return nil end
-		
-		add_predefined_values(group_data, entity_preset)
-		description:add_entries(desc)
+	return CACHE
+end
 
-		local group_link = igi_linker.make_link(entity_preset.entity_type, entity_preset.group_id)
-		CACHE.setup[group_link] = group_data
+local function setup_entities(CACHE, description)
+	local task_data = igi_taskdata.construct_task(CACHE.task_name)
+	
+	for _, group_preset in pairs(task_data) do
+		local group_data, desc = setup_group(group_preset, CACHE.factions)
+		if not group_data then return nil end
+
+		description:add_entries(desc)
+		CACHE.setup[igi_linker.make_entity_link(group_preset)] = group_data
 	end
+end
+
+function setup_quest(task_name)
+	local CACHE = setup_CACHE()
+	local description = igi_description.TaskDescription.new()
+
+	setup_entities(CACHE, description)
 	CACHE.description = description:get_description(CACHE)
 	return CACHE
 end

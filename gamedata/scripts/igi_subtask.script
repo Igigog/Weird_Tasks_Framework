@@ -18,6 +18,7 @@ local function get_instant_functors(subtask_name)
 	local instant_objective = {
 		["kill"] = {is_complete = igi_helper.object_not_exist},
 		["get"] = {is_complete = igi_helper.object_in_player_inv},
+		["assault"] = {is_complete = igi_helper.smart_cleared},
 	}
 	return instant_objective[subtask_name]
 end

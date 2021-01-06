@@ -1,4 +1,19 @@
-[default_target]
-squad					= kill
-package					= return
-item					= fetch
+[defaults_squad]
+target					= assault
+where					= nearby
+amount					= 1
+
+[defaults_item]
+target					= return
+to_create				= true
+where					= $smart_1_1$
+amount					= 1
+
+[defaults_package]
+target					= return
+amount					= 2
+quest_type				= *task_name*
+
+[defaults_smart]
+amount					= 1
+where					= nearby
