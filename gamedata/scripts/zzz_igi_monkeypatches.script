@@ -4,8 +4,10 @@ local old_get_task_complete_text = axr_task_manager.get_task_complete_text
 function axr_task_manager.get_task_complete_text(task_id)
 	local task_complete_descr = old_get_task_complete_text(task_id)
 
-	if task_complete_descr:find(igi_db.TEXT_HEADER) then
-		task_complete_descr = get_task_text(task_id, "finish")
+	if task_complete_descr then
+		if task_complete_descr:find(igi_db.TEXT_HEADER) then
+			task_complete_descr = get_task_text(task_id, "finish")
+		end
 	end
 	return task_complete_descr
 end
@@ -14,8 +16,10 @@ local old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
 	local job_descr = old_get_task_job_description(task_id)
 
-	if job_descr:find(igi_db.TEXT_HEADER) then
-		job_descr = get_task_text(task_id, "job_descr")
+	if job_descr then
+		if job_descr:find(igi_db.TEXT_HEADER) then
+			job_descr = get_task_text(task_id, "job_descr")
+		end
 	end
 	return job_descr
 end
@@ -24,9 +28,11 @@ local old_text_npc_has_task = dialogs.text_npc_has_task
 function dialogs.text_npc_has_task(a,b)
 	local text = old_text_npc_has_task(a, b)
 	
-	if text:find(igi_db.TEXT_HEADER) then
-		local task_id = text:match("(.*)_job_descr")
-		text = get_task_text(task_id, "job_descr")
+	if text then
+		if text:find(igi_db.TEXT_HEADER) then
+			local task_id = text:match("(.*)_job_descr")
+			text = get_task_text(task_id, "job_descr")
+		end
 	end
 	return text
 end
