@@ -170,7 +170,9 @@ get_order = igi_utils.memoize_one_variable(get_order)
 function link(obj_tbl, entities)
 	for k, v in pairs(obj_tbl.as_table and obj_tbl:as_table() or obj_tbl) do
 		if type(v) == "string" and is_dependency(v) then
-			obj_tbl[k] = entities[v].id or entities[v].smart_name
+			if not string.find(k, "link") then
+				obj_tbl[k] = entities[v].id
+			end
 		elseif type(v) == "table" then
 			obj_tbl[k] = link(v, entities)
 		end

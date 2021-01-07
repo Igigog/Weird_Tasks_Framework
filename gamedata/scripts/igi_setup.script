@@ -89,7 +89,7 @@ local function create_squad_data(squad_info, factions)
 	-- set all default
 	local squad_data = igi_models.create_SquadsData(nil, squad_name, faction or "mutant", squad_info.where)
 	local target_desc = squad_type and igi_db.TEXT_HEADER .. squad_type or nil
-	local description = igi_models.create_DescriptionData(faction, target_desc, squad_data.location)
+	local description = igi_models.create_DescriptionData(faction, target_desc, squad_data.where)
 
 	return squad_data, description
 end
@@ -147,7 +147,7 @@ local function find_objects(object_data, amount)
 		object_data, 
 		object_data.possible_endings, 
 		object_data.only_endings)
-	printf("finder not fucked up")
+
 	if not next(objects) then 
 		printf("Igi: no objects")
 		return nil 
@@ -163,14 +163,13 @@ local function create_item_data(item_info, factions)
 	end
 	assert(ini_sys:section_exist(section), "Igi: bad item section: "..section or "nil")
 	
-	local item_data = igi_models.create_ItemData(nil, section, item_info.amount)
+	local item_data = igi_models.create_ItemData(nil, section, item_info.where)
 	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..section)
 	
 	return item_data, item_info.to_description and desc or nil
 end
 
 local function fetch_item_data(item_info, factions)
-	printf("item start")
 	assert(item_info.item_type, "Igi: setup_item: No item list given")
 	item_info.enemy_to = factions[item_info.enemy_to] or item_info.enemy_to
 
@@ -181,7 +180,7 @@ local function fetch_item_data(item_info, factions)
 	for _, se_obj in pairs(objects) do
 		ids[#ids + 1] = se_obj.id
 	end
-	printf("item found (or not)")
+
 	local item_data = igi_models.create_ItemData(ids)
 	local description = fetch_item_description(objects, item_info.item_type)
 	local group_data = igi_models.create_GroupData(
@@ -243,18 +242,14 @@ end
 
 local function setup_item(item_info, factions)
 	local item_data, description
-	printf("setup item")
-	for k, v in pairs(item_info) do
-		printf(tostring(k)..": "..tostring(v))
-	end
+
 	if item_info.to_create then
-		printf("lol??")
 		item_data, description = create_item_data(item_info, factions)
 	else
-		printf("fetch start")
 		item_data, description = fetch_item_data(item_info, factions)
 		if not item_data then return end
 	end
+
 	local group_data = igi_models.create_GroupData(
 		item_data,
 		item_info.target,

@@ -32,7 +32,8 @@ function create_SquadsData(ids, name, faction, location)
 		ids = ids,
 		name = name,
 		faction = faction,
-		location = location,
+		where = location,
+		where_link = location,
 	}
 	return tbl
 end

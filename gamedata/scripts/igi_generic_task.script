@@ -37,7 +37,7 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	local task_data = igi_taskdata.get_task_data(task_name)
 	if task_data.disabled then return false end
 	if not igi_precondition.check(task_data.preconditions) then return false end
-	printf("conditions done")
+
 	TASKS_CACHE[task_id] = TASKS_CACHE[task_id] or igi_setup.setup_quest(task_name)
 	return TASKS_CACHE[task_id] and true or false
 end
@@ -66,7 +66,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
-		--utils_data.print_table(CACHE, "CACHE after")
+		utils_data.print_table(CACHE, "CACHE after")
 	end
 	
 	-- Timer for less pressure (totally stolen from tasks_assault.script)
@@ -117,6 +117,12 @@ task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 	if not CACHE then return end
 
 	local target_id = igi_subtask.quest_target(CACHE.subtasks)
+	if target_id then
+	local se_obj = igi_helper.alife_obj(target_id)
+	if se_obj then
+		local sec = se_obj and se_obj:section_name() or "nil"
+		printf("target "..tostring(target_id).." is "..sec)
+	end end
 	return target_id or (tsk.stage ~= 0 and tsk.task_giver_id) 	-- target_id or task_giver_id
 end
 --< Text >--------------------------------------------------

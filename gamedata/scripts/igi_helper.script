@@ -67,16 +67,6 @@ function check_common_npc(id)
 	return true
 end
 
-function get_community(character)
-	if not character then return nil end
-	
-	if character == db.actor then
-		return character_community(character)
-	else
-		return alife_character_community(character)
-	end
-end
-
 function object_in_world(se_obj)
 	return se_obj and se_obj.parent_id == 65535
 end
@@ -269,4 +259,67 @@ itms_manager.igi_use_package = function (obj)
 	end
 	utils_item.delay_event(content, {obj:id()}, "medkit_ai1", true, 5)
 end
+
+local function is_legit_squad(squad)
+	local section = squad and squad:section_name()
+	return squad and (not section:find("tushkano")) and (not section:find("rat"))
+end
+
+local function is_squad_at_smart(squad, smart)
+	local scripted_target = squad:get_script_target()
+	
+	if scripted_target then 
+		return scripted_target == smart.id
+	else
+		if squad.current_target_id ~= smart.id then
+			return false
+		end
+	
+		if squad.current_action ~= 1 then
+			return false
+		end
+	
+		if not is_legit_squad(squad) then
+			return false
+		end	
+	end
+	
+	return true
+end
+
+function is_smart_cleared(smart_entity)
+	local smart_data = SIMBOARD.smarts[smart_entity.id]
+	local cleared = true
+	for sq_id, _ in pairs(smart_data.squads) do
+		local squad = alife_obj(sq_id)
+		if squad and simulation_objects.is_on_the_same_level(squad, smart_data.smrt) then
+			if not ( squad.first_update ) then
+				--printf("~ %s | not all squads are loaded yet!", task_id)
+				cleared = false
+				break
+			end
+
+			if is_squad_at_smart(squad, smart_data.smrt) then
+				-- reset gametime so they don't leave
+				squad.stay_time = game.get_game_time() 
+				squad.force_online = true
+				--printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
+				cleared = false
+			end
+		end
+	end
+	return cleared
+end
+
+
+
+
+
+
+
+
+
+
+
+
 

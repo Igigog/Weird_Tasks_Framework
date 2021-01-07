@@ -1,6 +1,5 @@
 -- Object finder functions
 
-local get_community = igi_helper.get_community
 local alife_obj = igi_helper.alife_obj
 
 local function object_in_world(se_obj)
@@ -80,13 +79,13 @@ local function where_handler(se_obj, args, sim, gg)
 	return false
 end
 
-local function enemy_to_handler(se_obj, args)
+local function enemy_to_handler(se_obj, args, sim)
 	if se_obj.parent_id ~= 65535 then
 		-- 65535 is world id
 		-- I don't check for common npc, but it will be checked anyway in check_object_by_args
 
-		local my_faction = get_community(args.enemy_to or db.actor)
-		local npc_faction = get_community(alife_obj(se_obj.parent_id))
+		local my_faction = get_object_community(args.enemy_to or db.actor)
+		local npc_faction = get_object_community(sim:object(se_obj.parent_id))
 
 		return game_relations.is_factions_enemies(my_faction, npc_faction) and not npc_faction == "monolith"
 	end
@@ -181,6 +180,7 @@ end
 local function clear_cache()
 	Finder.pure_objects = {}
 	Finder.ending_objects = {}
+	return true
 end
 
 function Finder._sort_smarts(self)
@@ -309,8 +309,8 @@ function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 	
 	-- make priority? Nah, no biggie
 	local arg_handler = {
-		enemy_to = enemy_to_handler,
-		where = where_handler
+		only_enemies = enemy_to_handler,
+		where = where_handler,
 	}
 	
 	-- priority for parent bcs there's main filtering and it's cheap for world objects

@@ -32,7 +32,8 @@ local function create_squad(group_data)
 		return squads
 	end
 	for i=1, group_data.amount or 1 do
-		local squad = utils_obj.create_squad(group_data.name, group_data.location)
+		local smart_name = SIMBOARD.smarts[group_data.where].smrt:name()
+		local squad = utils_obj.create_squad(group_data.name, smart_name)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 
@@ -60,17 +61,17 @@ local function create_item(group_data)	-- REFACTOR
 			add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
 		end
 	else
-		if SIMBOARD.smarts_by_names[group_data.where] then
-			local smart = SIMBOARD.smarts_by_names[group_data.where]
+		if SIMBOARD.smarts[group_data.where] then
+			local smart = SIMBOARD.smarts[group_data.where].smrt
 			local location = vector():set( --Make sure it don't fall under the ground
-				smart_data.position.x,
-				smart_data.position.y + 1,
-				smart_data.position.z
+				smart.position.x,
+				smart.position.y + 1,
+				smart.position.z
 			)
 			
 			for i=1, group_data.amount do
 				local se_obj = alife_create(group_data.section_name, location, 
-					smart_data.m_level_vertex_id, smart_data.m_game_vertex_id)
+					smart.m_level_vertex_id, smart.m_game_vertex_id)
 				add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
 			end
 		else
@@ -87,7 +88,11 @@ end
 local function check_smart(group_data)
 	smarts = {}
 	for i, smart_name in pairs(group_data.names) do
-		local smart_data = {['smart_name'] = smart_name}
+		local smart_id = SIMBOARD.smarts_by_names[smart_name].id
+		local smart_data = {
+			smart_name = smart_name,
+			id = smart_id,
+		}
 		xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
 		smarts[igi_linker.make_link("smart", group_data.group_id, i)] = smart_data
 	end
@@ -95,6 +100,7 @@ local function check_smart(group_data)
 end
 
 function create_target(entities_setup, task_name)
+	utils_data.print_table(entities_setup, "entities")
 	local handlers = {
 		squad = create_squad,
 		item = create_item,
@@ -113,11 +119,12 @@ function create_target(entities_setup, task_name)
 		local group_data = handler(entity_setup)
 
 		for link, target in pairs(group_data) do
+			target.where_link = entity_setup.where_link
 			target.target = entity_setup.target
 			target.online_activities = entity_setup.online_activities
 			targets[link] = target
 		end
 	end
-
+	utils_data.print_table(targets, "targets")
 	return targets
 end

@@ -18,7 +18,7 @@ local function get_instant_functors(subtask_name)
 	local instant_objective = {
 		["kill"] = {is_complete = igi_helper.object_not_exist},
 		["get"] = {is_complete = igi_helper.object_in_player_inv},
-		["assault"] = {is_complete = igi_helper.smart_cleared},
+		["assault"] = {is_complete = igi_helper.is_smart_cleared},
 	}
 	return instant_objective[subtask_name]
 end
@@ -32,10 +32,13 @@ function process_instant_subtasks(subtasks)
 			subtasks.instant[k] = nil
 			return
 		end
-		-- Check if object still exists
-		local se_obj = igi_helper.alife_obj(subtask_data.id)
-		if not se_obj then return "fail" end
-		if se_obj:section_name() ~= subtask_data.section_name then return "fail" end
+
+		if not k:find("smart") then
+			-- Check if object still exists
+			local se_obj = igi_helper.alife_obj(subtask_data.id)
+			if not se_obj then return "fail" end
+			if se_obj:section_name() ~= subtask_data.section_name then return "fail" end
+		end
 	end
 end
 
@@ -79,6 +82,42 @@ function finish_continuous_subtasks(subtasks_continuous, is_complete)
 	end
 	--printf("Igi: finish end")
 end
+
+local function prepare_targets(targets)		-- REFACTOR
+	local new_targets = {}
+	local old_smarts = {}
+	for k, v in pairs(targets) do
+		if v.target == "assault" then
+			local smart_entity
+			if not v.where_link then
+				local se_obj = igi_helper.alife_obj(v.id)
+				local smart = SIMBOARD.smarts[se_obj.current_target_id].smrt
+				local smart_counter = 0
+				for k, _ in pairs(targets) do
+					if k:find("smart") then
+						smart_counter = smart_counter + 1
+					end
+				end
+				smart_counter = smart_counter + #new_targets
+				smart_entity = {['id'] = smart.id}
+				local link = igi_linker.make_link("smart", smart_counter + 1, 1)
+				new_targets[link] = smart_entity
+			else
+				table.insert(old_smarts, targets[v.where_link])
+			end
+			v.target = nil
+		end
+	end
+	
+	for _, v in pairs(old_smarts) do
+		v.target = "assault"
+	end
+	
+	for k,v in pairs(new_targets) do
+		targets[k] = v
+		v.target = "assault"
+	end
+end
 ---------------------------------------------------
 function quest_target(subtasks)
 	if not subtasks or not (subtasks.instant and subtasks.continuous) then
@@ -97,13 +136,16 @@ function quest_target(subtasks)
 end
 ---------------------------------------------------
 function setup_subtask(targets)
+	prepare_targets(targets)
 	local subtasks = {
 		instant = {},
 		continuous = {},
 	}
 	for id, entity in pairs(targets) do
-		table.insert(subtasks.instant, get_instant_functors(entity.target) and entity or nil)
-		table.insert(subtasks.continuous, get_continuous_functors(entity.target) and entity or nil)
+		local inst_target = get_instant_functors(entity.target) and entity
+		local cont_target = get_continuous_functors(entity.target) and entity
+		subtasks.instant[id] = inst_target or nil
+		subtasks.continuous[id] = cont_target or nil
 	end
 
 	return subtasks

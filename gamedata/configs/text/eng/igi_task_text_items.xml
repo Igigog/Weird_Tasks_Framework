@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<!-- Package -->
+	<string id="igi_task_text_pda_package">
+		<text>This package may contain valuable stuff. I am curious to know what is inside.</text>
+	</string>
+	<string id="igi_task_text_igi_package_artifact">
+		<text>Artifact</text>
+	</string>
+	<string id="igi_task_text_igi_package_weapon">
+		<text>Weapon</text>
+	</string>
+	<string id="igi_task_text_igi_package_medicine">
+		<text>Medicine</text>
+	</string>
+	<string id="igi_task_text_igi_package_ammunition">
+		<text>Ammunition</text>
+	</string>
+	
+</string_table>
