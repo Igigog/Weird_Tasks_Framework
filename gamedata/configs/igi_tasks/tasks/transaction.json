@@ -5,7 +5,8 @@
 	"setup": [
 		{
 		"where":"nearby",
-		"entity_type":"smart"
+		"entity_type":"smart",
+		"target":"assault",
 		},
 		
 		{
@@ -17,6 +18,7 @@
 		"type":"guard",
 		"entity_type":"squad",
 		"to_create":true,
+		"where":"$smart_1_1$",
 		},
 		
 		{
@@ -24,6 +26,7 @@
 		"type":"guard",
 		"entity_type":"squad",
 		"to_create":true,
+		"where":"$smart_1_1$",
 		},
 		
 		{
@@ -32,6 +35,8 @@
 		"section":["igi_package_weapon", "igi_package_artifact"],
 		"target":"return",
 		"to_create":true,
+		"where":"$smart_1_1$",
+		"to_description":true,
 		},
 	],
 }

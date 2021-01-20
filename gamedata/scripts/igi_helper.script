@@ -6,7 +6,7 @@ function alife_obj(id)
 	id = tonumber(id)
 	if not id then
 		callstack()
-		assert(nil, "Don't look at me, senpai >//////<\n"..tostring(id))
+		assert(nil, "Don't look at me, senpai >//////<\n")
 	end
 	return alife_object(id)
 end
@@ -15,7 +15,7 @@ function level_object(id)
 	id = tonumber(id)
 	if not id then
 		callstack()
-		assert(nil, "Don't look at me, senpai >//////<\n"..tostring(id))
+		assert(nil, "Don't look at me, senpai >//////<\n")
 	end
 	return level.object_by_id(id)
 end
@@ -116,6 +116,21 @@ function change_goodwill(faction, task_name, task_successful)
 	xr_effects.complete_task_inc_goodwill(a, b, {value, faction})
 end
 
+function get_faction_enemies(faction, --[[optional]] monolith_included)
+	monolith_included = monolith_included or false
+	local enemies_set = {}
+	factions = igi_db.SectionView.new('squad_base.ltx', 'guard')
+	
+	for enemy_faction in pairs(factions:as_table()) do
+		if (game_relations.is_factions_enemies(faction, enemy_faction)) then
+			if (enemy_faction ~= "monolith" or monolith_included) then
+				enemies_set[enemy_faction] = true
+			end
+		end
+	end
+	return enemies_set
+end
+
 function release_squad(squad_data)
 	if not (squad_data.id) then printf("GhenTuong: no squad_data.id") return end
 	if not (squad_data.section_name) then printf("GhenTuong: no squad_data.section_name") return end
@@ -208,11 +223,32 @@ end
 function deliver_item(obj_data)
 	local npc = mob_trade.GetTalkingNpc()
 	if npc then
-		local obj = igi_helper.level_object(obj_data.id)
-		db.actor:transfer_item(obj, npc)
-		news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
-	else
-		alife_release_id(obj_data.id)
+		if obj_data.id then
+			local obj = igi_helper.level_object(obj_data.id)
+			db.actor:transfer_item(obj, npc)
+			news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
+		else
+			local section = obj_data.section_name
+			if (section and db.actor:object(section)) then
+				local amt = obj_data.how_much or 1
+				local trade_npc = get_speaker()
+				if (trade_npc) then 
+					local function transfer_object_item(itm)
+						if (itm:section() == section and amt > 0) then
+							db.actor:transfer_item(itm, trade_npc)
+							amt = amt - 1
+						end
+						if (amt <= 0) then 
+							return true
+						end
+						return false
+					end
+					db.actor:inventory_for_each(transfer_object_item)
+				else
+					xr_effects.remove_item(actor, npc, {section,amt})	
+				end
+			end
+		end
 	end
 end
 
@@ -311,7 +347,23 @@ function is_smart_cleared(smart_entity)
 	return cleared
 end
 
+function objects_fetched(obj_data)
+	for k,v in pairs(obj_data) do
+		printf(tostring(k)..": "..tostring(v))
+	end
 
+	local section = obj_data.section_name
+	local item = section and db.actor:object(section)
+	if item then
+		return utils_item.get_amount(db.actor, section, 1) >= obj_data.how_much
+	elseif section and string.find(section, "af_") then
+		return actor:object(section .. "_af_aam")
+		or actor:object(section .. "_af_iam")
+		or actor:object(section .. "_af_aac")
+		or actor:object(section .. "_lead_box")
+	end
+	return false
+end
 
 
 

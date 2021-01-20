@@ -15,6 +15,7 @@
 	"item_type":"weapon_scalable",
 	"entity_type":"item",
 	"where":"nearby",
+	"amount":1,
 	},
 
 	],

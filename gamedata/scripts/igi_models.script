@@ -1,3 +1,5 @@
+-- DELETE etu huinyu nahui
+
 function create_CACHE()
 	local tbl = {
 		setup = {},
@@ -55,13 +57,14 @@ function create_GroupData(entity_data, target, amount)
 	return entity_data
 end
 
-function create_ItemData(ids, sec_name, location)
+function create_ItemData(ids, sec_name, location, how_much)
 	local tbl = {
 		_cls = "EntityData",
 		ids = ids,
 		section_name = sec_name,
 		where = location,
 		amount = amount,
+		how_much = how_much,
 	}
 	return tbl
 end

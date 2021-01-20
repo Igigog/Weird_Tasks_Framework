@@ -1,0 +1,96 @@
+TYP = igi_subtask.TARGET_TYPES.INSTANT
+TARGET_NAME = "assault"
+PATTERN = "basic"
+
+local function is_legit_squad(squad)
+	local section = squad and squad:section_name()
+	return squad and (not section:find("tushkano")) and (not section:find("rat"))
+end
+
+local function is_squad_at_smart(squad, smart)
+	local scripted_target = squad:get_script_target()
+	
+	if scripted_target then 
+		return scripted_target == smart.id
+	else
+		if squad.current_target_id ~= smart.id then
+			return false
+		end
+	
+		if squad.current_action ~= 1 then
+			return false
+		end
+	
+		if not is_legit_squad(squad) then
+			return false
+		end	
+	end
+	
+	return true
+end
+
+function is_complete(obj_data)
+	assert(SIMBOARD.smarts[obj_data.id], "Igi_tasks: assault but not smart")
+	
+	local smart_data = SIMBOARD.smarts[obj_data.id]
+	local cleared = true
+	for sq_id, _ in pairs(smart_data.squads) do
+		local squad = igi_helper.alife_obj(sq_id)
+		if squad and simulation_objects.is_on_the_same_level(squad, smart_data.smrt) then
+			if not ( squad.first_update ) then
+				--printf("~ %s | not all squads are loaded yet!", task_id)
+				cleared = false
+				break
+			end
+
+			if is_squad_at_smart(squad, smart_data.smrt) then
+				-- reset gametime so they don't leave
+				squad.stay_time = game.get_game_time() 
+				squad.force_online = true
+				--printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
+				cleared = false
+			end
+		end
+	end
+	return cleared
+end
+
+function on_after_target_creation(CACHE)
+	-- if find squad: add smart entity squad is on, 
+	-- assault smart instead of squad
+	-- may produce copies of existing smarts, but that's okay
+	local new_targets = {}
+	local old_smarts = {}
+	local targets = CACHE.target
+	for k, v in pairs(targets) do
+		if v.target == "assault" and not string.find(k, "smart") then
+			local smart_entity
+			if not v.where_link then
+				local se_obj = igi_helper.alife_obj(v.id)
+				local smart = SIMBOARD.smarts[se_obj.current_target_id].smrt
+				local smart_counter = 0
+				for k, _ in pairs(targets) do
+					if k:find("smart") then
+						smart_counter = smart_counter + 1
+					end
+				end
+				smart_counter = smart_counter + #new_targets
+				smart_entity = {['id'] = smart.id}
+				local link = igi_linker.make_link("smart", smart_counter + 1, 1)
+				new_targets[link] = smart_entity
+			else
+				table.insert(old_smarts, targets[v.where_link])
+			end
+			v.target = nil
+		end
+	end
+	
+	for _, v in pairs(old_smarts) do
+		v.target = "assault"
+	end
+	
+	for k,v in pairs(new_targets) do
+		targets[k] = v
+		v.target = "assault"
+	end
+end

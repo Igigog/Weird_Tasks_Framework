@@ -1,34 +1,7 @@
-function get_player_tier()
-	local player_rank = db.actor:character_rank()
-	local tiers = igi_db.SectionView.new("tiers.ltx", "player_tiers")
-	for tier, bounds in pairs(tiers:as_table()) do
-		if player_rank >= bounds[1] and player_rank <= bounds[2] then
-			return tier
-		end
+local function add_predefined_values(group_data, entity_preset)
+	for k,v in pairs(entity_preset) do
+		group_data[k] = group_data[k] or entity_preset[k]
 	end
-	return "endgame"
-end
-
-function scale_value(str)
-	local player_tier = igi_helper.get_player_tier()
-	return string.gsub(str, "scalable", player_tier)
-end
-
-------------------------------------------------
-
-local function get_faction_enemies(faction, --[[optional]] monolith_included)
-	monolith_included = monolith_included or false
-	local enemies_set = {}
-	factions = igi_db.SectionView.new('squad_base.ltx', 'guard')
-	
-	for enemy_faction in pairs(factions:as_table()) do
-		if (game_relations.is_factions_enemies(faction, enemy_faction)) then
-			if (enemy_faction ~= "monolith" or monolith_included) then
-				enemies_set[enemy_faction] = true
-			end
-		end
-	end
-	return enemies_set
 end
 
 local function get_faction_setup()	-- TODO: implement factions
@@ -46,8 +19,8 @@ local function get_faction_setup()	-- TODO: implement factions
 	faction_list.task_giver = character_community(task_giver)
 	faction_list.actor = character_community(db.actor)
 	
-	local player_enemies = get_faction_enemies(faction_list.actor)
-	local task_giver_enemies = get_faction_enemies(faction_list.task_giver)
+	local player_enemies = igi_helper.get_faction_enemies(faction_list.actor)
+	local task_giver_enemies = igi_helper.get_faction_enemies(faction_list.task_giver)
 	
 	-- set enemy - must be enemy for both player and task giver
 	tmp_enemies = {}	
@@ -60,7 +33,7 @@ local function get_faction_setup()	-- TODO: implement factions
 	faction_list["enemy"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
 	
 	-- set client - must be enemy for enemy and not enemy with task giver; can be player's faction
-	local enemy_enemies = get_faction_enemies(faction_list["enemy"])
+	local enemy_enemies = igi_helper.get_faction_enemies(faction_list["enemy"])
 	tmp_enemies = {}
 	for faction in pairs(enemy_enemies) do
 		if(faction ~= faction_list["task_giver"] and task_giver_enemies[faction] == nil) then
@@ -71,205 +44,13 @@ local function get_faction_setup()	-- TODO: implement factions
 	faction_list["client"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
 	return faction_list
 end
-
-local function create_squad_data(squad_info, factions)
-	-- important: location, name, faction, description, target, amount
-	local squad_name, squad_type, faction
-	local squads = assert(igi_db.SectionView.new("squad_base.ltx", squad_info.type),
-		"Igi: setup squad: Unknown squad type")
-	if string.find(squad_info.type, "mutant") then
-		squad_name, squad_type = squads:random()
-	else
-		assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
-		faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
-		squad_name = squads[faction]
-	end
-	
-	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
-	-- set all default
-	local squad_data = igi_models.create_SquadsData(nil, squad_name, faction or "mutant", squad_info.where)
-	local target_desc = squad_type and igi_db.TEXT_HEADER .. squad_type or nil
-	local description = igi_models.create_DescriptionData(faction, target_desc, squad_data.where)
-
-	return squad_data, description
-end
-
-local function fetch_squad_data(squad_info, factions)
-	-- important: ids, predefined name, description, target
-	local finder = igi_finder.get_finder()
-	local factions
-	if squad_info.type == "mutant" then
-		factions = igi_db.SectionView.new(
-				"finder\\squad_types.ltx", "monster_types"
-				):as_set()
-	else
-		factions = get_faction_enemies(factions.actor)
-	end
-	local squads = finder:get_squads_by_args(squad_info, factions)
-	local ids = igi_utils.get_random_items(squads, squad_info.amount)
-	if not ids then return end
-
-	local location_desc = {}
-	local comm_desc = {}
-	for _, id in pairs(ids) do
-		local se_obj = igi_helper.alife_obj(id)
-		local community = game.translate_string(se_obj.player_id)
-		comm_desc[#comm_desc+1] = community
-		location_desc[#location_desc+1] = dynamic_news_helper.GetPointDescription(se_obj)
-	end
-
-	local squad_data = igi_models.create_SquadsData(ids, "predefined_squad")
-	local description = igi_models.create_DescriptionData(nil, comm_desc, location_desc)
-	return squad_data, description
-end
-
-local function fetch_item_description(objects, item_type)
-	local factions = {}
-	local targets = {}
-	local locations = {}
-	
-	for _, se_obj in pairs(objects) do
-		local parent_id = se_obj.parent_id
-		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.alife_obj(parent_id)
-		local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
-		
-		factions[#factions+1] = parent_npc and igi_helper.get_community(parent_npc) or nil
-		targets[#targets+1] = parent_npc and parent_npc:character_name() or desc_target
-		locations[#locations+1] = igi_helper.get_object_location_description(se_obj)
-	end
-	return igi_models.create_DescriptionData(factions, targets, locations)
-end
-
-local function find_objects(object_data, amount)
-	local finder = igi_finder.get_finder()
-	objects = finder:get_objects_by_args(
-		igi_helper.scale_value(object_data.item_type), 
-		object_data, 
-		object_data.possible_endings, 
-		object_data.only_endings)
-
-	if not next(objects) then 
-		printf("Igi: no objects")
-		return nil 
-	end
-
-	return igi_utils.get_random_items(objects, object_data.amount)
-end
-
-local function create_item_data(item_info, factions)
-	local section = item_info.section
-	if type(section) == "table" then
-		section = section[math.random(#section)]
-	end
-	assert(ini_sys:section_exist(section), "Igi: bad item section: "..section or "nil")
-	
-	local item_data = igi_models.create_ItemData(nil, section, item_info.where)
-	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..section)
-	
-	return item_data, item_info.to_description and desc or nil
-end
-
-local function fetch_item_data(item_info, factions)
-	assert(item_info.item_type, "Igi: setup_item: No item list given")
-	item_info.enemy_to = factions[item_info.enemy_to] or item_info.enemy_to
-
-	local objects = find_objects(item_info, item_info.amount)
-	if not objects then return nil end
-	
-	local ids = {}
-	for _, se_obj in pairs(objects) do
-		ids[#ids + 1] = se_obj.id
-	end
-
-	local item_data = igi_models.create_ItemData(ids)
-	local description = fetch_item_description(objects, item_info.item_type)
-	local group_data = igi_models.create_GroupData(
-		item_data,
-		item_info.target,
-		item_info.amount
-	)
-	return group_data, description
-end
-
-local function add_predefined_values(group_data, entity_preset)
-	group_data.entity_type = entity_preset.entity_type
-	group_data.group_id = entity_preset.group_id
-	group_data.online_activities = entity_preset.online_activities
-end
 ------------------------------------------------
-
-local function setup_squad(squad_info, factions)
-	local squad_data, description
-	if squad_info.to_create then
-		squad_data, description = create_squad_data(squad_info, factions)
-	else
-		squad_data, description = fetch_squad_data(squad_info, factions)
-		if not squad_data then return end
-	end
-	
-	local group_data = igi_models.create_GroupData(	-- set defaults
-		squad_data, 
-		squad_info.target,
-		squad_info.amount
-	)
-	return group_data, description
-end
-
-local function setup_smart(smart_data)
-	local amount = smart_data.amount or 1;
-
-	local finder = igi_finder.get_finder()
-	local possible_smarts = finder:get_smarts(smart_data.where)
-	
-	if #possible_smarts < amount then 
-		printf("smarts sucked")
-		return nil 
-	end
-	local smarts_list = igi_utils.get_random_items(possible_smarts, amount)
-	local smart_names = {}
-	for _, smart_data in pairs(smarts_list) do
-		table.insert(smart_names, smart_data.smrt:name())
-	end
-
-	local group_data = igi_models.create_GroupData(
-		igi_models.create_SmartData(smart_names),
-		smart_data.target,
-		smart_data.amount
-	)
-	--printf("SMART END")
-	return group_data
-end
-
-local function setup_item(item_info, factions)
-	local item_data, description
-
-	if item_info.to_create then
-		item_data, description = create_item_data(item_info, factions)
-	else
-		item_data, description = fetch_item_data(item_info, factions)
-		if not item_data then return end
-	end
-
-	local group_data = igi_models.create_GroupData(
-		item_data,
-		item_info.target,
-		item_info.amount
-	)
-	return group_data, description
-end
-
 local function setup_group(entity, factions)
-	local handler = {
-		squad = setup_squad,
-		item = setup_item,
-		smart = setup_smart,
-	}
-	local setup_func = assert(handler[entity.entity_type], 
-		"Unknown entity type: "..(entity.entity_type or "nil"))
-	
+	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
+	local setup_func = target_tbl["setup_"..entity.entity_type]
+
 	local group_data, desc = setup_func(entity, factions)
 	if not group_data then return end
-	
 	add_predefined_values(group_data, entity)
 	return group_data, desc
 end

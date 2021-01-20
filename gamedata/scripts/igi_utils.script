@@ -78,11 +78,12 @@ end
 function memoize_one_variable(f)
     local cache = {}
     return function (arg)
-        if cache[arg] then
-            return cache[arg]
+		local key = arg ~= nil and arg or "!nil!"
+        if cache[key] then
+            return cache[key]
         else
             local y = f(arg)
-            cache[arg] = y
+            cache[key] = y
             return y
         end
     end

@@ -24,26 +24,6 @@ local function is_incomplete_dependency(str)
 	return string.find(str, "^%$%D+_%d+%$")
 end
 
-local function set_default_deps(entities)
-	local defaults = {
-		['squad'] = {
-			['location'] = "$smart_1_1$",
-		},
-		['package'] = {
-			['location'] = "$smart_1_1$",
-		},
-	}
-
-	for _, entity in pairs(entities) do
-		if defaults[entity.entity_type] then
-			for k, v in pairs(defaults[entity.entity_type]) do
-				if not entity[k] then entity[k] = v end
-			end
-		end
-	end
-	return entities
-end
-
 local function finalize_dependency(dep)
 	-- if there's only group num in dependency: add default object num (1)
 	-- aka: "smart_1" -> "smart_1_1"
@@ -147,6 +127,10 @@ end
 
 local function set_group_order(entities)
 	local test_order = get_entities_test_order(entities)
+	printf("test order")
+	for k, v in pairs(test_order) do
+		printf(tostring(k)..": "..tostring(v))
+	end
 
 	local entities_count = 0
 	for _, entity in pairs(entities) do

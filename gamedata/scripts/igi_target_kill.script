@@ -1,0 +1,9 @@
+TYP = igi_subtask.TARGET_TYPES.INSTANT
+TARGET_NAME = "kill"
+PATTERN = "basic"
+
+function is_complete(obj_data)
+	local se_obj = igi_helper.alife_obj(obj_data.id)
+	if not se_obj then return true end
+	if se_obj:section_name() ~= obj_data.section_name then return true end
+end

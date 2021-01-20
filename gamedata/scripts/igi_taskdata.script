@@ -15,37 +15,38 @@ local function wrap_array_keys(task_table)
 	end
 end
 
-local function add_defaults(task_tbl, task_name)
-	for _, entity in pairs(task_tbl) do
-		local defaults = igi_db.SectionView.new("defaults.ltx", "defaults_"..entity.entity_type)
-		for k, v in pairs(defaults:as_table()) do
-			if v == "*task_name*" then v = task_name end	-- MAYBE NOT HERE
-			if not entity[k] then entity[k] = v end
-		end
-	end
-end
-
-local function create_smart_and_redirect(entity, count, smarts_table)
+local function create_smart_and_redirect(entity, counter, smarts_table)
 	local smart = igi_models.create_smart_setup(entity.where or {"everywhere"})
 	table.insert(smarts_table, smart)
 	
-	count["smart"] = count["smart"] + 1
-	entity.where = "$smart_"..tostring(count["smart"]).."_1$"
+	counter["smart"] = counter["smart"] + 1
+	entity.where = "$smart_"..tostring(counter["smart"]).."_1$"
 end
 
-local function setup_task_locations(task_table)
-	local links, count_entities = igi_linker.get_entity_links(task_table)
-	count_entities.smart = count_entities.smart or 0
+local function count_entities(task_setup)
+	local counter = {
+		smart = 0,
+		squad = 0,
+		item = 0,
+	}
+	for _, v in pairs(task_setup) do
+		counter[v.entity_type] = counter[v.entity_type] + 1
+	end
+	return counter
+end
+
+local function setup_task_locations(task_table, counter)
 	local new_smarts = {}
 	
 	for _, entity in pairs(task_table) do
 		if entity.to_create and type(entity.where) ~= "string" then
-			create_smart_and_redirect(entity, count_entities, new_smarts)
+			create_smart_and_redirect(entity, counter, new_smarts)
 		end
 	end
 	
 	igi_utils.extend_list(task_table, new_smarts)
 end
+
 -------------------------------------------------
 -- JSON functions
 -------------------------------------------------
@@ -79,10 +80,10 @@ function get_task_data(task_name)
 	local task_tbl = get_task_table(task_name)
 	assert(task_tbl, "Igi: no such task: "..tostring(task_name or "nil"))
 
-	add_defaults(task_tbl.setup, task_name)
 	wrap_array_keys(task_tbl.setup)
-	setup_task_locations(task_tbl.setup)
-	utils_data.print_table(task_tbl, "task_name")
+	task_tbl.group_counter = count_entities(task_tbl.setup)
+	setup_task_locations(task_tbl.setup, task_tbl.group_counter)
+	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl.setup, task_tbl.setup)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data)
@@ -106,6 +107,16 @@ function construct_task(task_name)
 	return task_setup
 end
 
+function get_target_table(target)
+	if not target then return end
+	printf(target)
+	local target_tbl = _G["igi_target_"..target]
+	if target_tbl.PATTERN then
+		setmetatable(target_tbl, {__index = get_target_table(target_tbl.PATTERN)})
+	end
+	return target_tbl
+end
+get_target_table = igi_utils.memoize_one_variable(get_target_table)
 
 
 

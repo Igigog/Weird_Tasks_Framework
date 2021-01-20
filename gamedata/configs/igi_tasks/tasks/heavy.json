@@ -9,6 +9,7 @@
 		"faction_type":"enemy",
 		"to_create":true,
 		"where":"nearby",
+		"target":"kill",
 		}
 	],
 }

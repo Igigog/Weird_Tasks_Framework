@@ -33,7 +33,7 @@ locations = {
         "drx_sl_esc_m_trader": "SIDOROVICH",
         "esc_2_12_stalker_wolf": "WOLF",
         "esc_2_12_stalker_nimble": "NIMBLE",
-        "esc_3_16_military_trader": "TRADER",
+        "esc_3_16_military_trader": "MILITARY TRADER",
         "esc_2_12_stalker_fanat": "FANATIC",
     },
     "garbage": {
@@ -89,7 +89,7 @@ locations = {
         "zat_tech_mlr": "MECHANIC",
         "zat_b22_stalker_medic": "MEDIC",
         "zat_a2_stalker_barmen": "BEARD",
-        "zat_stancia_trader_merc": "TRADER",
+        "zat_stancia_trader_merc": "MERC TRADER",
     },
 }
 
@@ -102,6 +102,9 @@ icons = {
     "artifact_world": "ui_inGame2_Kontrakt_s_uchenimi",
     "artifact_stalker": "ui_inGame2_Kontrakt_s_uchenimi",
     "assault_monster_online": "ui_iconsTotal_mutant",
+    "assault_stalker_online": "ui_inGame2_PD_Lider",
+    "kill_stalker_nearby": "ui_inGame2_Odin_vistrel",
+    "fetch_patches": "ui_icons_kill_stalker6",
 }
 
 quests = {
@@ -118,9 +121,12 @@ quests = {
     ],
     "BARKEEP": [
         "assault_monster_online",
+        "kill_stalker_nearby",
     ],
     "OLIVIUS": [
         "assault_monster_online",
+        "assault_stalker_online",
+        "kill_stalker_nearby",
     ],
     "WOLF": [
         "assault_monster_online",
@@ -133,8 +139,60 @@ quests = {
     ],
     "TRAPPER": [
         "assault_monster_online",
+        "kill_stalker_nearby",
     ],
     "BEARD": [
         "assault_monster_online",
     ],
+    "KUZNETSOV": [
+        "assault_stalker_online",
+        "kill_stalker_nearby",
+        "fetch_patches",
+    ],
+    "VORONIN": [
+        "fetch_patches",
+    ],
+    "PETRENKO": [
+        "assault_stalker_online",
+        "kill_stalker_nearby",
+    ],
+    "SULTAN": [
+        "kill_stalker_nearby",
+        "fetch_patches",
+    ],
+    "DUSHMAN": [
+        "kill_stalker_nearby",
+    ],
+    "ASLAN": [
+        "kill_stalker_nearby",
+        "fetch_patches",
+    ],
+    "SIDOROVICH": [
+        "kill_stalker_nearby",
+    ],
+    "MILITARY TRADER": [
+        "fetch_patches",
+    ],
+    "RABBIT": [
+        "kill_stalker_nearby",
+        "assault_stalker_online",
+    ],
+    "COLD": [
+        "fetch_patches",
+    ],
+    "LUKASH": [
+        "fetch_patches",
+    ],
+    "EIDOLON": [
+        "fetch_patches",
+    ],
+    "HARON": [
+        "fetch_patches",
+    ],
+    "GRIFFIN": [
+        "fetch_patches",
+    ],
+    "MERC TRADER": [
+        "fetch_patches",
+    ], 
 }

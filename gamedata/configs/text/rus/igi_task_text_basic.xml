@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <string_table>
+	<!-- basic text -->
+	<string id="igi_task_text_title">
+		<text>Igi Tasks: Название не найдено</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_descr">
+		<text>Igi Tasks: Описание не найдено</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_job_descr">
+		<text>Igi Tasks: Описание задания не найдено</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_finish">
+		<text>Igi Tasks: Поздравляю! Текст завершения не найден.</text>
+	</string>
 	<!-- mutant -->
 	<string id="igi_task_text_assault_monster_online_title">
 		<text>Уничтожение опасных мутантов</text>
@@ -12,5 +25,44 @@
 	</string>
 	<string id="igi_task_text_assault_monster_online_finish">
 		<text>Отличная работа! Они не давали нашим отрядам работать...</text>
+	</string>
+	<!-- kill_stalker_nearby -->
+	<string id="igi_task_text_kill_stalker_nearby_title">
+		<text>Враг группировки</text>
+	</string>
+	<string id="igi_task_text_kill_stalker_nearby_descr">
+		<text>Мне нужно убить этого парня. Как два пальца.</text>
+	</string>
+	<string id="igi_task_text_kill_stalker_nearby_job_descr">
+		<text>Есть один сталкер, о котором нужно позаботиться. Возьмешься?</text>
+	</string>
+	<string id="igi_task_text_kill_stalker_nearby_finish">
+		<text>Отличная работа! А вот и твои денежки...</text>
+	</string>
+	<!-- assault_stalker_online -->
+	<string id="igi_task_text_assault_stalker_online_title">
+		<text>Нежеланная группа</text>
+	</string>
+	<string id="igi_task_text_assault_stalker_online_descr">
+		<text>Мне нужно зачистить местность от противников.</text>
+	</string>
+	<string id="igi_task_text_assault_stalker_online_job_descr">
+		<text>Наши парни видели группу сталкеров, которые что-то разнюхивают тут неподалеку. Мне это не нравится, так что их должно не стать. Возьмешься?</text>
+	</string>
+	<string id="igi_task_text_assault_stalker_online_finish">
+		<text>Отличная работа! А вот и твои денежки...</text>
+	</string>
+			<!-- fetch_patches -->
+	<string id="igi_task_text_fetch_patches_title">
+		<text>Сбор: Нашивки</text>
+	</string>
+	<string id="igi_task_text_fetch_patches_descr">
+		<text>Мне нужно собрать нашивки противников.</text>
+	</string>
+	<string id="igi_task_text_fetch_patches_job_descr">
+		<text>Не хочешь размяться? Иди убей врагов группировки. Мы тебя наградим, не волнуйся.</text>
+	</string>
+	<string id="igi_task_text_fetch_patches_finish">
+		<text>Отличная работа! А вот и твои денежки...</text>
 	</string>
 </string_table>

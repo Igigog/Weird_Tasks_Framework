@@ -1,0 +1,120 @@
+TYP = igi_subtask.TARGET_TYPES.CONTINUOUS
+TARGET_NAME = "fetch"
+PATTERN = "basic"
+
+function ready_to_finish(obj_data)
+	local section = obj_data.section_name
+	local item = section and db.actor:object(section)
+	if item then
+		return utils_item.get_amount(db.actor, section, 1) >= obj_data.how_much
+	elseif section and string.find(section, "af_") then
+		return actor:object(section .. "_af_aam")
+		or actor:object(section .. "_af_iam")
+		or actor:object(section .. "_af_aac")
+		or actor:object(section .. "_lead_box")
+	end
+	return false
+end
+
+function finish_subtask(obj_data)
+	local npc = mob_trade.GetTalkingNpc()
+	local section = obj_data.section_name
+
+	if (section and db.actor:object(section)) then
+		local amt = obj_data.how_much or 1
+		local trade_npc = get_speaker()
+		if (trade_npc) then 
+			printf("section and npc, "..section)
+			local function transfer_object_item(itm)
+				if (itm:section() == section and amt > 0) then
+					db.actor:transfer_item(itm, trade_npc)
+					amt = amt - 1
+				end
+				if (amt <= 0) then 
+					return true
+				end
+				return false
+			end
+			db.actor:inventory_for_each(transfer_object_item)
+		else
+			xr_effects.remove_item(actor, npc, {section,amt})	
+		end
+		news_manager.relocate_item(db.actor, "out", section, obj_data.how_much or 1)
+	end
+end
+
+function on_get_taskdata(task_setup)
+	for _, entity in pairs(task_setup) do
+		if entity.target == TARGET_NAME then
+			-- change amount with "how_much" bcs amount is target creation flag
+			entity.how_much = entity.amount
+			entity.amount = 1
+			
+			-- nothing to show on map obviously
+			entity.not_on_map = true
+		end
+	end
+end
+
+function quest_target(obj_data)
+	if not ready_to_finish(obj_data) then return -1 end
+end
+
+local function get_name_part(item_info, factions)
+	local part = item_info.has_in_name
+	if part == "*worst_enemy*" then
+		local enemies = igi_db.SectionView.new("misc.ltx", "worst_enemy")
+		return enemies[factions.task_giver] or "bandit"
+	else
+		return part
+	end
+end
+
+function setup_item(item_info, factions)
+	local sec_name, desc_target
+	
+	if type(item_info.how_much) == "table" then
+		item_info.how_much = math.random(item_info.how_much[1], item_info.how_much[2])
+	end
+
+	if item_info.item_type then
+		local item_list = igi_db.SectionView.new("fetch_items\\fetch_base.ltx", item_info.item_type):as_table()
+		assert(item_list, "Igi: fetch: no such item set: "..tostring(item_info.item_type or "nil"))
+		
+		if item_info.has_in_name then
+			local name_part = get_name_part(item_info, factions)
+			local items = {}
+			for k, v in pairs(item_list) do
+				if string.find(v, name_part) then
+					table.insert(items, v)
+				end
+			end
+			item_list = items
+		end
+		
+		sec_name = item_list[math.random(#item_list)]
+	else
+		assert(item_info.section, "Igi: no section for fetch task given")
+		if type(item_info.section) == "table" then
+			sec_name = item_info.section[math.random(#item_info.section)]
+		else
+			sec_name = item_info.section
+		end
+	end
+	
+	assert(ini_sys:section_exist(sec_name or "nil"))
+	local text_name = ini_sys:r_string_ex(sec_name, "inv_name")
+	local name_translated = game.translate_string(text_name)
+	desc_target = name_translated..", "..tostring(item_info.how_much)
+
+	local item_data = igi_models.create_ItemData(nil, sec_name, nil, item_info.how_much)
+	local desc = igi_models.create_DescriptionData(nil, desc_target)
+	return item_data, desc
+end
+
+function create_item(group_data)
+	local items = {}
+	local link = igi_linker.make_link("item", group_data.group_id, 1)
+	items[link] = group_data
+	return items
+end

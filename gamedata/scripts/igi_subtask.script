@@ -1,69 +1,55 @@
-
-local function get_continuous_functors(subtask_name)
-	if not subtask_name then return end
-
-	local continuous_objective = {
-		["return"] = {
-			is_not_failed = igi_helper.object_exist,
-			on_complete = igi_helper.deliver_item,
-			ready_to_finish = igi_helper.object_in_player_inventory
-		},
-	}
-	return continuous_objective[subtask_name]
-end
-
-local function get_instant_functors(subtask_name)
-	if not subtask_name then return end
-
-	local instant_objective = {
-		["kill"] = {is_complete = igi_helper.object_not_exist},
-		["get"] = {is_complete = igi_helper.object_in_player_inv},
-		["assault"] = {is_complete = igi_helper.is_smart_cleared},
-	}
-	return instant_objective[subtask_name]
-end
+TARGET_TYPES = {	-- Enum to be clear everywhere and no typos
+	CONTINUOUS = "continuous",
+	INSTANT = "instant",
+}
 
 function process_instant_subtasks(subtasks)
 	-- Instant = instant without completed tasks
+	local completed_keys = {}
+	
 	for k, subtask_data in pairs(subtasks.instant) do
-		local complete_functor = get_instant_functors(subtask_data.target).is_complete
-		assert(complete_functor, "Igi: no complete functor for "..subtask_data.target)
-		if complete_functor(subtask_data) then
-			subtasks.instant[k] = nil
-			return
-		end
+		printf("instant subtask: "..subtask_data.target)
+		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
+		assert(target_tbl.is_complete, 
+			"Igi Tasks: no complete functor for target "..subtask_data.target)
 
-		if not k:find("smart") then
-			-- Check if object still exists
-			local se_obj = igi_helper.alife_obj(subtask_data.id)
-			if not se_obj then return "fail" end
-			if se_obj:section_name() ~= subtask_data.section_name then return "fail" end
+		if target_tbl.is_complete(subtask_data) then
+			printf("complete")
+			table.insert(completed_keys, k)
+		else
+			if target_tbl.is_failed then
+				if target_tbl.is_failed(subtask_data) then return "fail" end
+			end
 		end
+	end
+	
+	-- remove completed tasks
+	for _, v in pairs(completed_keys) do
+		subtasks.instant[v] = nil
 	end
 end
 
 function check_continuous_failed(subtasks_continuous)
-	-- Returns false, if at least one condition is failed;
-	-- Continuous objectives will be completed with task end and can be failed
-
-	-- If functor of continuous not true - mission fail
 	for k, subtask_data in pairs(subtasks_continuous) do
-		local functor = get_continuous_functors(subtask_data.target).is_not_failed
-		if not functor(subtask_data) then
-			return true
+		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
+		local is_not_failed_functor = target_tbl.is_not_failed
+		if is_not_failed_functor then
+			if not is_not_failed_functor(subtask_data) then
+				return true
+			end
 		end
-		
-		local se_obj = igi_helper.alife_obj(subtask_data.id)
-		if not se_obj then return true end
-		if se_obj:section_name() ~= subtask_data.section_name then return true end
 	end
 	return false
 end
 
 function check_continuous_running(subtasks_continuous)
 	for k, subtask_data in pairs(subtasks_continuous) do
-		local functor = get_continuous_functors(subtask_data.target).ready_to_finish
-		if not functor(subtask_data) then
+		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
+		local is_ready_functor = target_tbl.ready_to_finish
+		assert(is_ready_functor, 
+			"Igi Tasks: no ready functor for target "..subtask_data.target)
+		
+		if not is_ready_functor(subtask_data) then
 			return true
 		end
 	end
@@ -72,80 +58,66 @@ end
 
 function finish_continuous_subtasks(subtasks_continuous, is_complete)
 	for _, subtask_data in pairs(subtasks_continuous) do
-		local complete_functor = get_continuous_functors(subtask_data.target).on_complete
-		local fail_functor = get_continuous_functors(subtask_data.target).on_fail
+		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
+		local complete_functor = target_tbl.finish_subtask
+		local fail_functor = target_tbl.fail_subtask
 		-- printf("Igi: subtask finish: "..subtask_data.section_name..tostring(subtask_data.id))
-		if is_complete then complete_functor(subtask_data)
+		
+		if is_complete and complete_functor then 
+			complete_functor(subtask_data)
 		elseif not is_complete and fail_functor then
 			fail_functor(subtask_data)
 		end
 	end
-	--printf("Igi: finish end")
-end
-
-local function prepare_targets(targets)		-- REFACTOR
-	local new_targets = {}
-	local old_smarts = {}
-	for k, v in pairs(targets) do
-		if v.target == "assault" then
-			local smart_entity
-			if not v.where_link then
-				local se_obj = igi_helper.alife_obj(v.id)
-				local smart = SIMBOARD.smarts[se_obj.current_target_id].smrt
-				local smart_counter = 0
-				for k, _ in pairs(targets) do
-					if k:find("smart") then
-						smart_counter = smart_counter + 1
-					end
-				end
-				smart_counter = smart_counter + #new_targets
-				smart_entity = {['id'] = smart.id}
-				local link = igi_linker.make_link("smart", smart_counter + 1, 1)
-				new_targets[link] = smart_entity
-			else
-				table.insert(old_smarts, targets[v.where_link])
-			end
-			v.target = nil
-		end
-	end
-	
-	for _, v in pairs(old_smarts) do
-		v.target = "assault"
-	end
-	
-	for k,v in pairs(new_targets) do
-		targets[k] = v
-		v.target = "assault"
-	end
 end
 ---------------------------------------------------
-function quest_target(subtasks)
-	if not subtasks or not (subtasks.instant and subtasks.continuous) then
-		return 
-	end
+local function basic_quest_target(obj_data)
+	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
+	local is_ready = target_tbl.ready_to_finish
+	if not is_ready(obj_data) then return obj_data.id end
+end
 
+function quest_target(subtasks, CACHE)
+	local is_nothing = false
 	_, target_obj = next(subtasks.instant)
-	if not target_obj then
+	
+	if target_obj then
+		return target_obj.id
+	else
+		local no_target
 		for _, subtask_data in pairs(subtasks.continuous) do
-			local is_ready = get_continuous_functors(subtask_data.target).ready_to_finish
-			target_obj = not is_ready(subtask_data) and subtask_data
-			if target_obj then break end
+			local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
+			local target
+			if target_tbl.quest_target then
+				target = target_tbl.quest_target(subtask_data, CACHE)
+			else
+				target = basic_quest_target(subtask_data)
+			end
+			
+			-- use -1 if no target must be given
+			if target and target == -1 then
+				no_target = -1
+			elseif target and target ~= -1 then
+				return target
+			end
 		end
+		return no_target
 	end
-	return target_obj and target_obj.id
 end
 ---------------------------------------------------
 function setup_subtask(targets)
-	prepare_targets(targets)
+	-- prepare_targets(targets)
 	local subtasks = {
 		instant = {},
 		continuous = {},
 	}
 	for id, entity in pairs(targets) do
-		local inst_target = get_instant_functors(entity.target) and entity
-		local cont_target = get_continuous_functors(entity.target) and entity
-		subtasks.instant[id] = inst_target or nil
-		subtasks.continuous[id] = cont_target or nil
+		if entity.target then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			local target_type = target_tbl.TYP
+			printf(entity.target.."added to "..target_type)
+			subtasks[target_type][id] = entity
+		end
 	end
 
 	return subtasks
@@ -171,7 +143,7 @@ function update_marks(entities)
 	
 	for entity_name, entity in pairs(entities) do
 		local mark = marks[string.match(entity_name, "%$(%D+)_")]
-		if mark then
+		if mark and not entity.not_on_map then
 			update_mark(entity, mark)
 		end
 	end

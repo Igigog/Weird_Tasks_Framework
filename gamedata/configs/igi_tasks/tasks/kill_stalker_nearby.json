@@ -5,9 +5,9 @@
 	"setup": [
 		{
 		"entity_type":"squad",
-		"type":"mutant",
-		"where":"online",
-		"target":"assault",
+		"type":"enemy",
+		"where":"nearby",
+		"target":"kill",
 		"amount":1,
 		},
 	],

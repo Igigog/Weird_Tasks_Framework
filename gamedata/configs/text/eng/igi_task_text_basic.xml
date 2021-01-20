@@ -2,6 +2,19 @@
 <!-- This file contains text for tasks from base anomaly -->
 <!-- If task has exclusive text, then it's not here -->
 <string_table>
+	<!-- basic text -->
+	<string id="igi_task_text_title">
+		<text>Igi Tasks: Title not found</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_descr">
+		<text>Igi Tasks: Description not found</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_job_descr">
+		<text>Igi Tasks: Job description not found</text>
+	</string>
+	<string id="igi_task_text_assault_monster_online_finish">
+		<text>Igi Tasks: Finish not found, but congrats anyway</text>
+	</string>
 	<!-- mutant -->
 	<string id="igi_task_text_assault_monster_online_title">
 		<text>Eliminate dangerous mutants</text>
@@ -14,5 +27,44 @@
 	</string>
 	<string id="igi_task_text_assault_monster_online_finish">
 		<text>Great job! They didn't let our teams work...</text>
+	</string>
+	<!-- kill_stalker_nearby -->
+	<string id="igi_task_text_kill_stalker_nearby_title">
+		<text>Enemy of faction</text>
+	</string>
+	<string id="igi_task_text_kill_stalker_nearby_descr">
+		<text>I need to kill this guy. Simple.</text>
+	</string>
+	<string id="igi_task_text_kill_stalker_nearby_job_descr">
+		<text>There is a guy to take care of. Wanna do it?</text>
+	</string>
+	<string id="igi_task_text_kill_stalker_nearby_finish">
+		<text>Great job! And here's your money.</text>
+	</string>
+	<!-- assault_stalker_online -->
+	<string id="igi_task_text_assault_stalker_online_title">
+		<text>Unwanted group</text>
+	</string>
+	<string id="igi_task_text_assault_stalker_online_descr">
+		<text>I need to clear this location from any enemies.</text>
+	</string>
+	<string id="igi_task_text_assault_stalker_online_job_descr">
+		<text>There's a group of enemies searching for something nearby. I don't like it. Take care of it.</text>
+	</string>
+	<string id="igi_task_text_assault_stalker_online_finish">
+		<text>Great job! And here's your money.</text>
+	</string>
+		<!-- fetch_patches -->
+	<string id="igi_task_text_fetch_patches_title">
+		<text>Fetch: Patches</text>
+	</string>
+	<string id="igi_task_text_fetch_patches_descr">
+		<text>I need to fetch patches of enemies.</text>
+	</string>
+	<string id="igi_task_text_fetch_patches_job_descr">
+		<text>Wanna warm up a little? Go kill some enemies of our faction. Reward included.</text>
+	</string>
+	<string id="igi_task_text_fetch_patches_finish">
+		<text>Great job! And here's your money.</text>
 	</string>
 </string_table>

@@ -6,6 +6,7 @@
 		{
 		"entity_type":"smart",
 		"where":"nearby",
+		"target":"assault",
 		},
 		
 		{
@@ -14,6 +15,7 @@
 		"entity_type":"squad",
 		"type":"guard",
 		"to_create":true,
+		"where":"$smart_1_1$",
 		},
 		
 		{
@@ -22,6 +24,7 @@
 		"section":["igi_package_medicine", "igi_package_ammunition"],
 		"target":"return",
 		"to_create":true,
+		"where":"$smart_1_1$",
 		},
 	],
 }

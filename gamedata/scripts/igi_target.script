@@ -1,4 +1,4 @@
-local function create_target_entry(se_obj)
+function create_target_entry(se_obj)
 	if not se_obj then return end
 
 	local entry = {
@@ -8,7 +8,7 @@ local function create_target_entry(se_obj)
 	return entry
 end
 
-local function add_entry(tbl, typ, group_id, entity_id, se_obj)
+function add_entry(tbl, typ, group_id, entity_id, se_obj)
 	if not (tbl and typ and group_id and entity_id and se_obj) then
 		callstack()
 		assert(nil, "Igi: Something went wrong while adding entry")
@@ -18,103 +18,15 @@ local function add_entry(tbl, typ, group_id, entity_id, se_obj)
 	tbl[id] = create_target_entry(se_obj)
 end
 
-local function create_squad(group_data)
-	local squads = {}
-	
-	if group_data.name == "predefined_squad" then
-		local ids = group_data.ids
-		for i=1, #ids do
-			local squad = igi_helper.alife_obj(ids[i])
-			squad.stay_time = game.get_game_time()
-			squad.force_online = true
-			add_entry(squads, group_data.entity_type, group_data.group_id, i, squad)
-		end
-		return squads
-	end
-	for i=1, group_data.amount or 1 do
-		local smart_name = SIMBOARD.smarts[group_data.where].smrt:name()
-		local squad = utils_obj.create_squad(group_data.name, smart_name)
-		squad.stay_time = game.get_game_time()
-		squad.force_online = true
-
-		if group_data.items then
-			local commander = igi_helper.alife_obj(squad:commander_id())
-			for item, amount in pairs(items) do
-				alife_create_item(item, commander)
-			end
-		end
-		add_entry(squads, group_data.entity_type, group_data.group_id, i, squad)
-		--squads[igi_linker.make_id("squad", group_data.group_id, i)] = create_target_entry(squad)
-	end
-	
-	return squads
-end
-
-local function create_item(group_data)	-- REFACTOR
-	local items = {}
-	for k, v in pairs(group_data) do
-		printf(k..": "..tostring(v))
-	end
-	if group_data.ids then
-		for i, id in pairs(group_data.ids) do
-			local se_obj = igi_helper.alife_obj(id)
-			add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
-		end
-	else
-		if SIMBOARD.smarts[group_data.where] then
-			local smart = SIMBOARD.smarts[group_data.where].smrt
-			local location = vector():set( --Make sure it don't fall under the ground
-				smart.position.x,
-				smart.position.y + 1,
-				smart.position.z
-			)
-			
-			for i=1, group_data.amount do
-				local se_obj = alife_create(group_data.section_name, location, 
-					smart.m_level_vertex_id, smart.m_game_vertex_id)
-				add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
-			end
-		else
-			local parent = igi_helper.alife_obj(group_data.where)
-			for i=1, group_data.amount do
-				local se_obj = alife_create_item(group_data.section_name, parent)
-				add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
-			end
-		end
-	end
-	return items
-end
-
-local function check_smart(group_data)
-	smarts = {}
-	for i, smart_name in pairs(group_data.names) do
-		local smart_id = SIMBOARD.smarts_by_names[smart_name].id
-		local smart_data = {
-			smart_name = smart_name,
-			id = smart_id,
-		}
-		xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
-		smarts[igi_linker.make_link("smart", group_data.group_id, i)] = smart_data
-	end
-	return smarts
-end
-
 function create_target(entities_setup, task_name)
-	utils_data.print_table(entities_setup, "entities")
-	local handlers = {
-		squad = create_squad,
-		item = create_item,
-		smart = check_smart,
-	}
 	local targets = {}
 	local order = igi_linker.get_order(task_name)
 	
 	for _, group_link in pairs(order) do
 		local entity_setup = entities_setup[group_link]
-		local handler = assert(handlers[entity_setup.entity_type], 
-				"Igi: Unknown entity type: "..entity_setup.entity_type)
-
-		-- printf("linking "..igi_linker.make_id(entity.entity_type, entity.group_id))
+		local target_tbl = igi_taskdata.get_target_table(entity_setup.target or "basic")
+		local handler = target_tbl["create_"..entity_setup.entity_type]
+		
 		igi_linker.link(entity_setup, targets)
 		local group_data = handler(entity_setup)
 
@@ -125,6 +37,5 @@ function create_target(entities_setup, task_name)
 			targets[link] = target
 		end
 	end
-	utils_data.print_table(targets, "targets")
 	return targets
 end

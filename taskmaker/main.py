@@ -47,7 +47,7 @@ title_functor {" "*(SPACE_COUNT-len("title_functor"))}= igi_task_generic_text
 descr_functor {" "*(SPACE_COUNT-len("descr_functor"))}= igi_task_generic_text
 job_descr {" "*(SPACE_COUNT-len("job_descr"))}= {TEXT_HEADER}{task_id}_job_descr
 task_complete_descr {" "*(SPACE_COUNT-len("task_complete_descr"))}= {TEXT_HEADER}{task_id}_finish
-                    
+
 stage_complete {" "*(SPACE_COUNT-len("stage_complete"))}= {STAGES}
 status_functor {" "*(SPACE_COUNT-len("status_functor"))}= igi_task_generic_status
 target_functor {" "*(SPACE_COUNT-len("target_functor"))}= igi_task_generic_target
@@ -57,7 +57,7 @@ on_complete {" "*(SPACE_COUNT-len("on_complete"))}= %=igi_task_generic_finish({t
 on_fail {" "*(SPACE_COUNT-len("on_fail"))}= %=igi_task_generic_finish({task_id}:false))%
 condlist_0 {" "*(SPACE_COUNT-len("condlist_0"))}= {op + f"!task_giver_alive({task_id})" + cl} fail
 ;------------------------------------------------
-                    """)
+""")
 
 
 if __name__ == '__main__':
