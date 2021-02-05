@@ -17,30 +17,8 @@ function ready_to_finish(obj_data)
 end
 
 function finish_subtask(obj_data)
-	local npc = mob_trade.GetTalkingNpc()
-	local section = obj_data.section_name
-
-	if (section and db.actor:object(section)) then
-		local amt = obj_data.how_much or 1
-		local trade_npc = get_speaker()
-		if (trade_npc) then 
-			printf("section and npc, "..section)
-			local function transfer_object_item(itm)
-				if (itm:section() == section and amt > 0) then
-					db.actor:transfer_item(itm, trade_npc)
-					amt = amt - 1
-				end
-				if (amt <= 0) then 
-					return true
-				end
-				return false
-			end
-			db.actor:inventory_for_each(transfer_object_item)
-		else
-			xr_effects.remove_item(actor, npc, {section,amt})	
-		end
-		news_manager.relocate_item(db.actor, "out", section, obj_data.how_much or 1)
-	end
+	local amt = obj_data.how_much or 1
+	xr_effects.remove_item(nil, nil, {obj_data.section_name, amt})
 end
 
 function on_get_taskdata(task_setup)
@@ -76,11 +54,10 @@ function setup_item(item_info, factions)
 	if type(item_info.how_much) == "table" then
 		item_info.how_much = math.random(item_info.how_much[1], item_info.how_much[2])
 	end
-
 	if item_info.item_type then
-		local item_list = igi_db.SectionView.new("fetch_items\\fetch_base.ltx", item_info.item_type):as_table()
+		local item_list = igi_db.SectionView.new("fetch_items\\fetch_base.ltx", item_info.item_type)
+		item_list = item_list:as_table()
 		assert(item_list, "Igi: fetch: no such item set: "..tostring(item_info.item_type or "nil"))
-		
 		if item_info.has_in_name then
 			local name_part = get_name_part(item_info, factions)
 			local items = {}
@@ -91,7 +68,6 @@ function setup_item(item_info, factions)
 			end
 			item_list = items
 		end
-		
 		sec_name = item_list[math.random(#item_list)]
 	else
 		assert(item_info.section, "Igi: no section for fetch task given")

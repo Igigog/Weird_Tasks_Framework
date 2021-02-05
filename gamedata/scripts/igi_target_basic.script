@@ -5,8 +5,7 @@
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 	local squad_name, squad_type, faction
-	printf("igi_db is "..tostring(igi_db or "nil").." _G is "..tostring(_G["igi_db"] or "nil"))
-	local squads = assert(igi_db.SectionView.new("squad_base.ltx", squad_info.type),
+	local squads = assert(igi_db.SectionView.new("squads\\create_squad_base.ltx", squad_info.type),
 		"Igi: setup squad: Unknown squad type")
 	if string.find(squad_info.type, "mutant") then
 		squad_name, squad_type = squads:random()
@@ -28,11 +27,11 @@ end
 local function fetch_squad_data(squad_info, factions)
 	-- important: ids, predefined name, description, target
 	local finder = igi_finder.get_finder()
-	printf(utils_data.print_table(squad_info, "squad_info", true))
+	-- printf(utils_data.print_table(squad_info, "squad_info", true))
 	local enemy_factions
 	if squad_info.type == "mutant" then
 		enemy_factions = igi_db.SectionView.new(
-				"finder\\squad_types.ltx", "monster_types"
+				"squads\\fetch_squad_base.ltx", "monster_types"
 				):as_set()
 	elseif squad_info.type == "enemy" then
 		enemy_factions = igi_helper.get_faction_enemies(factions.actor)
@@ -66,7 +65,7 @@ local function fetch_item_description(objects, item_type)
 		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.alife_obj(parent_id)
 		local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
 		
-		factions[#factions+1] = parent_npc and igi_helper.get_community(parent_npc) or nil
+		factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
 		targets[#targets+1] = parent_npc and parent_npc:character_name() or desc_target
 		locations[#locations+1] = igi_helper.get_object_location_description(se_obj)
 	end

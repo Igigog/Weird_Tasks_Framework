@@ -14,9 +14,7 @@ function ready_to_finish(obj_data)
 end
 
 function finish_subtask(obj_data)
-	local npc = mob_trade.GetTalkingNpc()
-	local obj = igi_helper.level_object(obj_data.id)
-
-	db.actor:transfer_item(obj, npc)
+	local obj = igi_helper.alife_obj(obj_data.id)
+	alife_release(obj)
 	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
 end
