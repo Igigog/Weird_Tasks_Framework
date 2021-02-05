@@ -58,12 +58,10 @@ function check_common_npc(id)
 	local smart = smrt and smrt.smrt
 	local smart_name = smart and smart:name()
 	--Fancy checking smart and squad
-	if not (smart_name) then return false end
-	if (simulation_objects.base_smarts[smart_name] == true) then return false end
+	if (smart_name and simulation_objects.base_smarts[smart_name] == true) then return false end
 	if (squad:get_script_target()) then return false end
-	--[[
-	printf("GhenTuong: check_common_npc: %s | %s | %s",npc:name(),squad:name(), smart_name)
-	--]]
+
+	-- printf("GhenTuong: check_common_npc: %s | %s | %s",npc:name(),squad:name(), smart_name)
 	return true
 end
 
@@ -105,25 +103,30 @@ end
 
 function change_goodwill(faction, task_name, task_successful)
 	if not faction then return nil, "gt_goodwill: no faction given" end
-	local task_info = igi_taskdata.get_task_info(task_name)
+	local task_info = igi_taskdata.get_task_data(task_name)
 	local value
 	if task_successful then 
-		value = task_info and task_info.reward_goodwill or 50
+		value = task_info.reward and task_info.reward.goodwill or 50
 	else 
-		value = task_info and task_info.fail_goodwill or -50
+		value = task_info.fail and task_info.fail.goodwill or -50
 	end
 
 	xr_effects.complete_task_inc_goodwill(a, b, {value, faction})
 end
 
-function get_faction_enemies(faction, --[[optional]] monolith_included)
-	monolith_included = monolith_included or false
+function get_faction_enemies(faction)
+	local excluded = {
+		monolith = true,
+		renegade = true,
+		greh = true,
+		isg = true,
+	}
 	local enemies_set = {}
-	factions = igi_db.SectionView.new('squad_base.ltx', 'guard')
+	local factions = game_relations.factions_table
 	
-	for enemy_faction in pairs(factions:as_table()) do
+	for _, enemy_faction in pairs(factions) do
 		if (game_relations.is_factions_enemies(faction, enemy_faction)) then
-			if (enemy_faction ~= "monolith" or monolith_included) then
+			if not excluded[enemy_faction] then
 				enemies_set[enemy_faction] = true
 			end
 		end
@@ -161,8 +164,8 @@ function reward_quest_money(task_name)
 		['midgame'] = 2000,
 		['endgame'] = 4000,
 	}
-	local task_info = igi_taskdata.get_task_info(task_name)
-	local sum_money = task_info and task_info.reward_money or 3000
+	local task_info = igi_taskdata.get_task_data(task_name)
+	local sum_money = task_info.reward and task_info.reward.money or 3000
 	if sum_money == 0 then return end
 	
 	local player_tier = get_player_tier()
@@ -282,20 +285,6 @@ function get_object_location_description(se_obj)
 	return dynamic_news_helper.GetPointDescription(se_obj)
 end
 
-itms_manager.igi_use_package = function (obj)
-	local sec = obj:section()
-	local possible_content_key = ini_sys:r_string_ex(sec,"possible_content")
-	if not possible_content_key then return end
-
-	local possible_content = igi_db.SectionView.new('item_types.ltx', igi_helper.scale_value(possible_content_key))
-	local content = {}
-	for i=1, ini_sys:r_float_ex(sec, "amount_content") do
-		local v = possible_content:random()
-		table.insert(content, v)
-	end
-	utils_item.delay_event(content, {obj:id()}, "medkit_ai1", true, 5)
-end
-
 local function is_legit_squad(squad)
 	local section = squad and squad:section_name()
 	return squad and (not section:find("tushkano")) and (not section:find("rat"))
@@ -365,13 +354,17 @@ function objects_fetched(obj_data)
 	return false
 end
 
+function is_in_actor_squad(id)
+	if id == AC_ID then return true end
+	local actor_squad = axr_companions.list_actor_squad_by_id()
 
+	if actor_squad then
+		for i=1,#actor_squad do
+			if (id == actor_squad[i]) then
+				return true
+			end
+		end
+	end
 
-
-
-
-
-
-
-
-
+	return false
+end
