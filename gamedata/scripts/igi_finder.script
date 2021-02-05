@@ -7,7 +7,9 @@ local function object_in_world(se_obj)
 end
 
 local function object_in_npc_inventory(se_obj)
-	return igi_helper.check_common_npc(se_obj.parent_id)
+	local is_common = igi_helper.check_common_npc(se_obj.parent_id)
+	return is_common
+	
 end
 
 local function get_object_level_id(se_obj, gg)
