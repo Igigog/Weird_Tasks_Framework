@@ -16,15 +16,19 @@ end
 
 function actor_on_first_update()
 	if TASKS_CACHE.TASKS_VERSION ~= TASKS_VERSION then
-		TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
-		printf("Igi Tasks: wrong task version. Removing old tasks.")
-		news_manager.send_tip(db.actor, "Igi Tasks: wrong task version. Removing old tasks.", nil, nil, 10000)
+		printf("Igi Tasks: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
+				.." -> "..TASKS_VERSION)
+		TASKS_CACHE.TASKS_VERSION = nil
+
 		local task_manager = task_manager.get_task_manager()
 		for k, _ in pairs(TASKS_CACHE) do
-			if k ~= "TASKS_VERSION" then
-				task_manager:set_task_cancelled(k)
-			end
+			TASKS_CACHE[k] = nil
+			task_manager.task_info[k] = nil
 		end
+
+		TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
+		printf("Igi Tasks: Update successful.")
+		news_manager.send_tip(db.actor, "Igi Tasks: Update complete. Welcome to Igi Tasks "..TASKS_VERSION, nil, nil, 30000)
 	end
 end
 
@@ -54,19 +58,17 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	printf("setup "..task_name)
 	assert(task_name and task_id and igi_taskdata.get_task_data(task_name), 
 		"Igi: validate_task: task_name invalid")
-
-	local task_giver = mob_trade.GetTalkingNpc()
-	local squad = get_object_squad(task_giver) --Task count for squad. Not NPC.
-	if not task_giver or not squad then return false end
-	--local giver_task_count = utils.load_var(db.actor, "drx_sl_task_giver_" .. squad.id, 0)	REWORKABLE, DO AT SOME POINT
-	--if giver_task_count >= MAX_TASK then return false end
+		
+	-- TASK LIMIT CHECK
+	if dialogs.has_tasks_by_npc(db.actor, npc) then return false end
 	
 	local task_data = igi_taskdata.get_task_data(task_name)
+	-- printf(utils_data.print_table(task_data, "task_data", true))
 	if task_data.disabled then return false end
 	if not igi_precondition.check(task_data.preconditions) then return false end
-
 	if not TASK_SETUP[task_id] then
 		TASK_SETUP[task_id] = igi_setup.setup_quest(task_name)
+		TASK_SETUP.task_id = task_id
 	end
 	return TASK_SETUP[task_id] and true or false
 end
@@ -81,7 +83,7 @@ xr_effects.igi_task_generic_setup = function(actor,npc,p)
 	--Give message
 	local description = igi_description.get_postpone_intel(task_id, CACHE.description)
 	--Print the message
-	CreateTimeEvent(0, "gt_task_"..CACHE.task_name.."_setup", 0, igi_description.postpone_function, description)
+	CreateTimeEvent(0, "igi_task_"..CACHE.task_name.."_setup", 0, igi_description.postpone_function, description)
 end
 --< Status >--------------------------------------------------
 task_status_functor.igi_task_generic_status = function (tsk,task_id)
@@ -96,7 +98,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
-		printf(utils_data.print_table(CACHE, "CACHE after", true))
+		-- printf(utils_data.print_table(CACHE, "CACHE after", true))
 	end
 	
 	-- Timer for less pressure (totally stolen from tasks_assault.script)
@@ -114,8 +116,9 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 
 	if igi_subtask.check_continuous_failed(CACHE.subtasks.continuous) then return "fail" end
 	-- If no continuous and no money reward -> complete task, when all instant are ready
+	local task_data = igi_taskdata.get_task_data(igi_helper.get_task_name(task_id))
 	if not next(CACHE.subtasks.instant) and not next(CACHE.subtasks.continuous) and
-			igi_db.get_value("task_info.ltx", CACHE.task_name, "reward_money") == 0 then
+			task_data.reward and task_data.reward.money == 0 then
 		return "complete" 
 	end
 	---------------------------<STAGE>----------------------
@@ -169,15 +172,20 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 	local text = igi_description.get_task_text(task_id, field)
 	local desc = field ~= "title" and ("\\n "..CACHE.description) or ""
 
-	return text..desc
+	return "[Igi] "..text..desc
 end
 --< Reward >--------------------------------------------------
 xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	if not (p and p[1] and p[2]) then return end
 	local task_id = p[1]
 	local is_completed = p[2] == "true"
-
 	local CACHE = get_cache(task_id)
+
+	--Release
+	igi_callbacks.invoke_target_callbacks("on_complete", CACHE, CACHE.target, is_completed)
+	igi_subtask.finish_continuous_subtasks(CACHE.subtasks.continuous, is_completed)
+	igi_helper.release_targets_in_world(CACHE.target)
+	igi_subtask.unmark_all(CACHE.target)
 	--Reward money
 	if is_completed then
 		igi_helper.reward_quest_money(CACHE.task_name)
@@ -185,11 +193,6 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	end
 	-- Goodwill
 	igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
-	--Release
-	igi_callbacks.invoke_target_callbacks("on_complete", CACHE, CACHE.target, is_completed)
-	igi_subtask.finish_continuous_subtasks(CACHE.subtasks.continuous, is_completed)
-	igi_helper.release_targets_in_world(CACHE.target)	-- to rework: SV: can't find child...
-	igi_subtask.unmark_all(CACHE.target)
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil
 	--Finish
