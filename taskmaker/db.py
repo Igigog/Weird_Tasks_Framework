@@ -1,3 +1,6 @@
+AUTHOR = "no_author"
+PREFIX = ""
+
 locations = {
     "agroprom": {
         "agr_smart_terrain_1_6_army_mechanic_stalker": "MECHANIC",
@@ -37,7 +40,7 @@ locations = {
         "esc_2_12_stalker_fanat": "FANATIC",
     },
     "garbage": {
-        "hunter_gar_trader_task": "BUTCHER",
+        "hunter_gar_trader": "BUTCHER",
         "baraholka_trader_night": "TRADER",
     },
     "jupiter": {
@@ -93,106 +96,4 @@ locations = {
     },
 }
 
-icons = {
-    "transaction": "ui_inGame2_Sdelka",
-    "supply": "ui_inGame2_Osobiy_zakaz",
-    "weapon": "ui_inGame2_Neizvestnoe_oruzhie",
-    "mutant": "ui_iconsTotal_mutant",
-    "heavy": "ui_inGame2_PD_master_boevih_sistem",
-    "artifact_world": "ui_inGame2_Kontrakt_s_uchenimi",
-    "artifact_stalker": "ui_inGame2_Kontrakt_s_uchenimi",
-    "assault_monster_online": "ui_iconsTotal_mutant",
-    "assault_stalker_online": "ui_inGame2_PD_Lider",
-    "kill_stalker_nearby": "ui_inGame2_Odin_vistrel",
-    "fetch_patches": "ui_icons_kill_stalker6",
-}
-
-quests = {
-    "MECHANIC": [
-        "transaction",
-        "supply",
-        "weapon",
-        "mutant",
-        "heavy",
-    ],
-    "MEDIC": [
-        "artifact_world",
-        "artifact_stalker",
-    ],
-    "BARKEEP": [
-        "assault_monster_online",
-        "kill_stalker_nearby",
-    ],
-    "OLIVIUS": [
-        "assault_monster_online",
-        "assault_stalker_online",
-        "kill_stalker_nearby",
-    ],
-    "WOLF": [
-        "assault_monster_online",
-    ],
-    "FANATIC": [
-        "assault_monster_online",
-    ],
-    "BUTCHER": [
-        "assault_monster_online",
-    ],
-    "TRAPPER": [
-        "assault_monster_online",
-        "kill_stalker_nearby",
-    ],
-    "BEARD": [
-        "assault_monster_online",
-    ],
-    "KUZNETSOV": [
-        "assault_stalker_online",
-        "kill_stalker_nearby",
-        "fetch_patches",
-    ],
-    "VORONIN": [
-        "fetch_patches",
-    ],
-    "PETRENKO": [
-        "assault_stalker_online",
-        "kill_stalker_nearby",
-    ],
-    "SULTAN": [
-        "kill_stalker_nearby",
-        "fetch_patches",
-    ],
-    "DUSHMAN": [
-        "kill_stalker_nearby",
-    ],
-    "ASLAN": [
-        "kill_stalker_nearby",
-        "fetch_patches",
-    ],
-    "SIDOROVICH": [
-        "kill_stalker_nearby",
-    ],
-    "MILITARY TRADER": [
-        "fetch_patches",
-    ],
-    "RABBIT": [
-        "kill_stalker_nearby",
-        "assault_stalker_online",
-    ],
-    "COLD": [
-        "fetch_patches",
-    ],
-    "LUKASH": [
-        "fetch_patches",
-    ],
-    "EIDOLON": [
-        "fetch_patches",
-    ],
-    "HARON": [
-        "fetch_patches",
-    ],
-    "GRIFFIN": [
-        "fetch_patches",
-    ],
-    "MERC TRADER": [
-        "fetch_patches",
-    ], 
-}
+quests = {}

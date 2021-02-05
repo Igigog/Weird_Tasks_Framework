@@ -1,14 +1,21 @@
 import db
 import os
+import logging
+from datetime import datetime, timezone
 
+date_time = datetime.now(timezone.utc).strftime("%m/%d/%Y, %H:%M:%S")
+anomaly_version = "1.5.1"
 op = "{"
 cl = "}"
 TEXT_HEADER = "igi_task_text_"
 STAGES = 2
 SPACE_COUNT = 21
-FILE_HEADER = """;============================================================
-;	Anomaly 1.5.5.0
-;	Igigog
+FILE_HEADER = f""";============================================================
+;
+;	Anomaly {anomaly_version}
+;	{db.AUTHOR}
+;   Last change: {date_time} UTC
+;
 ;============================================================
 """
 
@@ -20,7 +27,7 @@ def main():
         pass
     
     for location, npcs in db.locations.items():
-        with open(f"task/tm_igi_tasks_{location}.ltx", 'w') as f:
+        with open(f"task/tm_igi_{db.PREFIX}_tasks_{location}.ltx", 'w') as f:
             f.write(FILE_HEADER)
             for npc, typ in npcs.items():
                 try:
@@ -61,4 +68,12 @@ condlist_0 {" "*(SPACE_COUNT-len("condlist_0"))}= {op + f"!task_giver_alive({tas
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+        input("Ltx creating complete! Press Enter to exit...")
+    except Exception as e:
+        console = logging.StreamHandler()
+        logging.getLogger().addHandler(console)
+        logging.exception(e)
+        input("Press Enter to exit...")
+    
