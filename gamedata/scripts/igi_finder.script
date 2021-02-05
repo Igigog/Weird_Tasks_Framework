@@ -68,7 +68,7 @@ local function where_handler(se_obj, args, sim, gg)
 	}
 	
 	for _, v in pairs(args.where) do
-		if v == "everywhere" then
+		if v == "anywhere" then
 			return true
 		end
 
@@ -84,10 +84,11 @@ local function enemy_to_handler(se_obj, args, sim)
 		-- 65535 is world id
 		-- I don't check for common npc, but it will be checked anyway in check_object_by_args
 
-		local my_faction = get_object_community(args.enemy_to or db.actor)
+		local my_faction = args.enemy_to or get_object_community(db.actor)
 		local npc_faction = get_object_community(sim:object(se_obj.parent_id))
+		printf(my_faction..npc_faction)
 
-		return game_relations.is_factions_enemies(my_faction, npc_faction) and not npc_faction == "monolith"
+		return game_relations.is_factions_enemies(my_faction, npc_faction)
 	end
 	return true
 end
@@ -168,13 +169,13 @@ local Finder = {
 }
 
 function Finder._populate_item_names(self)
-	local name_sections = igi_db.SectionView.new("item_types.ltx", "igi_item_types_sections")
+	local name_sections = ini_file("igi_tasks\\finder\\item_types_base.ltx")
 
-	for _, section in pairs(name_sections:as_table()) do
-		local name_set = igi_db.SectionView.new("item_types.ltx", section):as_set()
+	function itr(section)
+		local name_set = igi_db.SectionView.new("finder\\item_types_base.ltx", section):as_set()
 		self.item_names[section] = name_set 
 	end
-
+	name_sections:section_for_each(itr)
 end
 
 local function clear_cache()
@@ -285,6 +286,7 @@ end
 
 function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
 	assert(with_ending or not only_ending, "Igi: setup: only_ending but no ending")
+	-- printf(utils_data.print_table(args, "args", true))
 	
 	local items_pool = {}
 	igi_utils.extend_list(items_pool, self:get_items(typ, with_ending))
@@ -292,14 +294,13 @@ function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
 	if with_ending and not only_ending then
 		igi_utils.extend_list(items_pool, self:get_items(typ))
 	end
-	printf("filter")
+	printf("has items: "..tostring(not not next(items_pool)))
 	-- extend for new indexes
 	return igi_utils.extend_list({}, self:_filter_by_args(items_pool, args))
 end
 
 function Finder.get_items(self, typ, has_ending)
 	if not next(self.pure_objects) then self:_sort_objects() end
-	printf("sort works")
 	return has_ending and self.ending_objects[typ] or self.pure_objects[typ]
 end
 
@@ -315,7 +316,7 @@ function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 	
 	-- priority for parent bcs there's main filtering and it's cheap for world objects
 	if not parent_handler(se_obj, args, sim, gg) then 
-		--printf("parent sucked")
+		-- printf("parent sucked")
 		return false 
 	end
 	
@@ -323,7 +324,7 @@ function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 		local handler = args[k] and v
 		if handler then
 			if not handler(se_obj, args, sim, gg) then 
-				--printf(k.." sucked")
+				-- printf(k.." sucked")
 				return false
 			end
 		end

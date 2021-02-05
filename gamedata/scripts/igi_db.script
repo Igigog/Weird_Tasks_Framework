@@ -69,6 +69,7 @@ function SectionView.new (file, section)
 			['section'] = section,
 			['custom'] = {}
 			}
+
 	view.ini = ini_file(database_folder..file)
 	if not view.ini then
 		callstack()
@@ -76,7 +77,6 @@ function SectionView.new (file, section)
 	end
 	
 	if not view.ini:section_exist(section) then return nil end
-	
 	for k, method in pairs(SectionView.methods) do
 		view[k] = method
 	end
