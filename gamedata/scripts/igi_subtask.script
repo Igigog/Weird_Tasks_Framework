@@ -8,18 +8,17 @@ function process_instant_subtasks(subtasks)
 	local completed_keys = {}
 	
 	for k, subtask_data in pairs(subtasks.instant) do
-		printf("instant subtask: "..subtask_data.target)
 		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
 		assert(target_tbl.is_complete, 
 			"Igi Tasks: no complete functor for target "..subtask_data.target)
 
+		if target_tbl.is_failed then
+			if target_tbl.is_failed(subtask_data) then return "fail" end
+		end
 		if target_tbl.is_complete(subtask_data) then
-			printf("complete")
 			table.insert(completed_keys, k)
 		else
-			if target_tbl.is_failed then
-				if target_tbl.is_failed(subtask_data) then return "fail" end
-			end
+			
 		end
 	end
 	

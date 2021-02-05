@@ -77,12 +77,11 @@ function setup_item(item_info, factions)
 			sec_name = item_info.section
 		end
 	end
-	
+
 	assert(ini_sys:section_exist(sec_name or "nil"))
 	local text_name = ini_sys:r_string_ex(sec_name, "inv_name")
 	local name_translated = game.translate_string(text_name)
 	desc_target = name_translated..", "..tostring(item_info.how_much)
-
 	local item_data = igi_models.create_ItemData(nil, sec_name, nil, item_info.how_much)
 	local desc = igi_models.create_DescriptionData(nil, desc_target)
 	return item_data, desc

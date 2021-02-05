@@ -92,10 +92,6 @@ function get_task_setup(task_name)
 	return get_task_data(task_name).setup
 end
 
-function get_task_info(task_name)
-	return get_task_data(task_name).info
-end
-
 function construct_task(task_name)
 	local task_setup = {}
 
@@ -109,8 +105,13 @@ end
 
 function get_target_table(target)
 	if not target then return end
-	printf(target)
 	local target_tbl = _G["igi_target_"..target]
+	
+	if not target_tbl then
+		callstack()
+		assert(nil, "Igi Tasks: no target tbl for target "..tostring(target or "nil"))
+	end
+	
 	if target_tbl.PATTERN then
 		setmetatable(target_tbl, {__index = get_target_table(target_tbl.PATTERN)})
 	end

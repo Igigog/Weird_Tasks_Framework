@@ -48,9 +48,9 @@ end
 local function setup_group(entity, factions)
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
 	local setup_func = target_tbl["setup_"..entity.entity_type]
-
 	local group_data, desc = setup_func(entity, factions)
 	if not group_data then return end
+
 	add_predefined_values(group_data, entity)
 	return group_data, desc
 end
@@ -67,6 +67,7 @@ local function setup_entities(CACHE, description)
 	
 	for _, group_preset in pairs(task_data) do
 		local group_data, desc = setup_group(group_preset, CACHE.factions)
+		printf("group_data exists2: "..tostring(not not group_data))
 		if not group_data then return nil end
 
 		description:add_entries(desc)
@@ -78,7 +79,6 @@ end
 function setup_quest(task_name)
 	local CACHE = setup_CACHE(task_name)
 	local description = igi_description.TaskDescription.new()
-
 	if not setup_entities(CACHE, description) then return end
 	CACHE.description = description:get_description(CACHE)
 	return CACHE
