@@ -22,6 +22,9 @@ local function change_squad_role(squad_data, se_obj, role, CACHE)
 	end
 	role = CACHE.factions[role] or role		-- if role is not in CACHE => role is actual faction
 	local se_squad = igi_helper.alife_obj(squad_data.id)
+	if not se_squad or se_squad:section_name() ~= squad_data.section_name then
+		return 
+	end
 	change_squad_faction(se_squad, role)
 end
 
