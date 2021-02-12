@@ -18,3 +18,12 @@ function finish_subtask(obj_data)
 	alife_release(obj)
 	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
 end
+
+function quest_target(obj_data)
+	local se_obj = igi_helper.alife_obj(obj_data.id)
+	if se_obj.parent_id == 65535 then
+		return obj_data.id
+	else
+		return se_obj.parent_id
+	end
+end

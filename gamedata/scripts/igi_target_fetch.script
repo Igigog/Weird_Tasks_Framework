@@ -52,7 +52,7 @@ function setup_item(item_info, factions)
 	local sec_name, desc_target
 	
 	if type(item_info.how_much) == "table" then
-		item_info.how_much = math.random(item_info.how_much[1], item_info.how_much[2])
+		item_info.how_much = igi_random.rand(item_info.how_much[1], item_info.how_much[2])
 	end
 	if item_info.item_type then
 		local item_list = igi_db.SectionView.new("fetch_items\\fetch_base.ltx", item_info.item_type)
@@ -68,11 +68,11 @@ function setup_item(item_info, factions)
 			end
 			item_list = items
 		end
-		sec_name = item_list[math.random(#item_list)]
+		sec_name = item_list[igi_random.rand(#item_list)]
 	else
 		assert(item_info.section, "Igi: no section for fetch task given")
 		if type(item_info.section) == "table" then
-			sec_name = item_info.section[math.random(#item_info.section)]
+			sec_name = item_info.section[igi_random.rand(#item_info.section)]
 		else
 			sec_name = item_info.section
 		end

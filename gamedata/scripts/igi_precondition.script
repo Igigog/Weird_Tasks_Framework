@@ -49,7 +49,7 @@ function check(preconditions)
 		["goodwill"] = goodwill_precondition,
 		["daytime"] = daytime_precondition,
 	}
-	printf(utils_data.print_table(preconditions, "precond", true))
+	-- printf(utils_data.print_table(preconditions, "precond", true))
 	for condition, handler in pairs(condition_handlers) do
 		-- not too good when there'll be more conditions but good enough now
 		if preconditions[condition] and not handler(preconditions[condition]) then

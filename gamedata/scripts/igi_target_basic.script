@@ -6,7 +6,7 @@ local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 	local squad_name, squad_type, faction
 	local squads = assert(igi_db.SectionView.new("squads\\create_squad_base.ltx", squad_info.type),
-		"Igi: setup squad: Unknown squad type")
+		"Igi: setup squad: Unknown squad type "..squad_info.type)
 	if string.find(squad_info.type, "mutant") then
 		squad_name, squad_type = squads:random()
 	else
@@ -91,7 +91,7 @@ end
 local function create_item_data(item_info, factions)
 	local section = item_info.section or "nil"
 	if type(section) == "table" then
-		section = section[math.random(#section)]
+		section = section[igi_random.rand(#section)]
 	end
 	assert(ini_sys:section_exist(section), "Igi: bad item section: "..section or "nil")
 	
@@ -276,4 +276,10 @@ function create_smart(group_data)
 		smarts[igi_linker.make_link("smart", group_data.group_id, i)] = smart_data
 	end
 	return smarts
+end
+
+function quest_target(obj_data)
+	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
+	local is_ready = target_tbl.ready_to_finish
+	if not is_ready(obj_data) and obj_data.id then return obj_data.id end
 end

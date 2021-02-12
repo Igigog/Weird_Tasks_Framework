@@ -111,14 +111,12 @@ function get_task_text(task_id, field)
 	
 	-- fallback to basic field for this task type
 	if text == text_id then
-		printe("Igi: no text for task "..text)
 		local task_name = igi_helper.get_task_name(task_id)
 		text_id = igi_db.TEXT_HEADER..task_name.."_"..field
 		text = game.translate_string(text_id)
 
 		-- fallback to basic field
 		if text == text_id then
-			printe("Igi: no generic text, fallback")
 			text = game.translate_string(igi_db.TEXT_HEADER..field)
 		end
 	end

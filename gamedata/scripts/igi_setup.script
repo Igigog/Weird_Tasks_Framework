@@ -16,8 +16,8 @@ local function get_faction_setup()	-- TODO: implement factions
 	}
 	
 	local task_giver = mob_trade.GetTalkingNpc()
-	faction_list.task_giver = character_community(task_giver)
-	faction_list.actor = character_community(db.actor)
+	faction_list.task_giver = task_giver:character_community()
+	faction_list.actor = db.actor:character_community()
 	
 	local player_enemies = igi_helper.get_faction_enemies(faction_list.actor)
 	local task_giver_enemies = igi_helper.get_faction_enemies(faction_list.task_giver)
@@ -63,7 +63,9 @@ local function setup_CACHE(task_name)
 end
 
 local function setup_entities(CACHE, description)
-	local task_data = igi_taskdata.construct_task(CACHE.task_name)
+	local task_data = igi_taskdata.get_finalized_task_setup(CACHE.task_name)
+	CACHE.group_counter = dup_table(
+			igi_taskdata.get_task_data(CACHE.task_name).group_counter)
 	
 	for _, group_preset in pairs(task_data) do
 		local group_data, desc = setup_group(group_preset, CACHE.factions)

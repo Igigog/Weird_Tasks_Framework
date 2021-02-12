@@ -13,3 +13,12 @@ function is_failed(obj_data)
 	if not se_obj then return true end
 	if se_obj:section_name() ~= obj_data.section_name then return true end
 end
+
+function quest_target(obj_data)
+	local se_obj = igi_helper.alife_obj(obj_data.id)
+	if se_obj.parent_id == 65535 then
+		return obj_data.id
+	else
+		return se_obj.parent_id
+	end
+end

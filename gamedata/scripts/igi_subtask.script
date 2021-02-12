@@ -70,12 +70,6 @@ function finish_continuous_subtasks(subtasks_continuous, is_complete)
 	end
 end
 ---------------------------------------------------
-local function basic_quest_target(obj_data)
-	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
-	local is_ready = target_tbl.ready_to_finish
-	if not is_ready(obj_data) then return obj_data.id end
-end
-
 function quest_target(subtasks, CACHE)
 	local is_nothing = false
 	_, target_obj = next(subtasks.instant)
@@ -86,13 +80,8 @@ function quest_target(subtasks, CACHE)
 		local no_target
 		for _, subtask_data in pairs(subtasks.continuous) do
 			local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-			local target
-			if target_tbl.quest_target then
-				target = target_tbl.quest_target(subtask_data, CACHE)
-			else
-				target = basic_quest_target(subtask_data)
-			end
-			
+			local target = target_tbl.quest_target(subtask_data, CACHE)
+
 			-- use -1 if no target must be given
 			if target and target == -1 then
 				no_target = -1

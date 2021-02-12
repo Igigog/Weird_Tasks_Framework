@@ -145,8 +145,7 @@ end
 --------------------<Globals>--------------------
 function get_order(task_name)
 	local task_data = igi_taskdata.get_task_setup(task_name)
-	local constructor = {}
-	copy_table(constructor, task_data)
+	local constructor = dup_table(task_data)
 	return assert(set_group_order(constructor))
 end
 get_order = igi_utils.memoize_one_variable(get_order)

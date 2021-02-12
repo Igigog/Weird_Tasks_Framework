@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-local TASKS_VERSION = "2.8"
+local TASKS_VERSION = "2.10"
 local TASK_SETUP = {}
 local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 
@@ -55,21 +55,20 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	assert(p and p[1], "No task id given")
 	local task_id = p[1]
 	local task_name = igi_helper.get_task_name(task_id)
-	printf("setup "..task_name)
+
 	assert(task_name and task_id and igi_taskdata.get_task_data(task_name), 
 		"Igi: validate_task: task_name invalid")
 		
-	-- TASK LIMIT CHECK
+	-- TASK LIMIT CHECK (not working)
 	if dialogs.has_tasks_by_npc(db.actor, npc) then return false end
 	
 	local task_data = igi_taskdata.get_task_data(task_name)
 	-- printf(utils_data.print_table(task_data, "task_data", true))
 	if task_data.disabled then return false end
 	if not igi_precondition.check(task_data.preconditions) then return false end
-	if not TASK_SETUP[task_id] then
-		TASK_SETUP[task_id] = igi_setup.setup_quest(task_name)
-		TASK_SETUP.task_id = task_id
-	end
+
+	TASK_SETUP[task_id] = igi_setup.setup_quest(task_name)
+	TASK_SETUP.task_id = task_id
 	return TASK_SETUP[task_id] and true or false
 end
 
@@ -92,7 +91,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not (CACHE["target"]) then
-		--utils_data.print_table(CACHE, "CACHE before")
+		-- printf(utils_data.print_table(CACHE, "CACHE before"), true)
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_name)
 		igi_callbacks.invoke_target_callbacks("on_after_target_creation", CACHE)
 		CACHE.setup = nil	-- you don't need setup after object creation
@@ -141,7 +140,6 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		-- target function works independently so this works
 		if tsk.current_target ~= tsk.task_giver_id then tsk.stage = 1 end
 	end
-	
 end
 --< Target >--------------------------------------------------
 task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
@@ -158,6 +156,7 @@ task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 		end 
 	end
 	if target_id == -1 then return end
+
 	return target_id or (tsk.stage ~= 0 and tsk.task_giver_id) 	-- target_id or task_giver_id
 end
 --< Text >--------------------------------------------------

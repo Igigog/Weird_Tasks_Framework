@@ -2,26 +2,30 @@ TYP = igi_subtask.TARGET_TYPES.INSTANT
 TARGET_NAME = "assault"
 PATTERN = "basic"
 
+local function is_ara()
+	return igi_mcm.get_options_value(igi_mcm.OPTION_IDS.ara)
+end
+
 local function is_legit_squad(squad)
 	local section = squad and squad:section_name()
 	return squad and (not section:find("tushkano")) and (not section:find("rat"))
 end
 
-local function is_squad_at_smart(squad, smart)
-	local scripted_target = squad:get_script_target()
+local function is_squad_at_smart(se_squad, smart_id)
+	local scripted_target = se_squad:get_script_target()
 	
 	if scripted_target then 
-		return scripted_target == smart.id
+		return scripted_target == smart_id
 	else
-		if squad.current_target_id ~= smart.id then
+		if se_squad.current_target_id ~= smart_id then
 			return false
 		end
 	
-		if squad.current_action ~= 1 then
+		if se_squad.current_action ~= 1 then
 			return false
 		end
 	
-		if not is_legit_squad(squad) then
+		if not is_legit_squad(se_squad) then
 			return false
 		end	
 	end
