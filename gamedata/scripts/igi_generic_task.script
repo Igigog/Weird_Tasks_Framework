@@ -114,18 +114,23 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	end
 
 	if igi_subtask.check_continuous_failed(CACHE.subtasks.continuous) then return "fail" end
-	-- If no continuous and no money reward -> complete task, when all instant are ready
-	local task_data = igi_taskdata.get_task_data(igi_helper.get_task_name(task_id))
-	if not next(CACHE.subtasks.instant) and not next(CACHE.subtasks.continuous) and
-			task_data.reward and task_data.reward.money == 0 then
-		return "complete" 
-	end
 	---------------------------<STAGE>----------------------
-	-- If no more instant objectives: stage = 1; if all continuous are ready: stage = 2
-	
-	-- skip stage 1 if task has no continuous
 	local instant_done = not next(CACHE.subtasks.instant)
 	local continuous_done = not igi_subtask.check_continuous_running(CACHE.subtasks.continuous)
+
+	-- If no more instant objectives: stage = 1; if all continuous are ready: stage = 2
+	
+		-- If no continuous and no money reward or autocomplete -> complete task, when all instant are ready
+	local task_data = igi_taskdata.get_task_data(igi_helper.get_task_name(task_id))
+	local skip_return = igi_mcm.get_options_value("autocomplete") or 
+			task_data.reward and task_data.reward.money == 0
+	
+	if instant_done and not next(CACHE.subtasks.continuous) and
+			skip_return then
+		return "complete" 
+	end
+	
+	-- skip stage 1 if task has no continuous
 	if instant_done and continuous_done then
 		tsk.stage = 2
 	end

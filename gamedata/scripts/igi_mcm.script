@@ -1,0 +1,26 @@
+
+OPTION_IDS = {
+	ara = "realistic_assassinations",
+	autocomplete = "autocomplete",
+}
+
+local function get_default_option(option_id)
+	return igi_db.get_value("options.ltx", "defaults", option_id)
+end
+
+local function get_mcm_option(option_id)
+	return ui_mcm.get("igi_tasks/"..option_id)
+end
+
+get_options_value = ui_mcm and get_mcm_option or get_default_option
+
+
+function on_mcm_load()
+	local op = {id= "igi_tasks", sh=true, gr={
+				{id="title", type="slide", link="ui_options_slider_player", text="ui_mcm_igi_tasks_title", size={512,50}},
+				{id=OPTION_IDS.autocomplete, type="check", val=1, def=get_default_option(OPTION_IDS.autocomplete)},
+				{id=OPTION_IDS.ara, type="check", val=1, def=get_default_option(OPTION_IDS.ara)},
+				}
+			}
+	return op
+end

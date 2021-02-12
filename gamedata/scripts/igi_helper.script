@@ -368,3 +368,16 @@ function is_in_actor_squad(id)
 
 	return false
 end
+
+function do_for_every_target(CACHE, target_name, f, ...)
+	for k, v in pairs(CACHE.target) do
+		if v.target == target_name then
+			if ... then
+				f(..., v, CACHE, k)
+			else
+				f(v, CACHE, k)
+			end
+		end
+	end
+end
+

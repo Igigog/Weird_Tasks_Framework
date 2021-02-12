@@ -2,8 +2,40 @@ TYP = igi_subtask.TARGET_TYPES.INSTANT
 TARGET_NAME = "kill"
 PATTERN = "basic"
 
+local function is_ara()
+	return igi_mcm.get_options_value(igi_mcm.OPTION_IDS.ara)
+end
+
 function is_complete(obj_data)
+	if is_ara() then
+		if not igi_ara.is_updated(obj_data) then return false end
+	end
+	
 	local se_obj = igi_helper.alife_obj(obj_data.id)
 	if not se_obj then return true end
 	if se_obj:section_name() ~= obj_data.section_name then return true end
+end
+
+local function add_kill_squad_to_ara_tables(subtask_data)
+	igi_ara.add_squad_to_tables(subtask_data.id, subtask_data)
+end
+
+function on_after_target_creation(CACHE)
+	if is_ara() then
+		igi_helper.do_for_every_target(CACHE, "kill", add_kill_squad_to_ara_tables)
+	end
+end
+
+function is_failed(subtask_data)
+	if is_ara() then
+		return igi_target_kill.is_complete(subtask_data) 
+				and igi_ara.is_not_killed_by_player(subtask_data)
+	end
+	return false
+end
+
+function on_complete(CACHE)
+	if is_ara() then
+		igi_helper.do_for_every_target(CACHE, "kill", igi_ara.clear_ara_table)
+	end
 end

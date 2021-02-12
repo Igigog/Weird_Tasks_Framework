@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<string id="ui_mcm_menu_igi_tasks">
+		<text>Igi Tasks</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_title">
+		<text>Igi Tasks</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_autocomplete">
+		<text>Автозавершение</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_realistic_assassinations">
+		<text>(Arszi's) Реалистичные убийства</text>
+	</string>
+</string_table>

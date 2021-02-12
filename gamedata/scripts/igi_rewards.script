@@ -1,0 +1,44 @@
+
+local function build_goodwill_reward(CACHE, task_giver_id)
+	local goodwill = 0
+	local tg = igi_helper.alife_obj(task_giver_id)
+	local community_setup = {tg:character_community()}
+	if string.find(community_setup[1], "trader") then
+		community_setup = igi_db.get_value("misc.ltx", "trader_faction", tg:section_name())
+	end
+	
+	for id, entity in pairs(CACHE.target) do
+		if entity.target then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			goodwill = goodwill + target_tbl.get_goodwill_reward(entity)
+		end
+	end
+end
+
+local function build_money_reward(CACHE, task_giver_id)
+	local money = 0
+	for id, entity in pairs(CACHE.target) do
+		if entity.target then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			money = money + target_tbl.get_money_reward(entity)
+		end
+	end
+	return money
+end
+
+function define_reward(CACHE, task_giver_id)
+	local reward = {}
+	local task_data = igi_taskdata.get_task_data(CACHE.task_name)
+	if task_data.reward then
+		for k,v in pairs(task_data.reward) do
+			reward[k] = v
+		end
+	end
+	if not reward.money then
+		reward.money = build_money_reward(CACHE, task_giver_id)
+	end
+	if not reward.goodwill then
+		reward.goodwill = build_goodwill_reward(CACHE, task_giver_id)
+	end
+	return reward
+end
