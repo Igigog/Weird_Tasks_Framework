@@ -22,14 +22,14 @@ function set_to_list(s)
 end
 
 function random_table_element(tbl)
-	-- It's preffered to use lists with math.random rather
+	-- It's preffered to use lists with igi_random.rand rather
 	-- than this function bcs this function is slow
 	local keyset = {}
 	for k in pairs(tbl) do
 		table.insert(keyset, k)
 	end
 	-- now you can reliably return a random key
-	local random_key = keyset[math.random(#keyset)]
+	local random_key = keyset[igi_random.rand(#keyset)]
 	local random_elem = tbl[random_key]
 	return random_elem, random_key
 end
@@ -44,7 +44,7 @@ function get_random_items(orig_list, amount)
 	for i=1, amount do
 		local item
 		repeat
-			item = orig_list[math.random(#orig_list)]
+			item = orig_list[igi_random.rand(#orig_list)]
 		until not set[item]
 		list[#list + 1] = item
 		set[item] = true

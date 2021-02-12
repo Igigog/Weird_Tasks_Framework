@@ -139,7 +139,7 @@ end
 
 SectionView.methods.random = function(tbl)
 	-- Ебал рот для кастомных ключей тоже прописывать
-	local line = math.random(tbl.ini:line_count(tbl.section)) - 1
+	local line = igi_random.rand(tbl.ini:line_count(tbl.section)) - 1
 	local _, key, values_str = tbl.ini:r_line_ex(tbl.section, line)
 	-- delete newline char
 	values_str = string.match(values_str, "^%s*(%S.+)%s*")

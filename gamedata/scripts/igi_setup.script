@@ -30,7 +30,7 @@ local function get_faction_setup()	-- TODO: implement factions
 		end
 	end
 	if (#tmp_enemies == 0) then printf("GhenTuong: player and task giver doesn't share enemies") end
-	faction_list["enemy"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
+	faction_list["enemy"] = tmp_enemies[igi_random.rand(#tmp_enemies)] or "stalker"
 	
 	-- set client - must be enemy for enemy and not enemy with task giver; can be player's faction
 	local enemy_enemies = igi_helper.get_faction_enemies(faction_list["enemy"])
@@ -41,7 +41,7 @@ local function get_faction_setup()	-- TODO: implement factions
 		end
 	end
 	if (#tmp_enemies == 0) then printf("GhenTuong: can't setup client") end
-	faction_list["client"] = tmp_enemies[math.random(#tmp_enemies)] or "stalker"
+	faction_list["client"] = tmp_enemies[igi_random.rand(#tmp_enemies)] or "stalker"
 	return faction_list
 end
 ------------------------------------------------
@@ -77,6 +77,10 @@ local function setup_entities(CACHE, description)
 end
 
 function setup_quest(task_name)
+	local game_time = game.get_game_time()
+	local game_date = game_time:dateToString(game.CTime.DateToDay)
+	igi_random.set_seed(task_name..game_date)
+
 	local CACHE = setup_CACHE(task_name)
 	local description = igi_description.TaskDescription.new()
 	if not setup_entities(CACHE, description) then return end
