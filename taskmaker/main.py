@@ -20,29 +20,28 @@ FILE_HEADER = f""";============================================================
 """
 
 
-def main():
-    try:
-        os.mkdir("task")
-    except FileExistsError:
-        pass
-    
-    for location, npcs in db.locations.items():
-        with open(f"task/tm_igi_{db.PREFIX}_tasks_{location}.ltx", 'w') as f:
-            f.write(FILE_HEADER)
-            for npc, typ in npcs.items():
-                try:
-                    tasks = db.quests[typ]
-                except KeyError:
-                    continue
-                f.write(f"""
+def collect_tasks(tags):
+	npc_tasks = set()
+	for task_tags, tasks in db.quests.items():
+		if tags.issuperset(task_tags):
+			npc_tasks.update(tasks)
+	return npc_tasks
+
+
+def write_npc_header(f, npc_id, tags):
+	header = f"""
 ;============================================================
-;{" "*(29-len(typ)//2)}{typ} 
-;{" "*(29-len(npc)//2)}{npc}
-;============================================================""")
-                for task_name in tasks:
-                    icon = db.icons[task_name]
-                    task_id = f"{npc}_task_{task_name}"
-                    f.write(f"""
+;{" "*(29-len(str(tags))//2)}{tags} 
+;{" "*(29-len(npc_id)//2)}{npc_id}
+;============================================================
+"""
+	f.write(header)
+
+
+def write_task(f, task_name, npc):
+	icon = db.icons[task_name]
+    task_id = f"{npc}_task_{task_name}"
+    task_section = f"""
 [{task_id}]
 icon {" "*(SPACE_COUNT-len("icon"))}= {icon}
 storyline {" "*(SPACE_COUNT-len("storyline"))}= false
@@ -65,11 +64,61 @@ on_fail {" "*(SPACE_COUNT-len("on_fail"))}= %=igi_task_generic_finish({task_id}:
 condlist_0 {" "*(SPACE_COUNT-len("condlist_0"))}= {op + f"!task_giver_alive({task_id})" + cl} fail
 ;------------------------------------------------
 """)
+	
+	f.write(task_section)
+
+
+def main():
+    try:
+        os.mkdir("task")
+    except FileExistsError:
+        pass
+    
+    for location, npcs in db.locations.items():
+        with open(f"task/tm_igi_{db.PREFIX}_tasks_{location}.ltx", 'w') as f:
+            f.write(FILE_HEADER)
+            for npc, tags in npcs.items():
+                tasks = collect_tasks(tags)
+                write_npc_header(f, npc, tags)
+                for task_name in tasks:
+                    write_task(f, task_name, npc)
+
+
+def write_warfare_faction_header(f, faction):
+	header = f"""
+;============================================================
+;
+;{" "*(29-len(faction)//2)}{faction} 
+;
+;============================================================
+"""
+	f.write(header)
+
+
+def write_warfare():
+	try:
+        os.mkdir("task")
+    except FileExistsError:
+        pass
+        
+    with open(f"task/tm_igi_{db.PREFIX}_tasks_warfare.ltx", "w") as f:
+		f.write(FILE_HEADER)    
+		for faction, faction_tags in db.warfare_factions.items():
+			write_warfare_faction_header(f, faction)
+			for npc_type, type_tags in db.warfare_npc_types.items():
+				tags = set()
+				tags.update(faction_tags)
+				tags.update(type_tags)
+				tasks = collect_tasks(tags)
+				
+				for task_name in tasks:
+					write_task(f, task_name, f"sim_default_{faction}_{npc_type}")
 
 
 if __name__ == '__main__':
     try:
         main()
+        write_warfare()
         input("Ltx creating complete! Press Enter to exit...")
     except Exception as e:
         console = logging.StreamHandler()
