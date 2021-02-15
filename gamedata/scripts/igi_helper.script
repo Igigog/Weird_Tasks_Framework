@@ -381,3 +381,16 @@ function do_for_every_target(CACHE, target_name, f, ...)
 	end
 end
 
+
+function trace_dbg(title, ...)
+	if igi_mcm.get_options_value("debug") then
+		printf("Igi DBG: "..title)
+		for k, v in pairs({...}) do
+			if type(v) == "table" then
+				printf(utils_data.print_table(v, k, true))
+			else
+				printf(v ~= nil and v or "nil")
+			end
+		end
+	end
+end

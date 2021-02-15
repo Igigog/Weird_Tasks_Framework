@@ -90,7 +90,7 @@ SectionView.mt.__index = function (tbl, key)
 	if tbl.custom[key] then return tbl.custom[key] end
 	local values_str
 	local line_key
-	if tonumber(key) then
+	if type(key) == "number" then
 		if tbl.ini:line_count(tbl.section) < key then
 			-- printf("Igi: No line "..key.." in file "..tbl.filename.." section "..tbl.section)
 			return nil 

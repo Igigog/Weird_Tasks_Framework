@@ -2,7 +2,11 @@
 local function build_goodwill_reward(CACHE, task_giver_id)
 	local goodwill = 0
 	local tg = igi_helper.alife_obj(task_giver_id)
-	local community_setup = {tg:character_community()}
+	if tg:clsid() == clsid.online_offline_group_s then
+		tg = igi_helper.alife_obj(tg:commander_id())
+	end
+	local community_setup = {get_object_community(tg)}
+
 	if string.find(community_setup[1], "trader") then
 		community_setup = igi_db.get_value("misc.ltx", "trader_faction", tg:section_name())
 	end
@@ -13,6 +17,7 @@ local function build_goodwill_reward(CACHE, task_giver_id)
 			goodwill = goodwill + target_tbl.get_goodwill_reward(entity)
 		end
 	end
+	return goodwill, community_setup
 end
 
 local function build_money_reward(CACHE, task_giver_id)
@@ -38,7 +43,38 @@ function define_reward(CACHE, task_giver_id)
 		reward.money = build_money_reward(CACHE, task_giver_id)
 	end
 	if not reward.goodwill then
-		reward.goodwill = build_goodwill_reward(CACHE, task_giver_id)
+		reward.goodwill, reward.community = build_goodwill_reward(CACHE, task_giver_id)
 	end
 	return reward
 end
+
+function give_rewards(rewards)
+	local money = {tostring(rewards.money - 1000), tostring(rewards.money + 1000)}
+	xr_effects.reward_random_money(nil, nil, money)
+	
+	local parts = 0
+	for i=1,#rewards.community do
+		parts = parts + i
+	end
+	
+	for i=1,#rewards.community do
+		local value = math.floor((i*rewards.goodwill)/parts)
+		local faction = rewards.community[#rewards.community+1-i]
+		xr_effects.complete_task_inc_goodwill(a, b, {value, faction})
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

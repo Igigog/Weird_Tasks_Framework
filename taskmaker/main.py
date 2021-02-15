@@ -20,6 +20,11 @@ FILE_HEADER = f""";============================================================
 """
 
 
+def spaces(string):
+    count = SPACE_COUNT - len(str(string))
+    return " "*count if count > 0 else ""
+
+
 def collect_tasks(tags):
 	npc_tasks = set()
 	for task_tags, tasks in db.quests.items():
@@ -43,25 +48,25 @@ def write_task(f, task_name, npc):
     task_id = f"{npc}_task_{task_name}"
     task_section = f"""
 [{task_id}]
-icon {" "*(SPACE_COUNT-len("icon"))}= {icon}
-storyline {" "*(SPACE_COUNT-len("storyline"))}= false
-prior {" "*(SPACE_COUNT-len("prior"))}= 2000
-repeat_timeout {" "*(SPACE_COUNT-len("repeat_timeout"))}= 16200
-precondition {" "*(SPACE_COUNT-len("precondition"))}= {op + f"=validate_generic_task({task_id})" + cl} true, false
+icon {spaces("icon")}= {icon}
+storyline {spaces("storyline")}= false
+prior {spaces("prior")}= 2000
+repeat_timeout {spaces("repeat_timeout")}= 16200
+precondition {spaces("precondition")}= {op + f"=validate_generic_task({task_id})" + cl} true, false
 
-title_functor {" "*(SPACE_COUNT-len("title_functor"))}= igi_task_generic_text
-descr_functor {" "*(SPACE_COUNT-len("descr_functor"))}= igi_task_generic_text
-job_descr {" "*(SPACE_COUNT-len("job_descr"))}= {TEXT_HEADER}{task_id}_job_descr
-task_complete_descr {" "*(SPACE_COUNT-len("task_complete_descr"))}= {TEXT_HEADER}{task_id}_finish
+title_functor {spaces("title_functor")}= igi_task_generic_text
+descr_functor {spaces("descr_functor")}= igi_task_generic_text
+job_descr {spaces("job_descr")}= {TEXT_HEADER}{task_id}_job_descr
+task_complete_descr {spaces("task_complete_descr")}= {TEXT_HEADER}{task_id}_finish
 
-stage_complete {" "*(SPACE_COUNT-len("stage_complete"))}= {STAGES}
-status_functor {" "*(SPACE_COUNT-len("status_functor"))}= igi_task_generic_status
-target_functor {" "*(SPACE_COUNT-len("target_functor"))}= igi_task_generic_target
-on_job_descr {" "*(SPACE_COUNT-len("on_job_descr"))}= %=igi_task_generic_setup({task_id})%
+stage_complete {spaces("stage_complete")}= {STAGES}
+status_functor {spaces("status_functor")}= igi_task_generic_status
+target_functor {spaces("target_functor")}= igi_task_generic_target
+on_job_descr {spaces("on_job_descr")}= %=igi_task_generic_setup({task_id})%
 
-on_complete {" "*(SPACE_COUNT-len("on_complete"))}= %=igi_task_generic_finish({task_id}:true)%
-on_fail {" "*(SPACE_COUNT-len("on_fail"))}= %=igi_task_generic_finish({task_id}:false))%
-condlist_0 {" "*(SPACE_COUNT-len("condlist_0"))}= {op + f"!task_giver_alive({task_id})" + cl} fail
+on_complete {spaces("on_complete")}= %=igi_task_generic_finish({task_id}:true)%
+on_fail {spaces("on_fail")}= %=igi_task_generic_finish({task_id}:false))%
+condlist_0 {spaces("condlist_0")}= {op + f"!task_giver_alive({task_id})" + cl} fail
 ;------------------------------------------------
 """)
 	
@@ -88,7 +93,7 @@ def write_warfare_faction_header(f, faction):
 	header = f"""
 ;============================================================
 ;
-;{" "*(29-len(faction)//2)}{faction} 
+;{spaces(faction)}{faction} 
 ;
 ;============================================================
 """

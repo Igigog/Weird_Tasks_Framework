@@ -1,3 +1,6 @@
+
+local trace_dbg = igi_helper.trace_dbg
+
 function create_target_entry(se_obj)
 	if not se_obj then return end
 
@@ -19,8 +22,10 @@ function add_entry(tbl, typ, group_id, entity_id, se_obj)
 end
 
 function create_target(entities_setup, task_name)
+	trace_dbg("create target "..task_name, entities_setup)
 	local targets = {}
 	local order = igi_linker.get_order(task_name)
+	trace_dbg("order", order)
 	
 	for _, group_link in pairs(order) do
 		local entity_setup = entities_setup[group_link]
@@ -29,6 +34,7 @@ function create_target(entities_setup, task_name)
 		
 		igi_linker.link(entity_setup, targets)
 		local group_data = handler(entity_setup)
+		trace_dbg("linked entities", group_data)
 
 		for link, target in pairs(group_data) do
 			target.where_link = entity_setup.where_link

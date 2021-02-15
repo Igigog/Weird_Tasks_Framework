@@ -20,10 +20,9 @@ function finish_subtask(obj_data)
 end
 
 function quest_target(obj_data)
+	if ready_to_finish(obj_data) then return end
 	local se_obj = igi_helper.alife_obj(obj_data.id)
-	if se_obj.parent_id == 65535 then
-		return obj_data.id
-	else
-		return se_obj.parent_id
-	end
+	if not se_obj then return end
+
+	return se_obj.parent_id == 65535 and obj_data.id or se_obj.parent_id
 end

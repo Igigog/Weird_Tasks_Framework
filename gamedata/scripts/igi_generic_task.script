@@ -6,6 +6,7 @@
 local TASKS_VERSION = "2.10"
 local TASK_SETUP = {}
 local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
+local trace_dbg = igi_helper.trace_dbg
 
 function on_game_start()
     RegisterScriptCallback("save_state",save_state)
@@ -52,6 +53,7 @@ local function get_setup_cache(task_id)
 end
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
+	trace_dbg("validate "..p[1])
 	assert(p and p[1], "No task id given")
 	local task_id = p[1]
 	local task_name = igi_helper.get_task_name(task_id)
@@ -63,11 +65,13 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	if dialogs.has_tasks_by_npc(db.actor, npc) then return false end
 	
 	local task_data = igi_taskdata.get_task_data(task_name)
+	trace_dbg("task_data", task_data)
 	-- printf(utils_data.print_table(task_data, "task_data", true))
 	if task_data.disabled then return false end
 	if not igi_precondition.check(task_data.preconditions) then return false end
 
 	TASK_SETUP[task_id] = igi_setup.setup_quest(task_name)
+	trace_dbg("setup", TASK_SETUP[task_id])
 	TASK_SETUP.task_id = task_id
 	return TASK_SETUP[task_id] and true or false
 end
@@ -97,6 +101,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
+		CACHE.reward = igi_rewards.define_reward(CACHE, tsk.task_giver_id)
 		-- printf(utils_data.print_table(CACHE, "CACHE after", true))
 	end
 	
@@ -107,6 +112,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	end
 	tsk.__actions_time = tg+3000
 	---------------------------<ACTIONS>---------------------
+	igi_callbacks.invoke_target_callbacks("on_status_functor", CACHE)
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	if igi_subtask.process_instant_subtasks(CACHE.subtasks) == "fail" then
@@ -192,11 +198,12 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	igi_subtask.unmark_all(CACHE.target)
 	--Reward money
 	if is_completed then
-		igi_helper.reward_quest_money(CACHE.task_name)
+		igi_rewards.give_rewards(CACHE.reward)
 		xr_effects.inc_task_stage(a, b, {task_id})
+	else
+		-- Goodwill
+		igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
 	end
-	-- Goodwill
-	igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil
 	--Finish

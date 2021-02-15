@@ -2,8 +2,13 @@ TYP = igi_subtask.TARGET_TYPES.INSTANT
 TARGET_NAME = "assault"
 PATTERN = "basic"
 
+local do_for_every_target = igi_helper.do_for_every_target
+local get_options_value = igi_mcm.get_options_value
+local igi_ara = igi_ara
+local alife_obj = igi_helper.alife_obj
+
 local function is_ara()
-	return igi_mcm.get_options_value(igi_mcm.OPTION_IDS.ara)
+	return get_options_value(igi_mcm.OPTION_IDS.ara)
 end
 
 local function is_legit_squad(squad)
@@ -41,7 +46,7 @@ function is_complete(obj_data)
 	
 	local cleared = true
 	for _, sq_id in pairs(obj_data.squads) do
-		local squad = igi_helper.alife_obj(sq_id)
+		local squad = alife_obj(sq_id)
 		if squad then
 			cleared = false
 			if not (squad.first_update) then break end
@@ -60,7 +65,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	if string.find(subtask_key, "smart") then return end
 	subtask_data.target = nil
 	if not subtask_data.where_link then
-		local se_obj = igi_helper.alife_obj(subtask_data.id)
+		local se_obj = alife_obj(subtask_data.id)
 		local smart_id = se_obj.current_target_id
 		local smart_entity = {id = smart_id, target = "assault"}
 		CACHE.group_counter.smart = CACHE.group_counter.smart + 1
@@ -76,7 +81,7 @@ local function add_target_squads(subtask_data)
 	subtask_data.squads = {}
 	local smart = SIMBOARD.smarts[subtask_data.id]
 	for sq_id in pairs(smart.squads) do
-		local se_squad = igi_helper.alife_obj(sq_id)
+		local se_squad = alife_obj(sq_id)
 		local actor_faction = character_community(db.actor)
 		local sq_faction = se_squad:get_squad_community()
 		if is_squad_at_smart(se_squad, subtask_data.id) and
@@ -92,25 +97,48 @@ local function add_assault_squads_to_ara_tables(subtask_data)
 	end
 end
 
-function on_after_target_creation(CACHE)
-	igi_helper.do_for_every_target(CACHE, TARGET_NAME, redirect_to_smart)
-	igi_helper.do_for_every_target(CACHE, TARGET_NAME, add_target_squads)
+function on_after_target_creation(subtask_data, CACHE)
+	do_for_every_target(CACHE, TARGET_NAME, redirect_to_smart)
+	do_for_every_target(CACHE, TARGET_NAME, add_target_squads)
 	
 	if is_ara() then
-		igi_helper.do_for_every_target(CACHE, "assault", add_assault_squads_to_ara_tables)
+		do_for_every_target(CACHE, "assault", add_assault_squads_to_ara_tables)
 	end
 end
 
 function is_failed(subtask_data)
 	if is_ara() then
-		return igi_target_assault.is_complete(subtask_data) 
+		return is_complete(subtask_data) 
 				and igi_ara.is_not_killed_by_player(subtask_data)
 	end
 	return false
 end
 
-function on_complete(CACHE)
+function on_complete(subtask_data)
 	if is_ara() then
-		igi_helper.do_for_every_target(CACHE, "assault", igi_ara.clear_ara_table)
+		igi_ara.clear_ara_table(subtask_data)
 	end
+end
+
+local function mark_distant_squads(subtask_data)
+	local sim = alife()
+	local smart_position = sim:object(subtask_data.id).position
+
+	for _, sq_id in pairs(subtask_data.squads) do
+		local se_squad = sim:object(sq_id)
+		if se_squad then
+			local is_marked = level.map_has_object_spot(se_squad.id,"red_location") == 1
+			local is_nearby = smart_position:distance_to_sqr(se_squad.position) < 2500
+
+			if not (is_nearby or is_marked) then
+				level.map_add_object_spot(se_squad.id, "red_location", "st_ui_pda_task_unknown_enemy")
+			elseif is_nearby and is_marked then
+				level.map_remove_object_spot(se_squad.id, "red_location")
+			end
+		end
+	end
+end
+
+function on_status_functor(subtask_data)
+	mark_distant_squads(subtask_data)
 end

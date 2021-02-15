@@ -1,5 +1,6 @@
 AUTHOR = "no_author"
 PREFIX = ""
+USE_TASK_TO_NPC = false
 
 npc = {
 	# Agroprom

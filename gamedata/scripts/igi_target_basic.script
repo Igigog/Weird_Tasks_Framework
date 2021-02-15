@@ -5,20 +5,26 @@
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 	local squad_name, squad_type, faction
-	local squads = assert(igi_db.SectionView.new("squads\\create_squad_base.ltx", squad_info.type),
-		"Igi: setup squad: Unknown squad type "..squad_info.type)
-	if string.find(squad_info.type, "mutant") then
-		squad_name, squad_type = squads:random()
+	if squad_info.section then
+		if not ini_sys:section_exist(squad_info.section) then assert(nil, squad_info.section) end
+		squad_name = squad_info.section
+		faction = ini_sys:r_string_ex(squad_name, "faction")
 	else
-		assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
-		faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
-		squad_name = squads[faction]
+		local squads = assert(igi_db.SectionView.new("squads\\create_squad_base.ltx", squad_info.type),
+			"Igi: setup squad: Unknown squad type "..squad_info.type)
+		if string.find(squad_info.type, "mutant") then
+			squad_name, squad_type = squads:random()
+		else
+			assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
+			faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
+			squad_name = squads[faction]
+		end
 	end
 	
 	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
 	-- set all default
 	local squad_data = igi_models.create_SquadsData(nil, squad_name, faction or "mutant", squad_info.where)
-	local target_desc = squad_type and igi_db.TEXT_HEADER .. squad_type or nil
+	local target_desc = squad_type and igi_db.TEXT_HEADER..(squad_type or "") or nil
 	local description = igi_models.create_DescriptionData(faction, target_desc, squad_info.where)
 
 	return squad_data, description
@@ -282,4 +288,20 @@ function quest_target(obj_data)
 	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
 	local is_ready = target_tbl.ready_to_finish
 	if not is_ready(obj_data) and obj_data.id then return obj_data.id end
+end
+
+function get_money_reward(entity)
+	return 3000
+end
+
+function get_goodwill_reward(entity)
+	return 25
+end
+
+function get_money_fail(entity)
+	return 0
+end
+
+function get_goodwill_fail(entity)
+	return -25
 end

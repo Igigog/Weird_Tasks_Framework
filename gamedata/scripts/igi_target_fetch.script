@@ -21,17 +21,13 @@ function finish_subtask(obj_data)
 	xr_effects.remove_item(nil, nil, {obj_data.section_name, amt})
 end
 
-function on_get_taskdata(task_setup)
-	for _, entity in pairs(task_setup) do
-		if entity.target == TARGET_NAME then
-			-- change amount with "how_much" bcs amount is target creation flag
-			entity.how_much = entity.amount
-			entity.amount = 1
-			
-			-- nothing to show on map obviously
-			entity.not_on_map = true
-		end
-	end
+function on_get_taskdata(entity)
+	-- change amount with "how_much" bcs amount is target creation flag
+	entity.how_much = entity.amount
+	entity.amount = 1
+
+	-- nothing to show on map obviously
+	entity.not_on_map = true
 end
 
 function quest_target(obj_data)
