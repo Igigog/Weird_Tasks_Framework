@@ -2,13 +2,21 @@
 local function build_goodwill_reward(CACHE, task_giver_id)
 	local goodwill = 0
 	local tg = igi_helper.alife_obj(task_giver_id)
+	
+	-- looks like it gives tg randomly :/
+	local se_squad, se_task_giver
 	if tg:clsid() == clsid.online_offline_group_s then
-		tg = igi_helper.alife_obj(tg:commander_id())
+		se_task_giver = igi_helper.alife_obj(tg:commander_id())
+		se_squad = tg
+	else
+		se_task_giver = tg
+		se_squad = get_object_squad(tg)
 	end
-	local community_setup = {get_object_community(tg)}
-
+	
+	local community_setup = {get_object_community(se_task_giver)}
 	if string.find(community_setup[1], "trader") then
-		community_setup = igi_db.get_value("misc.ltx", "trader_faction", tg:section_name())
+		community_setup = igi_db.get_value("misc.ltx", "trader_faction", se_task_giver:section_name())
+		if not community_setup then community_setup = {se_squad:get_squad_community()} end
 	end
 	
 	for id, entity in pairs(CACHE.target) do
@@ -49,7 +57,7 @@ function define_reward(CACHE, task_giver_id)
 end
 
 function give_rewards(rewards)
-	local money = {tostring(rewards.money - 1000), tostring(rewards.money + 1000)}
+	local money = {tostring(rewards.money*0.8), tostring(rewards.money*1.1)}
 	xr_effects.reward_random_money(nil, nil, money)
 	
 	local parts = 0

@@ -21,7 +21,7 @@ function finish_subtask(obj_data)
 	xr_effects.remove_item(nil, nil, {obj_data.section_name, amt})
 end
 
-function on_get_taskdata(entity)
+function entity_on_get_taskdata(entity)
 	-- change amount with "how_much" bcs amount is target creation flag
 	entity.how_much = entity.amount
 	entity.amount = 1
@@ -51,7 +51,7 @@ function setup_item(item_info, factions)
 		item_info.how_much = igi_random.rand(item_info.how_much[1], item_info.how_much[2])
 	end
 	if item_info.item_type then
-		local item_list = igi_db.SectionView.new("fetch_items\\fetch_base.ltx", item_info.item_type)
+		local item_list = igi_db.SectionView.new("tables\\base.ltx", item_info.item_type)
 		item_list = item_list:as_table()
 		assert(item_list, "Igi: fetch: no such item set: "..tostring(item_info.item_type or "nil"))
 		if item_info.has_in_name then

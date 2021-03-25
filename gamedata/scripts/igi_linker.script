@@ -1,4 +1,95 @@
---------------------<Utility>--------------------
+
+local trace_dbg = igi_helper.trace_dbg
+
+Dependency = {}
+Dependency.mt = {}
+setmetatable(Dependency, Dependency.mt)
+
+function Dependency.mt:__call(str, this_entity)
+	-- Won't work with dependencies with macros
+	if type(str) ~= "string" then assert(nil, str) end
+	
+	local pattern = "%$([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%$"
+	local typ, group_id, entity_id, field = str:match(pattern)
+	assert(typ and group_id, "Igi: something went wrong"..typ..group_id)
+	
+	local tbl = {
+		type = typ,
+		group_id = group_id or "1",
+		entity_id = entity_id or "1",
+		field = field or "id",
+		original = str,
+		this = this_entity,
+	}
+	setmetatable(tbl, {__index = self})
+	return tbl
+end
+
+function Dependency:wrap(str)
+	return "$"..str.."$"
+end
+
+function Dependency:unwrap(str)
+	return str:match("%$(.*)%$")
+end
+
+function Dependency:_get_unwrapped_group_link()
+	return self.type.."_"..self.group_id
+end
+
+function Dependency:_get_unwrapped_link()
+	return self:_get_unwrapped_group_link().."_"..self.entity_id
+end
+
+function Dependency:_to_unwrapped_string()
+	return self:_get_unwrapped_link().."."..self.field
+end
+
+function Dependency:get_group_link()
+	return self:wrap(self:_get_unwrapped_group_link())
+end
+
+function Dependency:get_link()
+	return self:wrap(self:_get_unwrapped_link())
+end
+
+function Dependency:to_string(safe_mode)
+	local str = self:wrap(self:_to_unwrapped_string())
+	if safe_mode then str = igi_utils.escape_pattern(str) end
+	return str
+end
+
+function Dependency:get_original(safe_mode)
+	if safe_mode then return igi_utils.escape_pattern(self.original) end
+	return self.original
+end
+
+function Dependency:resolve(entities)
+	local entity
+	printf(self.type)
+	if self.type == "this" then
+		entity = self.this
+	else
+		trace_dbg("entities", entities)
+		trace_dbg(self:get_link(), self:get_group_link())
+		entity = entities[self:get_link()] or entities[self:get_group_link()]
+	end
+
+	return get_dependency_value(entity, self.field)
+end
+
+function assign_group_id(entities)
+	local counters = {}
+	local grouped_entities = {}
+	for k, entity in pairs(entities) do
+		counters[entity.entity_type] = counters[entity.entity_type] and counters[entity.entity_type] + 1 or 1
+		entity.group_id = counters[entity.entity_type]
+
+		grouped_entities[make_entity_link(entity)] = entity
+	end
+	return grouped_entities, counters
+end
+
 function make_link(typ, group_id, obj_id)
 	if not typ or not group_id then
 		callstack()
@@ -15,167 +106,111 @@ function make_entity_link(entity, obj_id)
 	return make_link(entity.entity_type, entity.group_id, obj_id)
 end
 
-function is_dependency(str)
-	if not type(str) == "string" then return end
-	return string.find(str, "^%$%D+_%d+_-%d*%$")
+function has_dependency(str)
+    return string.find(str, "%b$$")
 end
 
-local function is_incomplete_dependency(str)
-	return string.find(str, "^%$%D+_%d+%$")
+function is_dependency(str)
+	if not type(str) == "string" then return end
+	return string.find(str, "^%$.*%$$")
+end
+
+local function escape_pattern(text)
+    return text:gsub("([^%w])", "%%%1")
+end
+
+local function get_name_from_link(entity_link)
+	return entity_link:match("%$(.*)%$")
+end
+
+function get_dependency_value(entity, field)
+	return entity[field]
+end
+
+local function is_group_dependency(str)
+	return not string.find(str, "%D+_%d+_%d+")
+end
+
+local function is_untargeted_dependency(str)
+	return not string.find(str, "_%d+%..+")
 end
 
 local function finalize_dependency(dep)
-	-- if there's only group num in dependency: add default object num (1)
-	-- aka: "smart_1" -> "smart_1_1"
-	if is_incomplete_dependency(dep) then dep = string.gsub(dep, "%$$", "_1$") end
+	if is_group_dependency(dep) and not dep == "this" then 
+		dep = string.gsub(dep, "%$$", "_1$") 
+	end
+	if is_untargeted_dependency(dep) then dep = string.gsub(dep, "%$$", ".id$") end
 	return dep
 end
 
-function assign_group_id(entities)
-	local counters = {}
-	for k, entity in pairs(entities) do
-		counters[entity.entity_type] = counters[entity.entity_type] and counters[entity.entity_type] + 1 or 1
-		entities[k].group_id = counters[entity.entity_type]
-	end
-	return entities, counters
+function dependency_iterator(str)
+	return str:gmatch("%b$$")
 end
 
-local function assign_ids(entities)
-	-- This function is used for dependency testing purposes and will not modify CACHE
-	local new_entities = {}
-	for _, entity in pairs(entities) do
-		for i=1, entity.amount or 1 do
-			assert(entity.group_id, "Group id not initialised: "..entity.entity_type)
-			new_entities[make_link(entity.entity_type, entity.group_id, i)] = entity
-		end
-	end
-	return new_entities
+function has_self_reference(str)
+	return string.find(str, "%$this")
 end
 
-local function get_table_dependencies(tbl)
-	local deps = {}
-	for _, v in pairs(tbl) do
-		-- this expression looks for strings of type: *entity_type*_*group_id*_*entity_id*(optional)
-		if type(v) == 'string' and is_dependency(v) then
-			deps[#deps + 1] = finalize_dependency(v)
-		elseif type(v) == 'table' then
-			for _, dep in pairs(get_table_dependencies(v)) do
-				deps[#deps + 1] = finalize_dependency(dep)
-			end
-		end
-	end
-	return deps
+local function tokenize_dependency(dep)
+	local entity_link = "$"..string.match(dep, "([^%$]*)%.").."$"
+	local field = string.match(dep, "%.([^%$]*)")
+
+	return entity_link, field
 end
 
-local function get_all_dependencies(entities)
-	local deps = {}
-	for id, entity in pairs(assign_ids(entities)) do
-		deps[id] = get_table_dependencies(entity)
+function resolve_dependencies(str, entity, entity_name)
+	if type(str) ~= 'string' then return str end
+
+	local new_str = str
+    local changes = 0
+	if not string.find(str, entity_name) then entity_name = entity_name:match("(.*)_%d+$") end
+	for dep in str:gmatch("%$"..entity_name..".-%$") do
+		local before = escape_pattern(dep)
+		dep = finalize_dependency(dep)
+		local link, field = tokenize_dependency(dep)
+		local value = get_dependency_value(entity, field)
+        local new_changes
+		new_str, new_changes = new_str:gsub(before, value)
+        changes = changes + new_changes
 	end
-	return deps
+	return new_str, changes > 0
 end
 
-local function is_dependencies_resolved(dep_list, objs_set)
-	for _, dep in pairs(dep_list) do
-        if not objs_set[dep] then
+function resolve_self_reference(str, entity)
+	local changes
+    local changes_made
+    repeat
+        changes = false
+        for field in str:gmatch("this%.(.-)%$") do
+            changes = true
+            changes_made = true
+            str = str:gsub("%$this%."..field.."%$", get_dependency_value(entity, field))
+        end
+    until not changes
+    return str, changes_made
+end
+
+function has_no_outer_links(tbl)
+    for k,v in pairs(tbl) do
+        if type(v) == 'string' and not string.find(k, "link") then 
+            for k in v:gmatch("%$(.-)[%.%$]") do
+                if k ~= 'this' and k ~= '' then
+                    return false
+                end
+            end
+        elseif type(v) == 'table' and not has_no_outer_links(v) then
             return false
         end
     end
     return true
 end
 
-function get_entity_links(task_table)
-	local tbl, counter = assign_group_id(task_table)
-	tbl = assign_ids(tbl)
-	return tbl, counter
+function broadcast_entity(entity, entity_link, tbl)
+    for k,v in pairs(tbl) do
+        if type(v) == 'string' and not string.find(k, "link") then
+            tbl[k] = resolve_dependencies(v, entity, get_name_from_link(entity_link))
+        elseif type(v) == 'table' then
+            broadcast_entity(entity, entity_link, v)
+        end
+    end
 end
-
---------------------<Test dependencies>--------------------
-local function get_entities_test_order(entities)
-	entities = assign_group_id(entities)
-
-	local objs = {}
-	local order = {}
-	local changes = true
-	while changes do
-		changes = false
-		for object_id, dependencies in pairs(get_all_dependencies(entities)) do
-			if not objs[object_id] and 
-					(not next(dependencies) or is_dependencies_resolved(dependencies, objs)) then
-				objs[object_id] = true
-				order[#order + 1] = object_id
-				changes = true
-			end
-		end
-	end
-	return order
-end
-
---------------------<Setup order>--------------------
-local function test_to_group_order(test_order)
-	local group_order = {}
-	local group_pool = {}
-	for _, obj_name in pairs(test_order) do
-		group_name = string.match(obj_name, "^(%$%D+_%d+)") .. "$"
-		if not group_pool[group_name] then
-			group_order[#group_order + 1] = group_name
-			group_pool[group_name] = true
-		end
-	end
-	return group_order
-end
-
-local function set_group_order(entities)
-	local test_order = get_entities_test_order(entities)
-	printf("test order")
-	for k, v in pairs(test_order) do
-		printf(tostring(k)..": "..tostring(v))
-	end
-
-	local entities_count = 0
-	for _, entity in pairs(entities) do
-		entities_count = entities_count + (entity.amount or 1)
-	end
-	if #test_order ~= entities_count then return nil, "Igi: linker: Can't resolve dependencies" end
-
-	local order = test_to_group_order(test_order)
-	return order
-end
-
---------------------<Globals>--------------------
-function get_order(task_name)
-	local task_data = igi_taskdata.get_task_setup(task_name)
-	local constructor = dup_table(task_data)
-	return assert(set_group_order(constructor))
-end
-get_order = igi_utils.memoize_one_variable(get_order)
-
-function link(obj_tbl, entities)
-	for k, v in pairs(obj_tbl.as_table and obj_tbl:as_table() or obj_tbl) do
-		if type(v) == "string" and is_dependency(v) then
-			if not string.find(k, "link") then
-				obj_tbl[k] = entities[v].id
-			end
-		elseif type(v) == "table" then
-			obj_tbl[k] = link(v, entities)
-		end
-	end
-	return obj_tbl
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

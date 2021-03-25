@@ -1,5 +1,46 @@
 -- There are purely utility functions, not bound with tasks or STALKER
 
+Set = {}
+function Set.union(set1, set2)
+	local new_set = dup_table(set1)
+	for k in pairs(set2) do
+		new_set[k] = true
+	end
+	return new_set
+end
+
+function Set.intersection(set1, set2)
+	local new_set = {}
+	for k in pairs(set2) do
+		new_set[k] = set1[k]
+	end
+	return new_set
+end
+
+function Set.difference(set1, set2)
+	local new_set = dup_table(set1)
+	for k in pairs(set2) do
+		new_set[k] = nil
+	end
+	return new_set
+end
+
+function Set.from_list(list)
+	local new_set = {}
+	for _, v in pairs(list) do
+		new_set[v] = true
+	end
+	return new_set
+end
+
+function Set.to_list(set)
+	local tbl = {}
+	for k in pairs(set) do
+		tbl[#tbl + 1] = k
+	end
+	return tbl
+end
+
 function list_to_set(l)
 	if(l == nil) then return nil end
 	
@@ -89,18 +130,6 @@ function memoize_one_variable(f)
     end
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function escape_pattern(text)
+    return text:gsub("([^%w])", "%%%1")
+end

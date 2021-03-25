@@ -21,27 +21,48 @@ function add_entry(tbl, typ, group_id, entity_id, se_obj)
 	tbl[id] = create_target_entry(se_obj)
 end
 
-function create_target(entities_setup, task_name)
-	trace_dbg("create target "..task_name, entities_setup)
-	local targets = {}
-	local order = igi_linker.get_order(task_name)
-	trace_dbg("order", order)
-	
-	for _, group_link in pairs(order) do
-		local entity_setup = entities_setup[group_link]
-		local target_tbl = igi_taskdata.get_target_table(entity_setup.target or "basic")
-		local handler = target_tbl["create_"..entity_setup.entity_type]
-		
-		igi_linker.link(entity_setup, targets)
-		local group_data = handler(entity_setup)
-		trace_dbg("linked entities", group_data)
+local function create_group_by_setup(entities_setup)
+	local target_tbl = igi_taskdata.get_target_table(entities_setup.target or "basic")
+	local handler = target_tbl["create_"..entities_setup.entity_type]
+    local group_data = handler(entities_setup)
+	trace_dbg("group_data", group_data)
+	return group_data
+end
 
-		for link, target in pairs(group_data) do
-			target.where_link = entity_setup.where_link
-			target.target = entity_setup.target
-			target.online_activities = entity_setup.online_activities
-			targets[link] = target
-		end
-	end
-	return targets
+local function pass_group_values(entity, entity_setup)
+	entity.where_link = entity_setup.where_link
+	entity.target = entity_setup.target
+	entity.online_activities = entity_setup.online_activities
+end
+
+function create_target(entities_setup)
+    local targets = {}
+    local created_keys = {}
+	
+	-- if it's not ready after #entities_setup tries, it won't be ready
+    for _ in pairs(entities_setup) do
+        for k,entity_setup in pairs(entities_setup) do
+			printf("try")
+            if not created_keys[k] and igi_linker.has_no_outer_links(entity_setup) then
+			    trace_dbg("entity_setup", entity_setup)
+				igi_text_processor.process_unlinked_entity(entity_setup)
+				trace_dbg("processed entity", entity_setup)
+
+                local group_data = create_group_by_setup(entity_setup)
+				created_keys[k] = true
+
+				for link, entity in pairs(group_data) do
+					pass_group_values(entity, entity_setup)
+					targets[link] = entity
+
+					igi_linker.broadcast_entity(entity, link, entities_setup)
+					trace_dbg("After broadcasting "..link, entities_setup)
+				end
+            end
+        end
+    end
+    if #created_keys < #entities_setup then
+        print("Linker probably fucked")
+    end
+    return targets
 end

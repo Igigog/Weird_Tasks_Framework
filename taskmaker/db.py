@@ -29,7 +29,7 @@ npc = {
 	# Escape
 	"esc_smart_terrain_5_7_loner_mechanic_stalker": {"Mechanic", "Escape", "Loner"},
 	"army_south_mechan_mlr": {"Mechanic", "Escape", "Army"},
-	"drx_sl_esc_m_trader": {"Trader", "Leader", "Escape", "Loner", "Sidorovich"},
+	"esc_m_trader": {"Trader", "Leader", "Escape", "Loner", "Sidorovich"},
 	"esc_2_12_stalker_wolf": {"TaskGiver", "Loner", "Escape", "Wolf"},
 	"esc_2_12_stalker_nimble": {"Trader", "Loner", "Escape", "Nimble"},
 	"esc_3_16_military_trader": {"Trader", "Army", "Escape"},

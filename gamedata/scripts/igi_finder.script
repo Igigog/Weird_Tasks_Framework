@@ -174,7 +174,7 @@ function Finder._populate_item_names(self)
 	local name_sections = ini_file("igi_tasks\\finder\\item_types_base.ltx")
 
 	function itr(section)
-		local name_set = igi_db.SectionView.new("finder\\item_types_base.ltx", section):as_set()
+		local name_set = igi_db.SectionView.new("tables\\base.ltx", section):as_set()
 		self.item_names[section] = name_set 
 	end
 	name_sections:section_for_each(itr)

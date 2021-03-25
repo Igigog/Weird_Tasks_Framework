@@ -44,6 +44,7 @@ end
 
 function check(preconditions)
 	if not preconditions then return true end
+	if igi_mcm.get_options_value("debug") then return true end
 	local condition_handlers = {
 		["player_tier"] = rank_precondition,
 		["goodwill"] = goodwill_precondition,

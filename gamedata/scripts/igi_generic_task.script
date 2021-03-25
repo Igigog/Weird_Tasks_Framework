@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-local TASKS_VERSION = "2.10"
+TASKS_VERSION = "2.11b1"
 local TASK_SETUP = {}
 local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 local trace_dbg = igi_helper.trace_dbg
@@ -35,10 +35,32 @@ end
 
 function save_state(m_data)
 	m_data.igi_tasks_cache = TASKS_CACHE
+	m_data.igi_tasks_ver = TASKS_VERSION
 end
 
 function load_state(m_data)
 	TASKS_CACHE = m_data.igi_tasks_cache or {TASKS_VERSION = TASKS_VERSION}
+	
+	if m_data.igi_tasks_ver ~= TASKS_VERSION then
+		-- Remove tasks from Task Manager
+		local tm = task_manager.get_task_manager()
+		local task_table
+		if tm and tm.task_info and #tm.task_info ~= 0 then
+			for task_id in pairs(tm.task_info) do
+				if TASKS_CACHE[task_id] then
+					tm.task_info[task_id] = nil
+				end
+			end
+		end
+		-- Remove tasks from loading to task manager
+		if m_data.task_info then
+			for task_id in pairs(m_data.task_info) do
+				if TASKS_CACHE[task_id] then
+					m_data.task_info[task_id] = nil
+				end
+			end
+		end
+	end
 end
 
 local function get_cache(task_id)
@@ -70,7 +92,7 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	if task_data.disabled then return false end
 	if not igi_precondition.check(task_data.preconditions) then return false end
 
-	TASK_SETUP[task_id] = igi_setup.setup_quest(task_name)
+	TASK_SETUP[task_id] = igi_setup.setup_quest(task_id)
 	trace_dbg("setup", TASK_SETUP[task_id])
 	TASK_SETUP.task_id = task_id
 	return TASK_SETUP[task_id] and true or false
@@ -95,14 +117,14 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not (CACHE["target"]) then
-		-- printf(utils_data.print_table(CACHE, "CACHE before"), true)
+		trace_dbg("before target creation", CACHE)
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_name)
 		igi_callbacks.invoke_target_callbacks("on_after_target_creation", CACHE)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
 		CACHE.reward = igi_rewards.define_reward(CACHE, tsk.task_giver_id)
-		-- printf(utils_data.print_table(CACHE, "CACHE after", true))
+		trace_dbg("after target creation", CACHE)
 	end
 	
 	-- Timer for less pressure (totally stolen from tasks_assault.script)

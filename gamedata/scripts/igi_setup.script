@@ -70,7 +70,7 @@ local function setup_entities(CACHE, description)
 	local task_data = igi_taskdata.get_finalized_task_setup(CACHE.task_name)
 	CACHE.group_counter = dup_table(
 			igi_taskdata.get_task_data(CACHE.task_name).group_counter)
-	trace_dbg("finalized CACHE", CACHE)
+	trace_dbg("finalized CACHE", task_data)
 	
 	for _, group_preset in pairs(task_data) do
 		trace_dbg('setup group '..tostring(_))
@@ -84,11 +84,12 @@ local function setup_entities(CACHE, description)
 	return true
 end
 
-function setup_quest(task_name)
+function setup_quest(task_id)
+	local task_name = igi_helper.get_task_name(task_id)
 	trace_dbg("setup "..task_name)
 	local game_time = game.get_game_time()
 	local game_date = game_time:dateToString(game.CTime.DateToDay)
-	igi_random.set_seed(task_name..game_date)
+	igi_random.set_seed(task_id..game_date)
 
 	local CACHE = setup_CACHE(task_name)
 	local description = igi_description.TaskDescription.new()

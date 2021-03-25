@@ -96,8 +96,9 @@ function get_finalized_task_setup(task_name)
 	local tbl = get_task_data(task_name)
 	local task_setup = dup_table(tbl.setup)
 
-	task_setup = igi_helper.scale_to_rank(task_setup)
 	task_setup = igi_linker.assign_group_id(task_setup)
+	task_setup = igi_text_processor.resolve_unlinked_macros(task_setup)
+	igi_text_processor.link_virtual_variables(task_setup)
 	return task_setup
 end
 

@@ -16,7 +16,7 @@ function is_complete(obj_data)
 	if se_obj:section_name() ~= obj_data.section_name then return true end
 end
 
-function on_after_target_creation(subtask_data)
+function entity_on_after_target_creation(subtask_data)
 	if is_ara() then
 		igi_ara.add_squad_to_tables(subtask_data.id, subtask_data)
 	end
@@ -30,7 +30,7 @@ function is_failed(subtask_data)
 	return false
 end
 
-function on_complete(subtask_data)
+function entity_on_complete(subtask_data)
 	if is_ara() then
 		igi_ara.clear_ara_table(subtask_data)
 	end
@@ -59,6 +59,7 @@ end
 local function get_npc_value(se_npc)
 	local value = 1000
 	local tier = string.sub(se_npc:section_name(), -1)
+	printf(se_npc:section_name())
 	local factors = igi_db.SectionView.new('tiers.ltx', 'npc_tier_factor')
 
 	return value*factors[tier]

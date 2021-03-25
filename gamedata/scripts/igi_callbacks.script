@@ -1,12 +1,25 @@
 
 function invoke_target_callbacks(callback_name, CACHE, entity_table, ...)
 	local entity_table = entity_table or CACHE.target
+	local target_set = {}
 	
 	for k, entity in pairs(entity_table) do
 		if entity.target then
 			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			if target_tbl[callback_name] then
-				target_tbl[callback_name](entity, CACHE, ...)
+			-- one-time callback
+			if target_tbl[callback_name] and not target_set[entity.target] then
+				target_set[entity.target] = true
+				target_tbl[callback_name](CACHE, ...)
+			end
+		end
+	end
+	
+	for k, entity in pairs(entity_table) do
+		if entity.target then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			-- callback for every entity with target
+			if target_tbl['entity_'..callback_name] then
+				target_tbl['entity_'..callback_name](entity, CACHE, ...)
 			end
 		end
 	end

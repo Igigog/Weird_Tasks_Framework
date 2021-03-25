@@ -2,6 +2,8 @@
 -- LOCALS
 -- No actual grouping, these are used to lower other functions complexity
 ------------------------------------------------
+local trace_dbg = igi_helper.trace_dbg
+
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 	local squad_name, squad_type, faction
@@ -10,7 +12,7 @@ local function create_squad_data(squad_info, factions)
 		squad_name = squad_info.section
 		faction = ini_sys:r_string_ex(squad_name, "faction")
 	else
-		local squads = assert(igi_db.SectionView.new("squads\\create_squad_base.ltx", squad_info.type),
+		local squads = assert(igi_db.SectionView.new("tables\\base.ltx", squad_info.type),
 			"Igi: setup squad: Unknown squad type "..squad_info.type)
 		if string.find(squad_info.type, "mutant") then
 			squad_name, squad_type = squads:random()
@@ -37,7 +39,7 @@ local function fetch_squad_data(squad_info, factions)
 	local enemy_factions
 	if squad_info.type == "mutant" then
 		enemy_factions = igi_db.SectionView.new(
-				"squads\\fetch_squad_base.ltx", "monster_types"
+				"tables\\base.ltx", "monster_types"
 				):as_set()
 	elseif squad_info.type == "enemy" then
 		enemy_factions = igi_helper.get_faction_enemies(factions.actor)
@@ -81,7 +83,7 @@ end
 local function find_objects(object_data, amount)
 	local finder = igi_finder.get_finder()
 	objects = finder:get_objects_by_args(
-		igi_helper.scale_value(object_data.item_type), 
+		object_data.item_list, 
 		object_data, 
 		object_data.possible_endings, 
 		object_data.only_endings)
@@ -108,7 +110,7 @@ local function create_item_data(item_info, factions)
 end
 
 local function fetch_item_data(item_info, factions)
-	assert(item_info.item_type, "Igi: setup_item: No item list given")
+	assert(item_info.item_list, "Igi: setup_item: No item list given")
 	item_info.enemy_to = factions[item_info.enemy_to] or item_info.enemy_to
 
 	local objects = find_objects(item_info, item_info.amount)
@@ -243,6 +245,17 @@ function create_item(group_data)
 	if group_data.ids then
 		for i, id in pairs(group_data.ids) do
 			local se_obj = igi_helper.alife_obj(id)
+			--[[local parent_id = se_obj.parent_id
+			if parent_id ~= 65535 then
+				local parent = igi_helper.alife_obj(parent_id)
+				local p_clsid = parent:clsid()
+				if IsStalker(parent, p_clsid) 
+						or IsMonster(parent, p_clsid)
+						or p_clsid == clsid.online_offline_group_s
+						then
+					parent.force_online = true
+				end
+			end]]
 			igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
 		end
 	else

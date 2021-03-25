@@ -1,3 +1,6 @@
+
+local trace_dbg = igi_helper.trace_dbg
+
 -- TaskDescription class
 -- Takes care of all description preparations, get_description will return description string
 
@@ -92,10 +95,13 @@ function TaskDescription._link(self, setup_entities)
 	
 	for k, location in pairs(self.locations) do
 		if string.find(location, "%$smart") then
-			group, id = string.match(location, "_(%d+)_(%d+)")
-			assert(group and id, "Igi: description: smart unlinkable: "..location)
-
-			local smart_name = setup_entities["$smart_"..group.."$"].names[tonumber(id)]
+			printf(location)
+			group, id = string.match(location, "_(%d+)_?(%d*)")
+			printf(group)
+			printf(id or "1")
+			assert(group, "Igi: description: smart unlinkable: "..location)
+			trace_dbg("link locations", setup_entities)
+			local smart_name = setup_entities["$smart_"..group.."$"].names[tonumber(id) or 1]
 			self.locations[k] = "st_"..smart_name.."_name"
 		end
 	end
