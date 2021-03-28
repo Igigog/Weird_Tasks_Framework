@@ -1,6 +1,7 @@
 -- Object finder functions
 
 local alife_obj = igi_helper.alife_obj
+local ini_tables = igi_db.ini_tables
 
 local function object_in_world(se_obj)
 	return se_obj.parent_id == 65535
@@ -43,7 +44,7 @@ local function is_far(se_obj, sim, gg)
 	return not (is_online(se_obj, sim, gg) or is_nearby(se_obj, sim, gg))
 end
 
-local blacklist = igi_db.SectionView.new("map_config.ltx", "blacklist"):as_set()
+local blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
 local function is_not_on_blacklisted_map(se_obj, sim, gg)
 	local object_lvl = igi_helper.get_object_level(se_obj, sim, gg)
 	return not blacklist[object_lvl]
@@ -171,13 +172,14 @@ local Finder = {
 }
 
 function Finder._populate_item_names(self)
-	local name_sections = ini_file("igi_tasks\\finder\\item_types_base.ltx")
-
-	function itr(section)
-		local name_set = igi_db.SectionView.new("tables\\base.ltx", section):as_set()
-		self.item_names[section] = name_set 
-	end
-	name_sections:section_for_each(itr)
+	ini_tables._ini:section_for_each(
+		function(section) 
+			if section:find("^f_") then
+				local name_set = ini_tables[section]:as_set()
+				self.item_names[section] = name_set
+			end
+		end
+	)
 end
 
 local function clear_cache()
@@ -296,7 +298,7 @@ function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
 	if with_ending and not only_ending then
 		igi_utils.extend_list(items_pool, self:get_items(typ))
 	end
-	printf("has items: "..tostring(not not next(items_pool)))
+
 	-- extend for new indexes
 	return igi_utils.extend_list({}, self:_filter_by_args(items_pool, args))
 end

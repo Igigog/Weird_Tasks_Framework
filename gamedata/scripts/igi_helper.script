@@ -24,17 +24,6 @@ function get_task_name(task_id)
 	return task_id:match(".*task_(.*)")
 end
 
-function get_player_tier()
-	local player_rank = db.actor:character_rank()
-	local tiers = igi_db.SectionView.new("tiers.ltx", "player_tiers")
-	for tier, bounds in pairs(tiers:as_table()) do
-		if player_rank >= bounds[1] and player_rank <= bounds[2] then
-			return tier
-		end
-	end
-	return "endgame"
-end
-
 function scale_to_player(a, b)
 	-- will return integer from a to b (or from 1 to a) based
 	-- on player rank
@@ -180,28 +169,6 @@ function release_package(pkg_data)
 	end
 end
 
-function reward_quest_money(task_name)
-	local difficulty_addition = {
-		['start_game'] = 0,
-		['midgame'] = 2000,
-		['endgame'] = 4000,
-	}
-	local task_info = igi_taskdata.get_task_data(task_name)
-	local sum_money = task_info.reward and task_info.reward.money or 3000
-	if sum_money == 0 then return end
-	
-	local player_tier = get_player_tier()
-
-	if (not sum_money) and player_tier then
-		sum_money = 2500 + difficulty_addition[player_tier]
-	elseif not sum_money then
-		sum_money = 2500
-	end
-
-	local money = {tostring(sum_money), tostring(sum_money+1000)}
-	xr_effects.reward_random_money(nil, nil, money)
-end
-
 function release_targets_in_world(target_cache)
 	local handlers = {
 		['package'] = release_package,
@@ -245,51 +212,6 @@ function object_in_player_inv(obj_data)
 	return se_obj and se_obj.parent_id == 0
 end
 
-function deliver_item(obj_data)
-	local npc = mob_trade.GetTalkingNpc()
-	if npc then
-		if obj_data.id then
-			local obj = igi_helper.level_object(obj_data.id)
-			db.actor:transfer_item(obj, npc)
-			news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
-		else
-			local section = obj_data.section_name
-			if (section and db.actor:object(section)) then
-				local amt = obj_data.how_much or 1
-				local trade_npc = get_speaker()
-				if (trade_npc) then 
-					local function transfer_object_item(itm)
-						if (itm:section() == section and amt > 0) then
-							db.actor:transfer_item(itm, trade_npc)
-							amt = amt - 1
-						end
-						if (amt <= 0) then 
-							return true
-						end
-						return false
-					end
-					db.actor:inventory_for_each(transfer_object_item)
-				else
-					xr_effects.remove_item(actor, npc, {section,amt})	
-				end
-			end
-		end
-	end
-end
-
-function scale_to_rank(tbl)
-	local player_tier = get_player_tier()
-	if not tbl then return end
-    for k, v in pairs(tbl) do
-        if type(v) == 'table' then
-            tbl[k] = scale_to_rank(v)
-        elseif type(v) == 'string' and string.find(v, "scalable") then
-            tbl[k] = string.gsub(v, "scalable", player_tier)
-        end
-    end
-    return tbl
-end
-
 function get_object_smart(se_obj)
 	if se_obj.smart_id then
 		return SIMBOARD.smarts[se_obj.smart_id].smrt and SIMBOARD.smarts[se_obj.smart_id].smrt:name()
@@ -305,57 +227,6 @@ end
 
 function get_object_location_description(se_obj)
 	return dynamic_news_helper.GetPointDescription(se_obj)
-end
-
-local function is_legit_squad(squad)
-	local section = squad and squad:section_name()
-	return squad and (not section:find("tushkano")) and (not section:find("rat"))
-end
-
-local function is_squad_at_smart(squad, smart)
-	local scripted_target = squad:get_script_target()
-	
-	if scripted_target then 
-		return scripted_target == smart.id
-	else
-		if squad.current_target_id ~= smart.id then
-			return false
-		end
-	
-		if squad.current_action ~= 1 then
-			return false
-		end
-	
-		if not is_legit_squad(squad) then
-			return false
-		end	
-	end
-	
-	return true
-end
-
-function is_smart_cleared(smart_entity)
-	local smart_data = SIMBOARD.smarts[smart_entity.id]
-	local cleared = true
-	for sq_id, _ in pairs(smart_data.squads) do
-		local squad = alife_obj(sq_id)
-		if squad and simulation_objects.is_on_the_same_level(squad, smart_data.smrt) then
-			if not ( squad.first_update ) then
-				--printf("~ %s | not all squads are loaded yet!", task_id)
-				cleared = false
-				break
-			end
-
-			if is_squad_at_smart(squad, smart_data.smrt) then
-				-- reset gametime so they don't leave
-				squad.stay_time = game.get_game_time() 
-				squad.force_online = true
-				--printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
-				cleared = false
-			end
-		end
-	end
-	return cleared
 end
 
 function objects_fetched(obj_data)

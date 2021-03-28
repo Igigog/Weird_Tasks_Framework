@@ -34,10 +34,7 @@ local function is_object_online(se_obj)
 	return npc and is_stalker_online(npc) or se_obj.online
 end
 
-local condition_handlers = {
+igi_activities.add_condition_handlers{
 	on_parent_death = is_parent_dead,
 	if_low_condition = is_low_condition,
 }
-for k, v in pairs(condition_handlers) do
-	igi_activities.condition_handlers[k] = v
-end

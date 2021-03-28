@@ -1,3 +1,4 @@
+local ini_tables = igi_db.ini_tables
 
 function has_macro(str)
 	return str:find("%b&&")
@@ -43,10 +44,7 @@ end
 
 function Macro.resolve_TableValueRandom(args)
 	args = parse_args(args)
-	printf('args')
-	printf(args[2] or "nil")
-	printf(args[1] or "nil")
-	local tbl = igi_db.SectionView.new("tables\\base.ltx", args[1]):as_table()
+	local tbl = ini_tables[args[1]]:as_table()
 	return tostring(igi_utils.random_table_element(tbl))
 end
 
@@ -57,7 +55,10 @@ function Macro.resolve_TableValueByKey(args)
 	end
 	
 	args = parse_args(args)
-	local tbl = igi_db.SectionView.new("tables\\base.ltx", args[1])
+	printf(args[1])
+	printf(args[2])
+	local tbl = ini_tables[args[1]]
+	printf(123)
 	return tostring(tbl[args[2]])
 end
 

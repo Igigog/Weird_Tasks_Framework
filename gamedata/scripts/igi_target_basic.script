@@ -3,31 +3,19 @@
 -- No actual grouping, these are used to lower other functions complexity
 ------------------------------------------------
 local trace_dbg = igi_helper.trace_dbg
+local ini_tables = igi_db.ini_tables
 
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
-	local squad_name, squad_type, faction
-	if squad_info.section then
-		if not ini_sys:section_exist(squad_info.section) then assert(nil, squad_info.section) end
-		squad_name = squad_info.section
-		faction = ini_sys:r_string_ex(squad_name, "faction")
-	else
-		local squads = assert(igi_db.SectionView.new("tables\\base.ltx", squad_info.type),
-			"Igi: setup squad: Unknown squad type "..squad_info.type)
-		if string.find(squad_info.type, "mutant") then
-			squad_name, squad_type = squads:random()
-		else
-			assert(squad_info.faction or squad_info.faction_type, "Igi: setup_squad: No faction data")
-			faction = squad_info[squad_info.faction] or factions[squad_info.faction_type]
-			squad_name = squads[faction]
-		end
-	end
+
+	local section = squad_info.section
+	if not ini_sys:section_exist(section) then assert(nil, section) end
+	local faction = ini_sys:r_string_ex(section, "faction")
 	
-	assert(squad_name, "Igi: setup_squad: Unable to set squad_name")
+	assert(section, "Igi: setup_squad: Unable to set squad_name")
 	-- set all default
-	local squad_data = igi_models.create_SquadsData(nil, squad_name, faction or "mutant", squad_info.where)
-	local target_desc = squad_type and igi_db.TEXT_HEADER..(squad_type or "") or nil
-	local description = igi_models.create_DescriptionData(faction, target_desc, squad_info.where)
+	local squad_data = igi_models.create_SquadsData(nil, section, faction or "mutant", squad_info.where)
+	local description = igi_models.create_DescriptionData(faction, nil, squad_info.where)
 
 	return squad_data, description
 end
@@ -35,14 +23,11 @@ end
 local function fetch_squad_data(squad_info, factions)
 	-- important: ids, predefined name, description, target
 	local finder = igi_finder.get_finder()
-	-- printf(utils_data.print_table(squad_info, "squad_info", true))
 	local enemy_factions
 	if squad_info.type == "mutant" then
-		enemy_factions = igi_db.SectionView.new(
-				"tables\\base.ltx", "monster_types"
-				):as_set()
+		enemy_factions = ini_tables["monster_types"]:as_set()
 	elseif squad_info.type == "enemy" then
-		enemy_factions = igi_helper.get_faction_enemies(factions.actor)
+		enemy_factions = igi_helper.get_faction_enemies(character_community(db.actor))
 	end
 	assert(enemy_factions)
 	local squads = finder:get_squads_by_args(squad_info, enemy_factions)
@@ -97,10 +82,7 @@ local function find_objects(object_data, amount)
 end
 
 local function create_item_data(item_info, factions)
-	local section = item_info.section or "nil"
-	if type(section) == "table" then
-		section = section[igi_random.rand(#section)]
-	end
+	local section = item_info.section
 	assert(ini_sys:section_exist(section), "Igi: bad item section: "..section or "nil")
 	
 	local item_data = igi_models.create_ItemData(nil, section, item_info.where)
@@ -111,7 +93,6 @@ end
 
 local function fetch_item_data(item_info, factions)
 	assert(item_info.item_list, "Igi: setup_item: No item list given")
-	item_info.enemy_to = factions[item_info.enemy_to] or item_info.enemy_to
 
 	local objects = find_objects(item_info, item_info.amount)
 	if not objects then return nil end
@@ -154,25 +135,23 @@ function setup_squad(squad_info, factions)
 end
 
 function setup_smart(smart_info)
-	local amount = smart_info.amount or 1;
-
 	local smart_data
 	if smart_info.smart_name then
 		assert(SIMBOARD.smarts_by_names[smart_info.smart_name], 
 			"Igi Tasks: wrong smart name "..smart_info.smart_name)
 		smart_data = igi_models.create_SmartData({smart_info.smart_name})
 	else
+		local amount = smart_info.amount or 1
 		local finder = igi_finder.get_finder()
 		local possible_smarts = finder:get_smarts(smart_info.where)
 		
 		if #possible_smarts < amount then 
-			printf("smarts sucked")
 			return nil 
 		end
 		local smarts_list = igi_utils.get_random_items(possible_smarts, amount)
 		local smart_names = {}
-		for _, smart_info in pairs(smarts_list) do
-			table.insert(smart_names, smart_info.smrt:name())
+		for _, smart in pairs(smarts_list) do
+			table.insert(smart_names, smart.smrt:name())
 		end
 		
 		smart_data = igi_models.create_SmartData(smart_names)
@@ -227,14 +206,7 @@ function create_squad(group_data)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 
-		if group_data.items then
-			local commander = igi_helper.alife_obj(squad:commander_id())
-			for item, amount in pairs(items) do
-				alife_create_item(item, commander)
-			end
-		end
 		igi_target.add_entry(squads, group_data.entity_type, group_data.group_id, i, squad)
-		--squads[igi_linker.make_id("squad", group_data.group_id, i)] = create_target_entry(squad)
 	end
 	
 	return squads
@@ -245,7 +217,7 @@ function create_item(group_data)
 	if group_data.ids then
 		for i, id in pairs(group_data.ids) do
 			local se_obj = igi_helper.alife_obj(id)
-			--[[local parent_id = se_obj.parent_id
+			local parent_id = se_obj.parent_id
 			if parent_id ~= 65535 then
 				local parent = igi_helper.alife_obj(parent_id)
 				local p_clsid = parent:clsid()
@@ -255,7 +227,7 @@ function create_item(group_data)
 						then
 					parent.force_online = true
 				end
-			end]]
+			end
 			igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
 		end
 	else
@@ -291,7 +263,9 @@ function create_smart(group_data)
 			smart_name = smart_name,
 			id = smart_id,
 		}
-		xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
+		if not IsWarfare() then
+			xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
+		end
 		smarts[igi_linker.make_link("smart", group_data.group_id, i)] = smart_data
 	end
 	return smarts

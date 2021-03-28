@@ -12,4 +12,7 @@
 	<string id="ui_mcm_igi_tasks_realistic_assassinations">
 		<text>(Arszi's) Реалистичные убийства</text>
 	</string>
+	<string id="ui_mcm_igi_tasks_debug">
+		<text>Режим дебага (Может вызывать падение фпс)</text>
+	</string>
 </string_table>

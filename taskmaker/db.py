@@ -1,6 +1,22 @@
 AUTHOR = "no_author"
 PREFIX = ""
-USE_TASK_TO_NPC = false
+
+fs = frozenset
+factions = {
+    "Loner",
+    "Army",
+    "Duty",
+    "Freedom",
+    "Bandit",
+    "Mercenary",
+    "Fanatic",
+    "Ecolog",
+    "ClearSky",
+    "Monolith",
+    "Renegade",
+    "Greh",
+    "UNISG",
+}
 
 npc = {
 	# Agroprom
@@ -66,11 +82,11 @@ npc = {
 	"pri_monolith_monolith_trader_stalker": {"Trader", "Monolith", "Pripyat2", "Rabbit"},
 	"lider_monolith_haron": {"Leader", "Monolith", "Pripyat2", "Haron"},
 	"monolith_eidolon": {"TaskGiver", "Monolith", "Pripyat2", "Eidolon"},
-	"merc_pri_grifon_mlr": {"Leader", "Mercenary", "Pripyat2", "Griffin"}
+	"merc_pri_grifon_mlr": {"Leader", "Mercenary", "Pripyat2", "Griffin"},
 	# Red Forest
 	"red_greh_tech": {"Mechanic", "Greh", "RedForest"},
 	# Truck Cemetery
-	"trucks_cemetery_bandit_mechanic": {"Mechanic", "Bandit", "TruckCemetery"}
+	"trucks_cemetery_bandit_mechanic": {"Mechanic", "Bandit", "TruckCemetery"},
 	# Yantar
 	"mechanic_army_yan_mlr": {"Mechanic", "Army", "Yantar"},
 	"yan_stalker_sakharov": {"Leader", "Ecolog", "Yantar", "Sakharov"},
@@ -100,37 +116,40 @@ warfare_factions = {
 warfare_npc_types = {
 	"mechanic": {"Mechanic"},
 	"trader": {"Trader"},
+    "medic": {"Medic"},
+    "barman": {"Barman"},
+}
 
 locations = { 
-    "agroprom": [
+    "agroprom": {
         "agr_smart_terrain_1_6_army_mechanic_stalker",
         "agr_1_6_medic_army_mlr",
         "agr_smart_terrain_1_6_near_2_military_colonel_kovalski",
-    ],
-    "bar": [
+    },
+    "bar": {
         "bar_visitors_stalker_mechanic",
         "bar_dolg_medic",
         "bar_visitors_barman_stalker_trader",
         "bar_dolg_leader",
         "bar_dolg_general_petrenko_stalker",
         "snitch",
-    ],
-    "darkscape": [
+    },
+    "darkscape": {
         "dasc_tech_mlr",
-    ],
-    "darkvalley": [
+    },
+    "darkvalley": {
         "val_smart_terrain_7_3_bandit_mechanic_stalker",
         "bandit_main_base_medic_mlr",
         "zat_b7_bandit_boss_sultan",
         "val_smart_terrain_7_4_bandit_trader_stalker",
-    ],
-    "deadcity": [
+    },
+    "deadcity": {
         "cit_killers_merc_mechanic_stalker",
         "cit_killers_merc_medic_stalker",
         "cit_killers_merc_trader_stalker",
         "cit_killers_merc_barman_mlr",
-    ],
-    "escape": [
+    },
+    "escape": {
         "esc_smart_terrain_5_7_loner_mechanic_stalker",
         "army_south_mechan_mlr",
         "drx_sl_esc_m_trader",
@@ -138,12 +157,12 @@ locations = {
         "esc_2_12_stalker_nimble",
         "esc_3_16_military_trader",
         "esc_2_12_stalker_fanat",
-    ],
-    "garbage": [
+    },
+    "garbage": {
         "hunter_gar_trader",
         "baraholka_trader_night",
         "baraholka_trader",
-    ],
+    },
     "jupiter": {
         "jup_b217_stalker_tech",
         "jup_cont_mech_bandit",
@@ -197,4 +216,8 @@ locations = {
     },
 }
 
-quests = {}
+icons = {
+}
+
+quests = {
+}

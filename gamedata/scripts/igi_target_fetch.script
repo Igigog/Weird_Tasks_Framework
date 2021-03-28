@@ -37,7 +37,7 @@ end
 local function get_name_part(item_info, factions)
 	local part = item_info.has_in_name
 	if part == "*worst_enemy*" then
-		local enemies = igi_db.SectionView.new("misc.ltx", "worst_enemy")
+		local enemies = igi_db.SectionView("misc.ltx", "worst_enemy")
 		return enemies[factions.task_giver] or "bandit"
 	else
 		return part
@@ -45,33 +45,10 @@ local function get_name_part(item_info, factions)
 end
 
 function setup_item(item_info, factions)
-	local sec_name, desc_target
+	local sec_name = item_info.section
 	
-	if type(item_info.how_much) == "table" then
-		item_info.how_much = igi_random.rand(item_info.how_much[1], item_info.how_much[2])
-	end
-	if item_info.item_type then
-		local item_list = igi_db.SectionView.new("tables\\base.ltx", item_info.item_type)
-		item_list = item_list:as_table()
-		assert(item_list, "Igi: fetch: no such item set: "..tostring(item_info.item_type or "nil"))
-		if item_info.has_in_name then
-			local name_part = get_name_part(item_info, factions)
-			local items = {}
-			for k, v in pairs(item_list) do
-				if string.find(v, name_part) then
-					table.insert(items, v)
-				end
-			end
-			item_list = items
-		end
-		sec_name = item_list[igi_random.rand(#item_list)]
-	else
-		assert(item_info.section, "Igi: no section for fetch task given")
-		if type(item_info.section) == "table" then
-			sec_name = item_info.section[igi_random.rand(#item_info.section)]
-		else
-			sec_name = item_info.section
-		end
+	if not sec_name then
+		sec_name = igi_db.ini_tables[item_info.item_list]:random()
 	end
 
 	assert(ini_sys:section_exist(sec_name or "nil"))

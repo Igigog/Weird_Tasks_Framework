@@ -1,10 +1,10 @@
 local function get_daytime_bounds(daytime)
-	local bounds = igi_db.SectionView.new("daytime.ltx", "daytime_bounds")
+	local bounds = igi_db.SectionView("daytime.ltx", "daytime_bounds")
 	return bounds[daytime]
 end
 
 local function rank_precondition(tier)
-	local quest_tiers = igi_db.SectionView.new("tiers.ltx", "player_tiers")
+	local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
 	assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
 			"Igi: Invalid quest tier")
 

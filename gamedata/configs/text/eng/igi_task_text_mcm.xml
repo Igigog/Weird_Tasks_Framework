@@ -12,4 +12,7 @@
 	<string id="ui_mcm_igi_tasks_realistic_assassinations">
 		<text>(Arszi's) Realistic Assassinations</text>
 	</string>
+	<string id="ui_mcm_igi_tasks_debug">
+		<text>Debug mode (May cause fps drops)</text>
+	</string>
 </string_table>

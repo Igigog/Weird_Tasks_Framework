@@ -7,46 +7,6 @@ local function add_predefined_values(group_data, entity_preset)
 	end
 end
 
-local function get_faction_setup()	-- TODO: implement factions
-	-- This function returns target character factions for all possible quests
-	-- Quest by himself decides, which character(s) to use
-	
-	local faction_list = {
-		["actor"] = 'stalker',		-- default values is 'stalker', will be changed if possible
-		["task_giver"] = 'stalker',
-		["client"] = 'stalker',
-		["enemy"] = 'stalker',
-	}
-	
-	local task_giver = mob_trade.GetTalkingNpc()
-	faction_list.task_giver = task_giver:character_community()
-	faction_list.actor = db.actor:character_community()
-	
-	local player_enemies = igi_helper.get_faction_enemies(faction_list.actor)
-	local task_giver_enemies = igi_helper.get_faction_enemies(faction_list.task_giver)
-	
-	-- set enemy - must be enemy for both player and task giver
-	tmp_enemies = {}	
-	for faction in pairs(player_enemies) do					-- search for enemies of both player and task giver
-		if task_giver_enemies[faction] then
-			tmp_enemies[#tmp_enemies + 1] = faction
-		end
-	end
-	if (#tmp_enemies == 0) then printf("GhenTuong: player and task giver doesn't share enemies") end
-	faction_list["enemy"] = tmp_enemies[igi_random.rand(#tmp_enemies)] or "stalker"
-	
-	-- set client - must be enemy for enemy and not enemy with task giver; can be player's faction
-	local enemy_enemies = igi_helper.get_faction_enemies(faction_list["enemy"])
-	tmp_enemies = {}
-	for faction in pairs(enemy_enemies) do
-		if(faction ~= faction_list["task_giver"] and task_giver_enemies[faction] == nil) then
-			tmp_enemies[#tmp_enemies + 1] = faction
-		end
-	end
-	if (#tmp_enemies == 0) then printf("GhenTuong: can't setup client") end
-	faction_list["client"] = tmp_enemies[igi_random.rand(#tmp_enemies)] or "stalker"
-	return faction_list
-end
 ------------------------------------------------
 local function setup_group(entity, factions)
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
@@ -61,7 +21,6 @@ end
 local function setup_CACHE(task_name)
 	local CACHE = igi_models.create_CACHE()
 	CACHE.task_name = task_name
-	CACHE.factions = get_faction_setup()
 	return CACHE
 end
 

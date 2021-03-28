@@ -1,20 +1,18 @@
 condition_handlers = {}		-- These are filled in igi_handlers.script
 action_handlers = {}		-- So you can add your own handlers to it. Modularity, desu.
 
---[[local function is_parent_dead(obj_data, se_obj)
-	if not se_obj then return end
-
-	local parent = igi_helper.alife_obj(se_obj.parent_id)
-	return not parent:alive()
+function add_condition_handlers(tbl)
+	for k,v in pairs(tbl) do
+		condition_handlers[k] = v
+	end
 end
 
-local function is_low_condition(obj_data)
-	local item = igi_helper.level_object(obj_data.id)
-	local cond = item and item.condition and item:condition()
-	local bound = igi_db.get_value("misc.ltx", "repair", "condition")[1]
-	return cond < (bound / 100)
+function add_action_handlers(tbl)
+	for k,v in pairs(tbl) do
+		action_handlers[k] = v
+	end
 end
-]]
+
 local function is_stalker_online(se_obj)
 	-- idk if I can just make se_obj.online
 	if not se_obj then return end
@@ -36,6 +34,7 @@ local function is_object_online(se_obj)
 
 	return npc and is_stalker_online(npc) or se_obj.online
 end
+
 ------------------------------------------
 --[[local function change_squad_faction(se_squad, faction)
 	if not se_squad then return end
@@ -74,10 +73,6 @@ end
 ]]
 ------------------------------------------
 local function do_activities(obj_data, condition, se_obj, CACHE)
-	--[[local action_handlers = {
-		['change_faction'] = change_squad_role,
-		['repair'] = repair_item,
-	}]]
 	
 	for action, args in pairs(obj_data.online_activities[condition]) do
 		if action_handlers[action] then
@@ -91,10 +86,6 @@ end
 function do_online_activities(CACHE)
 	-- TODO: rework
 	if not CACHE.online_activities then return CACHE, false end
-	--[[local condition_handlers = {
-		["on_parent_death"] = is_parent_dead,
-		["if_low_condition"] = is_low_condition,
-	}]]
 
 	local is_changed = false
 	for condition, objects in pairs(CACHE.online_activities) do
