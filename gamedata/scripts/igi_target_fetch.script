@@ -34,27 +34,13 @@ function quest_target(obj_data)
 	if not ready_to_finish(obj_data) then return -1 end
 end
 
-local function get_name_part(item_info, factions)
-	local part = item_info.has_in_name
-	if part == "*worst_enemy*" then
-		local enemies = igi_db.SectionView("misc.ltx", "worst_enemy")
-		return enemies[factions.task_giver] or "bandit"
-	else
-		return part
-	end
-end
-
 function setup_item(item_info, factions)
 	local sec_name = item_info.section
-	
-	if not sec_name then
-		sec_name = igi_db.ini_tables[item_info.item_list]:random()
-	end
 
 	assert(ini_sys:section_exist(sec_name or "nil"))
 	local text_name = ini_sys:r_string_ex(sec_name, "inv_name")
-	local name_translated = game.translate_string(text_name)
-	desc_target = name_translated..", "..tostring(item_info.how_much)
+	local desc_target = game.translate_string(text_name)..", "..tostring(item_info.how_much)
+
 	local item_data = igi_models.create_ItemData(nil, sec_name, nil, item_info.how_much)
 	local desc = igi_models.create_DescriptionData(nil, desc_target)
 	return item_data, desc

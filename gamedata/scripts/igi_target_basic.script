@@ -56,7 +56,7 @@ local function fetch_item_description(objects, item_type)
 	for _, se_obj in pairs(objects) do
 		local parent_id = se_obj.parent_id
 		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.alife_obj(parent_id)
-		local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
+		-- local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
 		
 		factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
 		targets[#targets+1] = parent_npc and parent_npc:character_name() or desc_target

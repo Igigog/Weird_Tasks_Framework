@@ -32,39 +32,36 @@ Macro = {
     _cls = "Macro"
 }
 
-function Macro.resolve_ScaleToPlayer(args)
+function Macro.ScaleToPlayer(args)
 	args = parse_args(args)
-	return tostring(igi_helper.scale_to_player(unpack(args)))
+	return igi_helper.scale_to_player(unpack(args))
 end
 
-function Macro.resolve_Random(args)
+function Macro.Random(args)
 	args = parse_args(args)
-	return tostring(igi_random.rand(unpack(args)))
+	return igi_random.rand(unpack(args))
 end
 
-function Macro.resolve_TableValueRandom(args)
+function Macro.TableValueRandom(args)
 	args = parse_args(args)
 	local tbl = ini_tables[args[1]]:as_table()
-	return tostring(igi_utils.random_table_element(tbl))
+	return igi_utils.random_table_element(tbl)
 end
 
-function Macro.resolve_TableValueByKey(args)
+function Macro.TableValueByKey(args)
 	if not args or not args[1] or not args[2] then 
 		callstack()
 		assert(nil)
 	end
 	
 	args = parse_args(args)
-	printf(args[1])
-	printf(args[2])
 	local tbl = ini_tables[args[1]]
-	printf(123)
-	return tostring(tbl[args[2]])
+	return tbl[args[2]]
 end
 
-function Macro.resolve_ChooseOne(args)
+function Macro.ChooseOne(args)
 	args = parse_args(args)
-	return tostring(igi_utils.random_table_element(args))
+	return igi_utils.random_table_element(args)
 end
 
 local function get_faction(keyword)
@@ -78,7 +75,7 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Macro.resolve_Faction(args)
+function Macro.Faction(args)
 	-- args checker needed
 	local args_str = args[1]
 	local tokens = tokenize(args_str)
@@ -101,10 +98,10 @@ local function has_macro(str)
 end
 
 local function resolve_macro(macro)
-	if not Macro['resolve_'..macro[1]] then
+	if not Macro[macro[1]] then
 		assert(nil, macro[1])
 	end
-	return Macro['resolve_'..macro[1]](macro[2])
+	return Macro[macro[1]](macro[2])
 end
 
 local function parse_macro(str)
@@ -134,9 +131,9 @@ function resolve_all_macros(str, entities)
 			macro_str = resolve_all_macros(macro_str)
 		end
 		local macro = parse_macro(macro_str)
-		printf(macro[1])
 		local resolved = resolve_macro(macro)
-		new_str = string.gsub(new_str, '%&'..before..'%&', resolved)
+		if not resolved then igi_helper.raise("MacroUnresolvableException", before) end
+		new_str = string.gsub(new_str, '%&'..before..'%&', tostring(resolved))
 	end
 	return new_str
 end
