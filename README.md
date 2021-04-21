@@ -1,4 +1,5 @@
 # Igi Tasks
+# OUTDATED
 ### Special thanks to GhenTuong
 
 This is my addon for S.T.A.L.K.E.R. Anomaly based on GhenTuong Tasks. 

@@ -1,0 +1,31 @@
+Nope, I won't translate it to russian. Too lazy, deal with it.
+
+Hellow my fellow testers! Time to write some readme for this piece of garbage!
+First of all: this is no magic thing that will make everything for ya. I worked on
+it alone for almost a year, many (MANY) features I want to add are not implemented yet.
+What this thing will do for you:
+	If you're not coder and want some easy money:
+	1. You'll be able to create some simple tasks with already predefined patterns
+	2. You'll be able to pack these tasks into one pack without conflicts with anything
+	
+	If you're coder and want to outsource some of task complexity:
+	1. You'll be able to create new task patterns
+	2. You'll be able to configure most behaviours used by framework or use
+	basic ones.
+	
+	If you're hardcore coder and want to upgrade framework itself:
+	1. nothing. Don't. You'll lose your sanity.
+	(but if you really want to, ping me in Discord, I'll give you some ideas)
+	
+What this thing WON'T do for you:
+	1. Native dialog support is not implemented and won't be until much time later.
+	2. Native questline support is not yet implemented. It must be easy to do for
+	a coder tho, I just haven't done it yet.
+	3. You can't get new behaviours without explicit coding. Nothing to see here.
+	
+I'll give some support in my discord (https://discord.gg/JSsVJWvZwD), but your main
+source of information will be reverse-engineering of existing task packs. I won't
+give support to stupid people. Fuck you.
+
+With love,
+Igi

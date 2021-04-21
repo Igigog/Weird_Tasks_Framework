@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+<!-- Butcher -->
+<!-- hunter_gar_trader_task_docs_fetch -->
+	<string id="igi_task_text_hunter_gar_trader_task_docs_fetch_title">
+		<text>Simple fetch task</text>
+	</string>
+    <string id="igi_task_text_hunter_gar_trader_task_docs_fetch_descr">
+		<text>Butcher has asked me to fetch shit</text>
+	</string>
+    <string id="igi_task_text_hunter_gar_trader_task_docs_fetch_job_descr">
+		<text>You haven't fetched shit for some time? Heh, loser. Here's a job for ya.</text>
+	</string>
+	<string id="igi_task_text_hunter_gar_trader_task_docs_fetch_finish">
+		<text>Some fine shit you've gathered. Well done, hunter.</text>
+	</string>
+</string_table>

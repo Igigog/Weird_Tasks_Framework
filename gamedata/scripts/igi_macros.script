@@ -140,10 +140,16 @@ end
 
 ----------------BOOLEAN----------------------------------
 
+local blacklist = {
+	monolith = true,
+	renegade = true,
+	greh = true,
+	isg = true,
+}
 local function get_viable_factions()
 	local factions = {}
 	for _, faction in pairs(game_relations.factions_table) do
-		if not game_relations.is_faction_unaffected(faction) then
+		if not blacklist[faction] then
 			factions[faction] = true
 		end
 	end

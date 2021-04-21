@@ -1,0 +1,14 @@
+kill: squad
+	Will be completed once every npc of squad is killed
+	
+assault: squad, smart
+	Will be completed once all squads of smart (or squad's smart) are killed
+	
+fetch: item
+	Well... fetch ._.
+	
+get: item
+	Will be completed once created or found item is in actor's inventory
+	
+return: item
+	Will be completed once item is returned to task giver

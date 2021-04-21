@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+<!-- Butcher -->
+<!-- hunter_gar_trader_task_docs_advanced -->
+	<string id="igi_task_text_docs_advanced_title">
+		<text>Advanced task</text>
+	</string>
+    <string id="igi_task_text_docs_advanced_descr">
+		<text>Whatever</text>
+	</string>
+    <string id="igi_task_text_docs_advanced_job_descr">
+		<text>Too lazy to write</text>
+	</string>
+	<string id="igi_task_text_docs_advanced_finish">
+		<text>Some fine shit you've gathered. Well done, hunter.</text>
+	</string>
+	<string id="igi_task_text_wpn_sks">
+		<text>SKS</text>
+	</string>
+	<string id="igi_task_text_wpn_vepr">
+		<text>Vepr</text>
+	</string>
+</string_table>

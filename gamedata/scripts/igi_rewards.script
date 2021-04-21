@@ -57,8 +57,9 @@ function define_reward(CACHE, task_giver_id)
 end
 
 function give_rewards(rewards)
-	local money = {tostring(rewards.money*0.8), tostring(rewards.money*1.1)}
+	local money = {rewards.money*0.8, rewards.money*1.1}
 	xr_effects.reward_random_money(nil, nil, money)
+	if not rewards.community then return end
 	
 	local parts = 0
 	for i=1,#rewards.community do

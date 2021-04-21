@@ -66,7 +66,7 @@ end
 
 function Dependency:resolve(entities)
 	local entity
-	printf(self.type)
+	trace_dbg(self.type)
 	if self.type == "this" then
 		entity = self.this
 	else

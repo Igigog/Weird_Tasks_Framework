@@ -1,0 +1,25 @@
+ScaleToPlayer(a, b):
+	will return integer from a to b (or from 1 to a) based on player rank
+	Will always return b if player_rank > 8000
+	Grows exponentially
+	
+Random(a, b):
+	nothing to write here
+	
+TableValueRandom(section_name)
+	table must be included in /configs/igi_tasks/tables/base.ltx
+	Will return random entry from section section_name
+	
+TableValueByKey(section, key)
+	Same as random, but uses key instead of random key
+	
+ChooseOne(arg1,arg2,arg3,...)
+	Returns one of the given args (chosen randomly)
+	
+Faction(expression)
+	Probably the most complicated one. Uses full boolean parser.
+	Keywords: actor, taskgiver, *faction*
+	Operators: not, or, and, of
+	Of keywords: friend, enemy
+
+	Example: friend of actor and enemy of taskgiver

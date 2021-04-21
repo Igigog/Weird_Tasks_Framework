@@ -1,0 +1,64 @@
+Oh hey there! Ready to be a big boy? No you're not.
+
+Example json from GT Task pack, transaction task.
+{
+	"preconditions": {
+		"player_tier": "endgame",
+	},
+	"disabled":false,
+	"setup": [
+		{
+		"where":"nearby",
+		"entity_type":"smart",
+		"target":"assault",
+		},
+		
+		{
+		"faction":"&Faction(enemy of taskgiver and enemy of actor)&",
+		"section":"&TableValueByKey(gt_guard, $this.faction$)&",
+		"entity_type":"squad",
+		"to_create":true,
+		"where":"$smart_1$",
+		},
+		
+		{
+		"faction":"&Faction(enemy of $squad_1.faction$)&",
+		"online_activities":
+			{"is_online":
+				{"change_faction":"$squad_1.faction$"}
+			},
+		"section":"&TableValueByKey(gt_guard, $this.faction$)&",
+		"entity_type":"squad",
+		"to_create":true,
+		"where":"$smart_1$",
+		},
+		
+		{
+		"entity_type":"item",
+		"amount":2,
+		"section":"&ChooseOne(gt_package_weapon,gt_package_artifact)&",
+		"target":"return",
+		"to_create":true,
+		"where":"$smart_1$",
+		"to_description":true,
+		},
+	],
+}
+
+Here's description by label:
+precondition - defines conditions for getting this task
+setup - defines entities of task. Entities are the task itself, without entities
+task will constantly end since nothing to do.
+	Entity types:
+		smart - found or predefined if has smart_name field
+		item - found or created, see examples in GT tasks
+		squad - found or created, see examples in GT and BaseGame tasks.
+		You may also define custom entity types.
+		
+	Field "target" defines, what must be done with this entity to finish task
+	Field "online_activities" is basically useless for non-scripters and me too
+	lazy to write advanced guide
+	
+reward - well... reward. May have two fields: "goodwill" and "money", both have number
+as value. If you want to use dynamic rewards don't use this field.
+

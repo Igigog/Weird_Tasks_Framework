@@ -41,13 +41,13 @@ quests = {
     {"Bandit", "Freedom"},
     ],
     "task2": [
-    {"Leader", "Mechanic", "Monolith"},
+    {"Mechanic", "Monolith"},
     {"Medic"},
     ],
 }
 
 In this example task1 will be assigned to the mechanic(s) of Duty, the leader(s) of ClearSky and Ecolog, and Bandits and Freedom.
-task2 will be assigned to the leader(s) and mechanic(s) of Monolith, along with all medics in the game.
+task2 will be assigned to the mechanic(s) of Monolith, along with all medics in the game.
 
 ::Example Hybrid Mode::
 quests = {

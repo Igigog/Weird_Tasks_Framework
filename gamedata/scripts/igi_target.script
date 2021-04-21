@@ -42,7 +42,6 @@ function create_target(entities_setup)
 	-- if it's not ready after #entities_setup tries, it won't be ready
     for _ in pairs(entities_setup) do
         for k,entity_setup in pairs(entities_setup) do
-			printf("try")
             if not created_keys[k] and igi_linker.has_no_outer_links(entity_setup) then
 			    trace_dbg("entity_setup", entity_setup)
 				igi_text_processor.process_unlinked_entity(entity_setup)
@@ -62,7 +61,7 @@ function create_target(entities_setup)
         end
     end
     if #created_keys < #entities_setup then
-        print("Linker probably fucked")
+        trace_dbg("Linker probably fucked")
     end
     return targets
 end

@@ -185,7 +185,7 @@ task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 		local se_obj = igi_helper.alife_obj(target_id)
 		if se_obj then
 			local sec = se_obj and se_obj:section_name() or "nil"
-			printf("target "..tostring(target_id).." is "..sec)
+			trace_dbg("target "..tostring(target_id).." is "..sec)
 		end 
 	end
 	if target_id == -1 then return end

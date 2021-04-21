@@ -95,10 +95,7 @@ function TaskDescription._link(self, setup_entities)
 	
 	for k, location in pairs(self.locations) do
 		if string.find(location, "%$smart") then
-			printf(location)
 			group, id = string.match(location, "_(%d+)_?(%d*)")
-			printf(group)
-			printf(id or "1")
 			assert(group, "Igi: description: smart unlinkable: "..location)
 			trace_dbg("link locations", setup_entities)
 			local smart_name = setup_entities["$smart_"..group.."$"].names[tonumber(id) or 1]
