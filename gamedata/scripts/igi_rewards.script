@@ -69,7 +69,7 @@ function give_rewards(rewards)
 	for i=1,#rewards.community do
 		local value = math.floor((i*rewards.goodwill)/parts)
 		local faction = rewards.community[#rewards.community+1-i]
-		xr_effects.complete_task_inc_goodwill(a, b, {value, faction})
+		xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
 	end
 end
 

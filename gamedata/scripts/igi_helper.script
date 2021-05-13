@@ -60,7 +60,7 @@ end
 
 function check_common_npc(id)
 	--Parameter is correct | not world map | not player |
-	local npc = id and (id ~= 65535) and (id ~= AC_ID) and alife():object(id)
+	local npc = id and (id ~= 65535) and (id ~= 0) and alife():object(id)
 	--Exist | is stalker | alive |
 	if not (npc and IsStalker(nil,npc:clsid()) and npc:alive()) then return false end
 	--section_name has "sim_default", not "zombied"
@@ -116,7 +116,7 @@ function get_object_level_id(se_obj)
 end
 
 function get_object_level(obj, sim, gg)
-	return alife():level_name(igi_helper.get_object_level_id(object))
+	return alife():level_name(igi_helper.get_object_level_id(obj))
 end
 
 function change_goodwill(faction, task_name, task_successful)
@@ -129,7 +129,7 @@ function change_goodwill(faction, task_name, task_successful)
 		value = task_info.fail and task_info.fail.goodwill or -50
 	end
 
-	xr_effects.complete_task_inc_goodwill(a, b, {value, faction})
+	xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
 end
 
 function get_faction_enemies(faction)
@@ -242,7 +242,8 @@ function objects_fetched(obj_data)
 	end
 
 	local section = obj_data.section_name
-	local item = section and db.actor:object(section)
+	local actor = db.actor
+	local item = section and actor:object(section)
 	if item then
 		return utils_item.get_amount(db.actor, section, 1) >= obj_data.how_much
 	elseif section and string.find(section, "af_") then
@@ -255,7 +256,7 @@ function objects_fetched(obj_data)
 end
 
 function is_in_actor_squad(id)
-	if id == AC_ID then return true end
+	if id == 0 then return true end
 	local actor_squad = axr_companions.list_actor_squad_by_id()
 
 	if actor_squad then

@@ -5,6 +5,7 @@ PATTERN = "basic"
 function ready_to_finish(obj_data)
 	local section = obj_data.section_name
 	local item = section and db.actor:object(section)
+	local actor = db.actor
 	if item then
 		return utils_item.get_amount(db.actor, section, 1) >= obj_data.how_much
 	elseif section and string.find(section, "af_") then

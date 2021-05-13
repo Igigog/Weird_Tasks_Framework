@@ -59,7 +59,7 @@ end
 local function get_npc_value(se_npc)
 	local value = 1000
 	local tier = string.sub(se_npc:section_name(), -1)
-	trace_dbg(se_npc:section_name())
+	igi_helper.trace_dbg(se_npc:section_name())
 	local factors = igi_db.SectionView('tiers.ltx', 'npc_tier_factor')
 
 	return value*factors[tier]

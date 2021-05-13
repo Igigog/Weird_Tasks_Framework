@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "2.11h1"
+TASKS_VERSION = "2.11h2"
 local TASK_SETUP = {}
 local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 local trace_dbg = igi_helper.trace_dbg
@@ -221,7 +221,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	--Reward money
 	if is_completed then
 		igi_rewards.give_rewards(CACHE.reward)
-		xr_effects.inc_task_stage(a, b, {task_id})
+		xr_effects.inc_task_stage(nil, nil, {task_id})
 	else
 		-- Goodwill
 		igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
@@ -229,6 +229,6 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil
 	--Finish
-	xr_effects.drx_sl_unregister_task_giver(a, b, {task_id})
-	xr_effects.drx_sl_reset_stored_task(a, b, {task_id})
+	xr_effects.drx_sl_unregister_task_giver(nil, nil, {task_id})
+	xr_effects.drx_sl_reset_stored_task(nil, nil, {task_id})
 end
