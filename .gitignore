@@ -2,3 +2,4 @@
 *.rar
 taskmaker/task
 taskmaker/__pycache__
+.vscode
