@@ -1,3 +1,6 @@
+local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
+
 -------------------------------------------------
 -- task table reworking functions
 -------------------------------------------------
@@ -50,35 +53,84 @@ end
 -------------------------------------------------
 -- JSON functions
 -------------------------------------------------
-local function get_configs_path()
+local function get_game_path()
   local info = debug.getinfo(1,'S');
   local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
-  gamedata_path = script_path:match([[(.*gamedata)]])
-  config_path = gamedata_path.."\\configs\\igi_tasks\\"
-  return config_path
+  game_path = script_path:match("(.*)bin"):gsub("/", "\\")
+  return game_path
 end
 
-local configs_path = get_configs_path()
-local function read_task_json(task_name)
-	local path = configs_path.."tasks\\"..task_name..".json"
-    local file = io.open(path, "rb") -- r read mode and b binary mode
-    if not file then return nil end
+local default_tasks_path = get_game_path().."gamedata\\configs\\igi_tasks\\tasks\\"
+local configured_tasks_path = get_game_path().."igi_tasks\\tasks\\"
+local function read_task_json(task_name, prefix)
+	local task_path = prefix.."\\"..task_name..".json"
+
+	local file = trace_assert(io.open(configured_tasks_path..task_path, "rb"))
+	if not file then
+		file = trace_assert(io.open(default_tasks_path..task_path, "rb"))
+	end
+
+    if not file then return end
+
     local content = file:read "*a" -- *a or *all reads the whole file
+	trace_dbg("json content: ", content)
     file:close()
     return content
 end
 
 local json = igi_json.get_json()
-local function get_task_table(task_name)
-	return json.decode(read_task_json(task_name))
+function get_task_table(task_name, prefix)
+	local task_json = trace_assert(
+		read_task_json(task_name, prefix),
+		"task_json: no json file for task "..prefix.."_"..task_name
+	)
+	if not task_json then return end
+	return json.decode(task_json)
 end
 
+local function save_file(path, content)
+	local file = trace_assert(io.open(path, "w"))
+	if not file then
+		os.execute('echo 1 > '..path)
+		file = trace_assert(io.open(path, "w"))
+	end
+	file:write(content)
+	file:close()
+end
+
+local function create_path(prefix)
+	local tasks_path = get_game_path().."igi_tasks\\"
+	os.execute(
+		"mkdir "..tasks_path.." & "..
+		"mkdir "..tasks_path.."tasks\\".." & "..
+		"mkdir "..tasks_path.."tasks\\"..prefix
+	)
+end
+create_path = igi_utils.one_timer_one_variable(create_path, "ot_create_path")
+
+local function save_task_table(task_name, prefix, table)
+	create_path(prefix)
+	local task_path = prefix.."\\"..task_name..".json"
+	local path = configured_tasks_path..task_path
+	local content = json.encode(table)
+	trace_dbg("save", path, content)
+	save_file(path, content)
+end
+
+function update_task_table_value(task_name, prefix, key, value)
+	local new_tbl = dup_table(get_task_table(task_name, prefix))
+	new_tbl[key] = value
+	save_task_table(task_name, prefix, new_tbl)
+	igi_utils.MemoizeCache.reset("task_data")
+end
 -------------------------------------------------
 -- global functions
 -------------------------------------------------
-function get_task_data(task_name)
-	local task_tbl = get_task_table(task_name)
-	assert(task_tbl, "Igi: no such task: "..tostring(task_name or "nil"))
+function get_task_data(task_id)
+	local prefix, task_name = igi_helper.get_task_name(task_id)
+	trace_dbg("get_task_data: ", prefix, task_name)
+	local task_tbl = get_task_table(task_name, prefix)
+	assert(task_tbl, "Igi: no such task: "..tostring(task_id or "nil"))
 
 	wrap_array_keys(task_tbl.setup)
 	task_tbl.group_counter = count_entities(task_tbl.setup)
@@ -86,14 +138,14 @@ function get_task_data(task_name)
 	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl.setup, task_tbl.setup)
 	return task_tbl
 end
-get_task_data = igi_utils.memoize_one_variable(get_task_data)
+get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
 
-function get_task_setup(task_name)
-	return get_task_data(task_name).setup
+function get_task_setup(task_id)
+	return get_task_data(task_id).setup
 end
 
-function get_finalized_task_setup(task_name)
-	local tbl = get_task_data(task_name)
+function get_finalized_task_setup(task_id)
+	local tbl = get_task_data(task_id)
 	local task_setup = dup_table(tbl.setup)
 
 	task_setup = igi_linker.assign_group_id(task_setup)

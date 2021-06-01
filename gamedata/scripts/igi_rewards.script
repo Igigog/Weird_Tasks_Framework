@@ -41,7 +41,7 @@ end
 
 function define_reward(CACHE, task_giver_id)
 	local reward = {}
-	local task_data = igi_taskdata.get_task_data(CACHE.task_name)
+	local task_data = igi_taskdata.get_task_data(CACHE.task_id)
 	if task_data.reward then
 		for k,v in pairs(task_data.reward) do
 			reward[k] = v

@@ -114,7 +114,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	-- First run, create target
 	if not (CACHE["target"]) then
 		trace_dbg("before target creation", CACHE)
-		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_name)
+		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_id)
 		igi_callbacks.invoke_target_callbacks("on_after_target_creation", CACHE)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
@@ -220,7 +220,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 		xr_effects.inc_task_stage(nil, nil, {task_id})
 	else
 		-- Goodwill
-		igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_name, is_completed)
+		igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_id, is_completed)
 	end
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil

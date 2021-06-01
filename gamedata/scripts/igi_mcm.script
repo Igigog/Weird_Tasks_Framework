@@ -1,3 +1,4 @@
+assert(ui_mcm, "Igi Tasks: MCM not installed. Fuck you.")
 
 OPTION_IDS = {
 	ara = "realistic_assassinations",
@@ -10,19 +11,72 @@ local function get_default_option(option_id)
 end
 
 local function get_mcm_option(option_id)
-	return ui_mcm.get("igi_tasks/"..option_id)
+	return ui_mcm.get("igi_tasks/Options/"..option_id)
+end
+get_options_value = get_mcm_option
+
+local function task_table_value(task_name, prefix, key)
+	return igi_taskdata.get_task_table(task_name, prefix)[key]
 end
 
-get_options_value = ui_mcm and get_mcm_option or get_default_option
+local function toggle_boolean(task_name, prefix, key)
+	local val = not task_table_value(task_name, prefix, key)
+	igi_taskdata.update_task_table_value(task_name, prefix, key, val)
+end
 
+local function build_task_entry(task, prefix, path)
+	local entry = {
+		id=task, sh=true, text="igi_task_text_"..prefix.."_"..task.."_title", gr={
+			{id = "check_disabled", type = "check", hint="igi_tasks_disable_task", val = 1, 
+			curr = {task_table_value, task, prefix, "disabled"},
+			functor = {toggle_boolean, task, prefix, "disabled"}}
+		}
+	}
+	return entry
+end
+
+local function build_tasks_entries(prefix, path)
+	local entries = {}
+	local files = getFS():file_list_open("$game_config$", 
+		"igi_tasks\\tasks\\"..prefix.."\\",
+		1+4+8)
+
+	for i=0,files:Size()-1 do
+		entries[#entries+1] = build_task_entry(files:GetAt(i), prefix, path)
+	end
+	return entries
+end
+
+local function build_task_pack_entry(meta_section, path)
+	local tbl = {
+		id=meta_section.name,
+		text=meta_section.name,
+		sh=false,
+		gr=build_tasks_entries(meta_section.prefix, path..meta_section.name.."/")
+	}
+	return tbl
+end
+
+local function build_task_packs_entries()
+	local entries = {}
+	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
+
+	for k, meta_section in meta_ltx:iter() do
+		entries[#entries+1] = build_task_pack_entry(meta_section, "")
+	end
+	return entries
+end
 
 function on_mcm_load()
-	local op = {id= "igi_tasks", sh=true, gr={
-				{id="title", type="slide", link="ui_options_slider_player", text="ui_mcm_igi_tasks_title", size={512,50}},
-				{id=OPTION_IDS.autocomplete, type="check", val=1, def=get_default_option(OPTION_IDS.autocomplete)},
-				{id=OPTION_IDS.ara, type="check", val=1, def=get_default_option(OPTION_IDS.ara)},
-				{id=OPTION_IDS.debug, type="check", val=1, def=get_default_option(OPTION_IDS.debug)},
+	local op = {id= "igi_tasks", sh=false, gr={
+					{id="Options", sh=true, gr={
+						{id="title", type="slide", link="ui_options_slider_player", text="ui_mcm_igi_tasks_title", size={512,50}},
+						{id=OPTION_IDS.autocomplete, type="check", val=1, def=get_default_option(OPTION_IDS.autocomplete)},
+						{id=OPTION_IDS.ara, type="check", val=1, def=get_default_option(OPTION_IDS.ara)},
+						{id=OPTION_IDS.debug, type="check", val=1, def=get_default_option(OPTION_IDS.debug)},
+					}}
 				}
 			}
+    igi_utils.extend_list(op.gr, build_task_packs_entries())
 	return op
 end

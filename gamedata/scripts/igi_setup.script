@@ -18,20 +18,14 @@ local function setup_group(entity, factions)
 	return group_data, desc
 end
 
-local function setup_CACHE(task_name)
-	local CACHE = igi_models.create_CACHE()
-	CACHE.task_name = task_name
-	return CACHE
-end
-
 local function setup_entities(CACHE, description)
-	local ok, task_data = pcall(igi_taskdata.get_finalized_task_setup, CACHE.task_name)
-	if not ok then 
+	local ok, task_data = pcall(igi_taskdata.get_finalized_task_setup, CACHE.task_id)
+	if not ok then
 		trace_dbg("Not ok", task_data)
-		return 
+		return
 	end
 	CACHE.group_counter = dup_table(
-			igi_taskdata.get_task_data(CACHE.task_name).group_counter)
+			igi_taskdata.get_task_data(CACHE.task_id).group_counter)
 	trace_dbg("finalized CACHE", task_data)
 	
 	for _, group_preset in pairs(task_data) do
