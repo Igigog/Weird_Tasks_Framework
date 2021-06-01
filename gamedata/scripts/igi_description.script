@@ -127,7 +127,6 @@ function get_task_text(task_id, field)
 end
 
 function get_postpone_intel(task_id, desc)
-	local task_name = igi_helper.get_task_name(task_id)
 	local icon = task_manager.task_ini:r_string_ex(task_id, "icon")
 
 	local postpone_intel = {

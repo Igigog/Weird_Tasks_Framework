@@ -50,7 +50,6 @@ local function find_resolve_self_references(entity)
 					if not igi_macros.has_macro(dep) then
 						new_str = new_str:gsub(escape_pattern(dep), 
 							igi_linker.resolve_self_reference(dep, entity))
-						printf(dep)
 						changes_made = true
 					end
 				end
@@ -86,8 +85,6 @@ local function collect_dependencies(str, this_entity)
 		for macro in dep:gmatch("c(%d)") do
 			dep = dep:gsub("c"..macro, macros[tonumber(macro)])
 		end
-		printf(dep)
-		printf(this_entity)
 		deps[#deps+1] = igi_linker.Dependency(dep, this_entity)
 	end
 	
@@ -106,12 +103,10 @@ local function resolve_free_dependencies(entity, entities)
 				local deps = collect_dependencies(v, entity)
 				for k2,dep in pairs(deps) do
 					local unwrapped = dep:unwrap(dep.original)
-					printf(unwrapped)
 					if sfind(unwrapped, "&") and not sfind(unwrapped, "%$") then
 						has_unresolved = true
 					elseif not sfind(unwrapped, "&") then
 						local resolved = dep:resolve(entities)
-						printf(resolved)
 						if resolved and not sfind(resolved, "&") then
 							tbl[k] = v:gsub(dep:get_original(true), resolved)
 							has_unresolved = true

@@ -89,7 +89,6 @@ local function enemy_to_handler(se_obj, args, sim)
 
 		local my_faction = args.enemy_to or get_object_community(db.actor)
 		local npc_faction = get_object_community(sim:object(se_obj.parent_id))
-		printf(my_faction..npc_faction)
 
 		return game_relations.is_factions_enemies(my_faction, npc_faction)
 	end

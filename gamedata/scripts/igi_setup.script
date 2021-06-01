@@ -47,17 +47,18 @@ local function setup_entities(CACHE, description)
 end
 
 function setup_quest(task_id)
-	local task_name = igi_helper.get_task_name(task_id)
-	trace_dbg("setup "..task_name)
+	trace_dbg("setup "..task_id)
 	local game_time = game.get_game_time()
 	local game_date = game_time:dateToString(game.CTime.DateToDay)
 	igi_random.set_seed(task_id..game_date)
 
-	local CACHE = setup_CACHE(task_name)
+	local CACHE = igi_models.create_CACHE()
+	CACHE.task_id = task_id
+
 	local description = igi_description.TaskDescription.new()
 	if not setup_entities(CACHE, description) then return end
 	CACHE.description = description:get_description(CACHE)
-	trace_dbg("end setup "..task_name)
+	trace_dbg("end setup "..task_id)
 	return CACHE
 end
 

@@ -55,7 +55,7 @@ function get_value(file, section, key)
 end
 
 -------------------------------------------------------
-LtxView = {}
+LtxView = {_cls = "LtxView"}
 local LtxView_mt = {}
 setmetatable(LtxView, LtxView_mt)
 
@@ -74,35 +74,43 @@ function LtxView_mt:__call(file)
 		callstack()
 		assert(nil, "Igi: LtxView: no such file: "..file)
 	end
-	setmetatable(view, getmetatable(self))
-	
+	setmetatable(view, LtxView_mt)
 	return view
 end
 
-function LtxView_mt:__index(section)
-	local view = SectionView(self._ini, section)	-- avoid indexing self
-	self[section] = view
+function LtxView_mt:__index(key)
+	if rawget(LtxView, key) then return rawget(LtxView, key) end
+	local view = SectionView(rawget(self, "_ini"), key)
+	self[key] = view
 	return view
 end
 
-function LtxView:iter()
+function LtxView:get_sections()
 	local sections = {}
 	local function add_to_table(section)
 		sections[#sections+1] = section
 	end
 	self._ini:section_for_each(add_to_table)
-	
+	return sections
+end
+
+function LtxView:iter()
+	local sections = self:get_sections()
+	local count = #sections
+
 	local current_key = 0
 	local function iterator()
 		current_key = current_key + 1
-		local section = sections[current_key]
-		return self[section]
+		if current_key <= count then
+			local section = sections[current_key]
+			return section, self[section]
+		end
 	end
 	return iterator
 end
 ini_tables = LtxView("tables\\base.ltx")
 -- Looks like table, behaves like table, but takes keys and values from ini_file
-SectionView = {}
+SectionView = {_cls = "SectionView"}
 local SectionView_mt = {}
 setmetatable(SectionView, SectionView_mt)
 SectionView._methods = {}
