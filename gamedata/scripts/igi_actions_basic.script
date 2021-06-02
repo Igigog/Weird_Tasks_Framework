@@ -1,4 +1,5 @@
 local function change_squad_faction(_, se_squad, faction)
+	if not se_squad then return end
 	for npc in se_squad:squad_members() do
 		local member = npc and igi_helper.level_object(npc.id)
 		if member and not (character_community(member) == faction) then
