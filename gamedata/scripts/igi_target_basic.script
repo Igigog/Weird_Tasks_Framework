@@ -59,7 +59,7 @@ local function fetch_item_description(objects, item_type)
 		-- local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
 		
 		factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
-		targets[#targets+1] = parent_npc and parent_npc:character_name()
+		targets[#targets+1] = parent_npc and parent_npc:character_name() or nil
 		locations[#locations+1] = igi_helper.get_object_location_description(se_obj)
 	end
 	return igi_models.create_DescriptionData(factions, targets, locations)
