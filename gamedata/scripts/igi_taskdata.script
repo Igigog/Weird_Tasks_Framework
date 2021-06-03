@@ -99,7 +99,7 @@ local function save_file(path, content)
 end
 
 local function create_path(prefix)
-	local tasks_path = get_game_path().."igi_tasks\\"
+	local tasks_path = '"'..get_game_path().."igi_tasks\\"..'"'
 	os.execute(
 		"mkdir "..tasks_path.." & "..
 		"mkdir "..tasks_path.."tasks\\".." & "..
