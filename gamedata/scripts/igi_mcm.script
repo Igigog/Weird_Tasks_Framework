@@ -1,4 +1,6 @@
-assert(ui_mcm, "Igi Tasks: MCM not installed. Fuck you.")
+function on_game_start()
+	assert(ui_mcm, "Igi Tasks: MCM not installed. Fuck you.")
+end
 
 OPTION_IDS = {
 	ara = "realistic_assassinations",

@@ -56,7 +56,7 @@ end
 local function get_game_path()
   local info = debug.getinfo(1,'S');
   local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
-  game_path = script_path:match("(.*)bin"):gsub("/", "\\")
+  local game_path = script_path:match("(.*)gamedata"):gsub("/", "\\")
   return game_path
 end
 
@@ -123,6 +123,7 @@ function update_task_table_value(task_name, prefix, key, value)
 	save_task_table(task_name, prefix, new_tbl)
 	igi_utils.MemoizeCache.reset("task_data")
 end
+
 -------------------------------------------------
 -- global functions
 -------------------------------------------------
