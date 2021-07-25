@@ -26,3 +26,23 @@ function quest_target(obj_data)
 
 	return se_obj.parent_id == 65535 and obj_data.id or se_obj.parent_id
 end
+
+function get_item_cost(entity)
+	return tonumber(ini_sys:r_string_ex(entity.section_name, "cost"))
+end
+
+function get_item_weight(entity)
+	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
+end
+
+function get_money_reward(entity)
+	return get_item_cost(entity)*get_item_weight(entity)/16
+end
+
+function get_goodwill_reward(entity)
+	return get_item_weight(entity)*10
+end
+
+function get_goodwill_fail(entity)
+	return get_item_cost(entity)*(-4)/100
+end

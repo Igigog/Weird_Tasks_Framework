@@ -53,3 +53,23 @@ function create_item(group_data)
 	items[link] = group_data
 	return items
 end
+
+local function get_cost_summed(entity)
+	local cost = ini_sys:r_string_ex(entity.section_name, "cost")
+	cost = tonumber(cost)
+	return cost*entity.amount
+end
+
+function get_money_reward(entity)
+	return get_cost_summed(entity)
+end
+
+function get_goodwill_reward(entity)
+	local cost_sum = get_cost_summed(entity)
+	return 15 + math.floor(2.728^(0.0000324*cost_sum)) 
+end
+
+function get_goodwill_fail(entity)
+	local cost_sum = get_cost_summed(entity)
+	return -75 + math.floor(50*(cost_sum/36000))
+end
