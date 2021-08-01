@@ -36,7 +36,7 @@ function get_item_weight(entity)
 end
 
 function get_money_reward(entity)
-	return get_item_cost(entity)*get_item_weight(entity)/16
+	return get_item_cost(entity)*get_item_weight(entity)/32
 end
 
 function get_goodwill_reward(entity)
@@ -44,5 +44,5 @@ function get_goodwill_reward(entity)
 end
 
 function get_goodwill_fail(entity)
-	return get_item_cost(entity)*(-4)/100
+	return get_item_cost(entity)/(-400)
 end
