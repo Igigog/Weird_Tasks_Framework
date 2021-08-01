@@ -119,7 +119,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
-		CACHE.reward = igi_rewards.define_reward(CACHE, tsk.task_giver_id)
+		CACHE.reward, CACHE.fail = igi_rewards.define_reward(CACHE, tsk.task_giver_id)
 		trace_dbg("after target creation", CACHE)
 	end
 
@@ -208,20 +208,17 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	local task_id = p[1]
 	local is_completed = p[2] == "true"
 	local CACHE = get_cache(task_id)
+	igi_callbacks.invoke_target_callbacks("on_complete", CACHE, CACHE.target, is_completed)
 
 	--Release
-	igi_callbacks.invoke_target_callbacks("on_complete", CACHE, CACHE.target, is_completed)
 	igi_subtask.finish_continuous_subtasks(CACHE.subtasks.continuous, is_completed)
-	igi_helper.release_targets_in_world(CACHE.target)
+	igi_helper.release_targets_in_world(CACHE.target)	-- Needed? Works? Idk
 	igi_subtask.unmark_all(CACHE.target)
-	--Reward money
-	if is_completed then
-		igi_rewards.give_rewards(CACHE.reward)
-		xr_effects.inc_task_stage(nil, nil, {task_id})
-	else
-		-- Goodwill
-		igi_helper.change_goodwill(CACHE.factions.task_giver, CACHE.task_id, is_completed)
-	end
+
+	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end
+	--Reward
+	igi_rewards.give_rewards(CACHE.reward, CACHE.fail, is_completed)
+
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil
 	--Finish
