@@ -17,7 +17,7 @@ function Dependency.mt:__call(str, this_entity)
 		type = typ,
 		group_id = group_id or "1",
 		entity_id = entity_id or "1",
-		field = field or "id",
+		field = field ~= "" and field or "id",
 		original = str,
 		this = this_entity,
 	}

@@ -63,6 +63,11 @@ local function parent_handler(se_obj, args, sim, gg)
 	return false
 end
 
+local location_keys = {
+	online = true,
+	nearby = true,
+	far = true
+}
 local function where_handler(se_obj, args, sim, gg)
 	local handler = {
 		online = is_online,
@@ -158,6 +163,20 @@ local function add_squads_of_smart(smart_data, args, factions, squads_tbl)
 	end
 end
 
+function is_smart_location(val)
+	if type(val) == "string" then return location_keys[val]
+	elseif type(val) == "table" then
+		for _,v in pairs(val) do
+			if not location_keys[v] then return false end
+		end
+		return true
+	end
+	return false
+end
+
+function wrap_smart_location(val)
+	return type(val)=="table" and val or {val}
+end
 ------------------------------
 local Finder = {
 	item_names = {},
@@ -191,7 +210,6 @@ function Finder._sort_smarts(self)
 	--// Utilities
 	local sim = alife()
 	local gg = game_graph()
-	local actor_comm = sim:actor():community()
 	local actor_level = level.name()
 	local is_avail = simulation_objects.available_by_id
 	local smarts = self.smarts
@@ -203,7 +221,7 @@ function Finder._sort_smarts(self)
 		far = smart_is_far
 	}
 	
-	for name, smart in pairs(simboard.smarts_by_names) do
+	for _, smart in pairs(simboard.smarts_by_names) do
 		local smart_level = sim:level_name(gg:vertex(smart.m_game_vertex_id):level_id())
 		local in_blacklist = smart_level ~= actor_level and blacklist[smart_level]
 		
@@ -338,6 +356,7 @@ end
 
 function Finder.get_smarts(self, where)
 	if not next(self.smarts.nearby) then self:_sort_smarts() end
+	if where then where = wrap_smart_location(where) end
 
 	local smart_list = {}
 	local extend = igi_utils.extend_list

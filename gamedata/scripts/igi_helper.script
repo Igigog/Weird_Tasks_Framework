@@ -232,6 +232,11 @@ function get_object_smart(se_obj)
 	end
 end
 
+function object_hasnt_changed(id, section)
+	local se_obj = alife_obj(id)
+	return se_obj and se_obj:section_name() == section
+end
+
 function get_object_location_description(se_obj)
 	return dynamic_news_helper.GetPointDescription(se_obj)
 end
