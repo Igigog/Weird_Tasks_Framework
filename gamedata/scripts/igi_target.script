@@ -1,24 +1,27 @@
 
 local trace_dbg = igi_helper.trace_dbg
 
-function create_target_entry(se_obj)
+function create_target_entry(se_obj, group_data)
 	if not se_obj then return end
 
 	local entry = {
 		id = se_obj.id,
 		section_name = se_obj:section_name()
 	}
+	for k,v in pairs(group_data or {}) do
+		entry[k] = v
+	end
 	return entry
 end
 
-function add_entry(tbl, typ, group_id, entity_id, se_obj)
+function add_entry(tbl, typ, group_id, entity_id, se_obj, group_data)
 	if not (tbl and typ and group_id and entity_id and se_obj) then
 		callstack()
 		assert(nil, "Igi: Something went wrong while adding entry")
 	end
-	
+
 	local id = igi_linker.make_link(typ, group_id, entity_id)
-	tbl[id] = create_target_entry(se_obj)
+	tbl[id] = create_target_entry(se_obj, group_data)
 end
 
 local function create_group_by_setup(entities_setup)
