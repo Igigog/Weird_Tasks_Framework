@@ -64,18 +64,28 @@ function Dependency:get_original(safe_mode)
 	return self.original
 end
 
-function Dependency:resolve(entities)
-	local entity
-	trace_dbg(self.type)
+function Dependency:get_linked_entity(entities)
 	if self.type == "this" then
-		entity = self.this
+		return self.this
 	else
-		trace_dbg("entities", entities)
-		trace_dbg(self:get_link(), self:get_group_link())
-		entity = entities[self:get_link()] or entities[self:get_group_link()]
+		trace_dbg("getting entity", self, entities)
+		return entities[self:get_link()] or entities[self:get_group_link()]
 	end
+end
 
+function Dependency:resolve(entities)
+	local entity = self:get_linked_entity(entities)
 	return get_dependency_value(entity, self.field)
+end
+
+function Dependency:to_repr()
+	local str = "Dependency:\n"
+	for k, v in pairs(self) do
+		if type(v) ~= "function" then
+			str = str.."	"..k..": "..v.."\n"
+		end
+	end
+	return str
 end
 
 function assign_group_id(entities)
