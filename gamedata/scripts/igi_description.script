@@ -90,17 +90,35 @@ function TaskDescription.get_description(self, cache)
 	return self:_setup_description()
 end
 
+function TaskDescription:_get_location_description(link, setup_entities)
+	if not igi_linker.is_dependency(link) then return link end
+
+	local dep = igi_linker.Dependency(link)
+	local location = dep:get_linked_entity(setup_entities)
+	if location.smarts then
+		dep.field = "smarts"
+		local smart_id = dep:resolve(setup_entities)[1]
+		local smart_name = SIMBOARD.smarts[smart_id].smrt:name()
+		return "st_"..smart_name.."_name"
+	elseif tonumber(location.where) then
+		local se_obj = igi_helper.alife_obj(location.where)
+		return igi_helper.get_object_location_description(se_obj)
+	else
+		--[[
+		local mock_object = {}
+		mock_object.m_game_vertex_id = location.game_vertex_id
+		mock_object.position = vector():set(location.x, location.y, location.z)
+		return igi_helper.get_object_location_description(mock_object)
+	]]
+		return "null"
+	end
+end
+
 function TaskDescription._link(self, setup_entities)
 	if not setup_entities then return end
-	
+
 	for k, location in pairs(self.locations) do
-		if string.find(location, "%$smart") then
-			group, id = string.match(location, "_(%d+)_?(%d*)")
-			assert(group, "Igi: description: smart unlinkable: "..location)
-			trace_dbg("link locations", setup_entities)
-			local smart_name = setup_entities["$smart_"..group.."$"].names[tonumber(id) or 1]
-			self.locations[k] = "st_"..smart_name.."_name"
-		end
+		self.locations[k] = self:_get_location_description(location, setup_entities)
 	end
 end
 

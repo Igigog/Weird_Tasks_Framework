@@ -52,12 +52,12 @@ local function fetch_item_description(objects, item_type)
 	local factions = {}
 	local targets = {}
 	local locations = {}
-	
+
 	for _, se_obj in pairs(objects) do
 		local parent_id = se_obj.parent_id
 		local parent_npc = igi_helper.check_common_npc(parent_id) and igi_helper.alife_obj(parent_id)
 		-- local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
-		
+
 		factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
 		targets[#targets+1] = parent_npc and parent_npc:character_name() or nil
 		locations[#locations+1] = igi_helper.get_object_location_description(se_obj)
@@ -68,20 +68,20 @@ end
 local function find_objects(object_data, amount)
 	local finder = igi_finder.get_finder()
 	objects = finder:get_objects_by_args(
-		object_data.item_list, 
-		object_data, 
-		object_data.possible_endings, 
+		object_data.item_list,
+		object_data,
+		object_data.possible_endings,
 		object_data.only_endings)
 
-	if not next(objects) then 
+	if not next(objects) then
 		printf("Igi: no objects")
-		return nil 
+		return nil
 	end
 
 	return igi_utils.get_random_items(objects, object_data.amount)
 end
 
-local function create_item_data(item_info, factions)
+local function create_item_data(item_info)
 	local section = item_info.section
 	assert(ini_sys:section_exist(section), "Igi: bad item section: "..(section or "nil"))
 	
@@ -91,12 +91,12 @@ local function create_item_data(item_info, factions)
 	return item_data, item_info.to_description and desc or nil
 end
 
-local function fetch_item_data(item_info, factions)
+local function fetch_item_data(item_info)
 	assert(item_info.item_list, "Igi: setup_item: No item list given")
 
 	local objects = find_objects(item_info, item_info.amount)
 	if not objects then return nil end
-	
+
 	local ids = {}
 	for _, se_obj in pairs(objects) do
 		ids[#ids + 1] = se_obj.id
@@ -112,10 +112,125 @@ local function fetch_item_data(item_info, factions)
 	return group_data, description
 end
 
+local function get_smart_coordinates(smart)
+	return table.concat({
+		smart.position.x,
+		smart.position.y + 1,
+		smart.position.z
+	}, ",")
+end
+
+local function find_smarts(where, amount)
+	local smarts = igi_finder.get_finder():get_smarts(where)
+	local smarts_list = igi_utils.get_random_items(smarts, amount)
+	if not smarts_list then return end
+	for k, smart in pairs(smarts_list) do
+		smarts_list[k] = smart.smrt.id
+	end
+	return smarts_list
+end
+
+local function force_parent_online(se_obj)
+	local parent_id = se_obj.parent_id
+	if parent_id ~= 65535 then
+		local parent = igi_helper.alife_obj(parent_id)
+		local p_clsid = parent:clsid()
+		if IsStalker(parent, p_clsid)
+				or IsMonster(parent, p_clsid)
+				or p_clsid == clsid.online_offline_group_s
+				then
+			parent.force_online = true
+			parent.stay_time = game.get_game_time()
+		end
+	end
+end
+
+local function get_vector(x,y,z)
+	return vector():set(x, y+1, z)
+end
+
+local function get_coords(str)
+	assert(type(str) == "string")
+	local lvl, x, y, z = str:match("(.*),(.*),(.*),(.*)")
+	x, y, z = tonumber(x), tonumber(y), tonumber(z)
+	lvl = igi_db.LtxView("map_config.ltx").map_names[lvl]
+	if not lvl then
+		trace_dbg("ERROR: Can't get lvl!", str)
+		assert(nil)
+	end
+	return lvl, x, y, z
+end
+
+local function create_item_on_smart(group_data)
+	local items = {}
+	local smart = SIMBOARD.smarts[group_data.where].smrt
+	local location = get_vector(
+		smart.position.x,
+		smart.position.y,
+		smart.position.z)
+	for i=1, group_data.amount do
+		local se_obj = alife_create(group_data.section_name, location, 
+		smart.m_level_vertex_id, smart.m_game_vertex_id)
+		igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj, group_data)
+	end
+	return items
+end
+
+local function create_item_in_inventory(group_data)
+	local items = {}
+	local parent = igi_helper.alife_obj(group_data.where)
+	for i=1, group_data.amount do
+		local se_obj = alife_create_item(group_data.section_name, parent)
+		igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj, group_data)
+	end
+	return items
+end
+
+local function create_item_on_coords(group_data)
+	local items = {}
+	local lvl, x, y, z = get_coords(group_data.where)
+	local se_obj = alife_create(group_data.section_name, get_vector(x,y,z), 0, lvl)
+	igi_target.add_entry(items, group_data.entity_type, group_data.group_id, 1, se_obj, group_data)
+	return items
+end
+
+local function setup_existing_items(group_data)
+	local items = {}
+	for i, id in pairs(group_data.ids) do
+		local se_obj = igi_helper.alife_obj(id)
+		force_parent_online(se_obj)
+		igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj, group_data)
+	end
+	return items
+end
 ------------------------------------------------
 -- SETUP FUNCTIONS
 -- Prepares objects for task, rolls random dice, finds objects in world
 ------------------------------------------------
+
+function setup_location(loc_info)
+	assert(loc_info.where or loc_info.coords, "Igi Tasks: location has no info")
+	if loc_info.coords then
+		return loc_info
+	end
+
+	local where = loc_info.where
+	if tonumber(where) or type(where)=="string" and igi_linker.has_dependency(where)  then
+		loc_info.id = where
+		loc_info.where = nil
+		return loc_info
+	end
+
+	if igi_finder.is_smart_location(loc_info.where) then
+		loc_info.smarts = find_smarts(loc_info.where, loc_info.amount or 1)
+		return loc_info
+	end
+
+	local smart = assert(SIMBOARD.smarts_by_names[where], "Igi Tasks: unknown name "..where)
+	loc_info.id = smart.id
+	loc_info.where = nil
+	return loc_info
+end
 
 function setup_squad(squad_info, factions)
 	local squad_data, description
@@ -125,7 +240,7 @@ function setup_squad(squad_info, factions)
 		squad_data, description = fetch_squad_data(squad_info, factions)
 		if not squad_data then return end
 	end
-	
+
 	local group_data = igi_models.create_GroupData(	-- set defaults
 		squad_data, 
 		squad_info.target,
@@ -144,16 +259,14 @@ function setup_smart(smart_info)
 		local amount = smart_info.amount or 1
 		local finder = igi_finder.get_finder()
 		local possible_smarts = finder:get_smarts(smart_info.where)
-		
-		if #possible_smarts < amount then 
-			return nil 
-		end
+
+		if #possible_smarts < amount then return end
 		local smarts_list = igi_utils.get_random_items(possible_smarts, amount)
 		local smart_names = {}
 		for _, smart in pairs(smarts_list) do
 			table.insert(smart_names, smart.smrt:name())
 		end
-		
+
 		smart_data = igi_models.create_SmartData(smart_names)
 	end
 	local group_data = igi_models.create_GroupData(
@@ -187,16 +300,29 @@ end
 -- Called after getting a task to create/prepare actual game objects
 ------------------------------------------------
 
+function create_location(group_data)
+	local locations = {}
+	if group_data.smarts then
+		for i, id in pairs(group_data.smarts) do
+			local loc_data = {id = id}
+			locations[igi_linker.make_link("location", group_data.group_id, i)] = loc_data
+		end
+	else
+		locations[igi_linker.make_link("location", group_data.group_id, 1)] = group_data
+	end
+	return locations
+end
+
 function create_squad(group_data)
 	local squads = {}
-	
+
 	if group_data.name == "predefined_squad" then
 		local ids = group_data.ids
 		for i=1, #ids do
 			local squad = igi_helper.alife_obj(ids[i])
 			squad.stay_time = game.get_game_time()
 			squad.force_online = true
-			igi_target.add_entry(squads, group_data.entity_type, group_data.group_id, i, squad)
+			igi_target.add_entry(squads, group_data.entity_type, group_data.group_id, i, squad, group_data)
 		end
 		return squads
 	end
@@ -206,53 +332,22 @@ function create_squad(group_data)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 
-		igi_target.add_entry(squads, group_data.entity_type, group_data.group_id, i, squad)
+		igi_target.add_entry(squads, group_data.entity_type, group_data.group_id, i, squad, group_data)
 	end
-	
+
 	return squads
 end
 
 function create_item(group_data)
-	local items = {}
-	if group_data.ids then
-		for i, id in pairs(group_data.ids) do
-			local se_obj = igi_helper.alife_obj(id)
-			local parent_id = se_obj.parent_id
-			if parent_id ~= 65535 then
-				local parent = igi_helper.alife_obj(parent_id)
-				local p_clsid = parent:clsid()
-				if IsStalker(parent, p_clsid) 
-						or IsMonster(parent, p_clsid)
-						or p_clsid == clsid.online_offline_group_s
-						then
-					parent.force_online = true
-				end
-			end
-			igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
-		end
+	if group_data.ids then	-- TODO: distinction with flag
+		return setup_existing_items(group_data)
+	elseif SIMBOARD.smarts[group_data.where] then
+		return create_item_on_smart(group_data)
+	elseif tonumber(group_data.where) then
+		return create_item_in_inventory(group_data)
 	else
-		if SIMBOARD.smarts[group_data.where] then
-			local smart = SIMBOARD.smarts[group_data.where].smrt
-			local location = vector():set( --Make sure it don't fall under the ground
-				smart.position.x,
-				smart.position.y + 1,
-				smart.position.z
-			)
-			
-			for i=1, group_data.amount do
-				local se_obj = alife_create(group_data.section_name, location, 
-					smart.m_level_vertex_id, smart.m_game_vertex_id)
-				igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
-			end
-		else
-			local parent = igi_helper.alife_obj(group_data.where)
-			for i=1, group_data.amount do
-				local se_obj = alife_create_item(group_data.section_name, parent)
-				igi_target.add_entry(items, group_data.entity_type, group_data.group_id, i, se_obj)
-			end
-		end
+		return create_item_on_coords(group_data)
 	end
-	return items
 end
 
 function create_smart(group_data)
@@ -292,3 +387,85 @@ end
 function get_goodwill_fail(entity)
 	return -25
 end
+
+
+------------------------------------------------
+-- TESTS
+-- Well... tests ._.
+------------------------------------------------
+local add_test = igi_unit_tests.add_test_partial("igi_target_basic")
+local tables_are_same = igi_unit_tests.tables_are_same
+
+add_test("setup_location", function()
+	local result, expected
+
+	local location_coords = {
+		coords = "123,123,321"
+	}
+	expected = dup_table(location_coords)
+	result = setup_location(location_coords)
+	assert(tables_are_same(result, expected))
+
+	local location_id = {
+		where = 0
+	}
+	expected = {
+		id = 0
+	}
+	result = setup_location(location_id)
+	assert(tables_are_same(result, expected))
+
+	local location_link = {
+		where = "$link$"
+	}
+	expected = {
+		id = "$link$"
+	}
+	result = setup_location(location_link)
+	assert(tables_are_same(result, expected))
+
+	local location_name = {
+		where = "mar_smart_terrain_6_10"
+	}
+	expected = {
+		id = SIMBOARD.smarts_by_names["mar_smart_terrain_6_10"].id
+	}
+	result = setup_location(location_name)
+	assert(tables_are_same(result, expected))
+
+	local location_find = {
+		where = "nearby",
+		amount = 2
+	}
+	result = setup_location(location_find)
+	assert(#result.smarts == 2)
+
+	local location_find_arr = {
+		where = {"nearby", "online"},
+		amount = 2
+	}
+	result = setup_location(location_find_arr)
+	assert(#result.smarts == 2)
+end)
+
+--[[add_test("setup_item", function()
+	local tbl, expected, result
+
+	tbl = {
+		section = "ammo_23_igi_eco",
+		where = "whatever",
+		item_list = "f_test_list", -- TODO: remove
+		amount = 1
+	}
+	expected = dup_table(tbl)
+	assert(tables_are_same(setup_item(tbl), expected))
+
+	tbl = {
+		look_in = "npc_inv",
+		where = "anywhere",
+		item_list = "f_test_list",
+		amount = 1
+	}
+	result = setup_item(tbl)
+	assert(result.ids and #result.ids == 1)
+end)]]
