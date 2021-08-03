@@ -1,34 +1,9 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
--------------------------------------------------
--- task table reworking functions
--------------------------------------------------
-local function wrap_array_keys(task_table)
-	local array_keys = {"where", "look_in"}
-
-	for _, entity in pairs(task_table) do
-		for _, k in pairs(array_keys) do
-
-			local val = entity[k]
-			if type(val) == "string" and not igi_linker.is_dependency(val) then
-				entity[k] = {entity[k]}
-			end
-		end
-	end
-end
-
-local function create_smart_and_redirect(entity, counter, smarts_table)
-	local smart = igi_models.create_smart_setup(entity.where or {"everywhere"})
-	table.insert(smarts_table, smart)
-
-	counter["smart"] = counter["smart"] + 1
-	entity.where = "$smart_"..tostring(counter["smart"]).."_1$"
-end
-
 local function count_entities(task_setup)
 	local counter = {
-		smart = 0,
+		location = 0,
 		squad = 0,
 		item = 0,
 	}
@@ -36,18 +11,6 @@ local function count_entities(task_setup)
 		counter[v.entity_type] = counter[v.entity_type] + 1
 	end
 	return counter
-end
-
-local function setup_task_locations(task_table, counter)
-	local new_smarts = {}
-	
-	for _, entity in pairs(task_table) do
-		if entity.to_create and type(entity.where) ~= "string" then
-			create_smart_and_redirect(entity, counter, new_smarts)
-		end
-	end
-	
-	igi_utils.extend_list(task_table, new_smarts)
 end
 
 -------------------------------------------------
@@ -133,10 +96,9 @@ function get_task_data(task_id)
 	local task_tbl = get_task_table(task_name, prefix)
 	assert(task_tbl, "Igi: no such task: "..tostring(task_id or "nil"))
 
-	wrap_array_keys(task_tbl.setup)
 	task_tbl.group_counter = count_entities(task_tbl.setup)
-	setup_task_locations(task_tbl.setup, task_tbl.group_counter)
-	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl.setup, task_tbl.setup)
+	-- igi_synsugar.desugarize(task_tbl)
+	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl, task_tbl.setup)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
