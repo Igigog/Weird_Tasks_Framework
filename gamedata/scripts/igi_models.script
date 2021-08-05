@@ -1,10 +1,13 @@
 -- DELETE etu huinyu nahui
 
+LOCATION = "location"
+ITEM = "item"
+SQUAD = "squad"
+
 function create_CACHE()
 	local tbl = {
 		setup = {},
 		task_name = "",
-		factions = {},
 		description = "",
 		objects = {},
 		subtasks = {

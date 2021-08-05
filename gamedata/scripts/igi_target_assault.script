@@ -59,22 +59,23 @@ function is_complete(obj_data)
 end
 
 local function redirect_to_smart(subtask_data, CACHE, subtask_key)
-	-- if find squad: add smart entity squad is on, 
+	-- if find squad: add smart entity squad is on,
 	-- assault smart instead of squad
 	-- may produce copies of existing smarts, but that's okay
-	if string.find(subtask_key, "smart") then return end
+	local location_key = igi_models.LOCATION
+	if string.find(subtask_key, location_key) then return end
 	subtask_data.target = nil
-	if not subtask_data.where_link then
-		local se_obj = alife_obj(subtask_data.id)
-		local smart_id = se_obj.current_target_id
-		local smart_entity = {id = smart_id, target = "assault"}
-		CACHE.group_counter.smart = CACHE.group_counter.smart + 1
-		local link = igi_linker.make_link("smart", CACHE.group_counter.smart, 1)
-
-		CACHE.target[link] = smart_entity
-	else
+	if subtask_data.where_link then
 		CACHE.target[subtask_data.where_link].target = "assault"
+		return
 	end
+
+	local smart_id = alife_obj(subtask_data.id).current_target_id
+	local smart_entity = {id = smart_id, target = "assault"}
+	CACHE.group_counter[location_key] = CACHE.group_counter[location_key] + 1
+	local link = igi_linker.make_link(location_key, CACHE.group_counter.smart, 1)
+
+	CACHE.target[link] = smart_entity
 end
 
 local function add_target_squads(subtask_data)
