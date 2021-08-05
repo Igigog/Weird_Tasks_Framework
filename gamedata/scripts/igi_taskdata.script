@@ -97,7 +97,7 @@ function get_task_data(task_id)
 	assert(task_tbl, "Igi: no such task: "..tostring(task_id or "nil"))
 
 	task_tbl.group_counter = count_entities(task_tbl.setup)
-	-- igi_synsugar.desugarize(task_tbl)
+	igi_synsugar.desugarize(task_tbl)
 	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl, task_tbl.setup)
 	return task_tbl
 end

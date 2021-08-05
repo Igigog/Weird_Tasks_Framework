@@ -1,0 +1,55 @@
+local trace_dbg = igi_helper.trace_dbg
+
+synsugar_handlers = {}
+synsugar_entity_handlers = {}
+
+function add_handler(handler)
+    if not type(handler) == "function" then
+        trace_dbg("synsugar: handler is not function")
+        return
+    end
+    synsugar_handlers[handler] = true
+end
+
+function add_entity_handler(handler)
+    if not type(handler) == "function" then
+        trace_dbg("synsugar: handler is not function")
+        return
+    end
+    synsugar_entity_handlers[handler] = true
+end
+
+function desugarize(cache)
+    for handler in pairs(synsugar_handlers) do
+        handler(cache)
+    end
+
+    for _, entity in pairs(cache.setup) do
+        for handler in pairs(synsugar_entity_handlers) do
+            handler(entity)
+        end
+    end
+end
+
+function set_default_amount(entity)
+    if not entity.amount then entity.amount = 1 end
+end
+add_entity_handler(set_default_amount)
+
+function set_default_creation_location(entity)
+    if (not entity.where) and entity.to_create then
+        entity.where = "$location_1_1$"
+    end
+end
+add_entity_handler(set_default_creation_location)
+
+function create_by_default(entity)
+    if (entity.entity_type == "squad"
+            or entity.entity_type == "item")
+            and entity.to_create == nil then
+        entity.to_create = true
+    end
+end
+add_entity_handler(create_by_default)
+
+
