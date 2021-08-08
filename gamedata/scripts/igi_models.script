@@ -75,7 +75,7 @@ function create_smart_setup(where)
 	if type(where) == "string" then where = {where} end
 
 	local smart = {
-		entity_type = "smart",
+		entity_type = "location",
 		where = where,
 	}
 	return smart

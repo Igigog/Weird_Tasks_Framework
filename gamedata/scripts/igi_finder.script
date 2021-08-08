@@ -1,4 +1,7 @@
 -- Object finder functions
+-- This module is flawed. Item finding must be avoided at all costs,
+-- as it takes eternity to work it out. There are ways how it can be
+-- accelerated, but I don't want to work on this god forsaken thing.
 
 local alife_obj = igi_helper.alife_obj
 local ini_tables = igi_db.ini_tables
@@ -50,42 +53,28 @@ local function is_not_on_blacklisted_map(se_obj, sim, gg)
 	return not blacklist[object_lvl]
 end
 
+local parent_handlers = {
+	world = object_in_world,
+	npc_inv = object_in_npc_inventory,
+}
+local where_handlers = {
+	online = is_online,
+	nearby = is_nearby,
+	far = is_far,
+}
 local function parent_handler(se_obj, args, sim, gg)
-	local handler = {
-		world = object_in_world,
-		npc_inv = object_in_npc_inventory,
-	}
-
-	for _, v in pairs(args.look_in) do
-		if handler[v](se_obj, sim, gg) then return true end
+	if not parent_handlers[args.find_in[1]](se_obj, sim, gg) then
+		return false
 	end
-
-	return false
+	if args.find_in[2] == "anywhere" then return true end
+	return where_handlers[args.find_in[2]](se_obj, sim, gg)
 end
 
-local location_keys = {
+location_keys = {
 	online = true,
 	nearby = true,
 	far = true
 }
-local function where_handler(se_obj, args, sim, gg)
-	local handler = {
-		online = is_online,
-		nearby = is_nearby,
-		far = is_far,
-	}
-	
-	for _, v in pairs(args.where) do
-		if v == "anywhere" then
-			return true
-		end
-
-		if handler[v](se_obj, sim, gg) then
-			return true
-		end
-	end
-	return false
-end
 
 local function enemy_to_handler(se_obj, args, sim)
 	if se_obj.parent_id ~= 65535 then
@@ -325,27 +314,24 @@ function Finder.get_items(self, typ, has_ending)
 	return has_ending and self.ending_objects[typ] or self.pure_objects[typ]
 end
 
+arg_handlers = {
+	only_enemies = enemy_to_handler,
+}
 function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
 			"Igi: Check object: enemy but not in_npc_inv")
-	
-	-- make priority? Nah, no biggie
-	local arg_handler = {
-		only_enemies = enemy_to_handler,
-		where = where_handler,
-	}
-	
+
 	-- priority for parent bcs there's main filtering and it's cheap for world objects
-	if not parent_handler(se_obj, args, sim, gg) then 
-		-- printf("parent sucked")
-		return false 
+	if not parent_handler(se_obj, args, sim, gg) then
+		igi_helper.trace_dbg("parent sucked")
+		return false
 	end
-	
-	for k, v in pairs(arg_handler) do
+
+	for k, v in pairs(arg_handlers) do
 		local handler = args[k] and v
 		if handler then
-			if not handler(se_obj, args, sim, gg) then 
-				-- printf(k.." sucked")
+			if not handler(se_obj, args, sim, gg) then
+				igi_helper.trace_dbg(k.." sucked")
 				return false
 			end
 		end

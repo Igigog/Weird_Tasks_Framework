@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "2.12u1h3"
+TASKS_VERSION = "3nightly1"
 local TASK_SETUP = {}
 local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 local trace_dbg = igi_helper.trace_dbg
@@ -16,21 +16,25 @@ function on_game_start()
 end
 
 function actor_on_first_update()
-	if TASKS_CACHE.TASKS_VERSION ~= TASKS_VERSION then
-		printf("Igi Tasks: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
-				.." -> "..TASKS_VERSION)
-		TASKS_CACHE.TASKS_VERSION = nil
-
-		local task_manager = task_manager.get_task_manager()
-		for k, _ in pairs(TASKS_CACHE) do
-			TASKS_CACHE[k] = nil
-			task_manager.task_info[k] = nil
-		end
-
-		TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
-		printf("Igi Tasks: Update successful.")
-		news_manager.send_tip(db.actor, "Igi Tasks: Update complete. Welcome to Igi Tasks "..TASKS_VERSION, nil, nil, 30000)
+	if TASKS_CACHE.TASKS_VERSION == TASKS_VERSION then
+		return
 	end
+
+	printf("Igi Tasks: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
+			.." -> "..TASKS_VERSION)
+	TASKS_CACHE.TASKS_VERSION = nil
+
+	local task_manager = task_manager.get_task_manager()
+	for k, _ in pairs(TASKS_CACHE) do
+		TASKS_CACHE[k] = nil
+		task_manager.task_info[k] = nil
+	end
+
+	TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
+
+	igi_taskdata.reset_all_custom_tables()
+	printf("Igi Tasks: Update successful.")
+	news_manager.send_tip(db.actor, "Igi Tasks: Update complete. Welcome to Igi Tasks "..TASKS_VERSION, nil, nil, 30000)
 end
 
 function save_state(m_data)

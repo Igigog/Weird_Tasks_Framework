@@ -350,22 +350,6 @@ function create_item(group_data)
 	end
 end
 
-function create_smart(group_data)
-	smarts = {}
-	for i, smart_name in pairs(group_data.names) do
-		local smart_id = SIMBOARD.smarts_by_names[smart_name].id
-		local smart_data = {
-			smart_name = smart_name,
-			id = smart_id,
-		}
-		if not IsWarfare() then
-			xr_effects.clear_smart_terrain(nil, nil, {smart_name,})
-		end
-		smarts[igi_linker.make_link("smart", group_data.group_id, i)] = smart_data
-	end
-	return smarts
-end
-
 function quest_target(obj_data)
 	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
 	local is_ready = target_tbl.ready_to_finish
@@ -435,17 +419,17 @@ add_test("setup_location", function()
 
 	local location_find = {
 		where = "nearby",
-		amount = 2
+		amount = 1
 	}
 	result = setup_location(location_find)
-	assert(#result.smarts == 2)
+	assert(#result.smarts == 1)
 
 	local location_find_arr = {
 		where = {"nearby", "online"},
-		amount = 2
+		amount = 1
 	}
 	result = setup_location(location_find_arr)
-	assert(#result.smarts == 2)
+	assert(#result.smarts == 1)
 end)
 
 --[[add_test("setup_item", function()

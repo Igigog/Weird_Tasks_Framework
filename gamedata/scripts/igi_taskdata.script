@@ -87,6 +87,13 @@ function update_task_table_value(task_name, prefix, key, value)
 	igi_utils.MemoizeCache.reset("task_data")
 end
 
+local function reset_all_custom_tables()
+	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
+	for prefix in meta_ltx:iter() do
+		os.remove(configured_tasks_path..prefix)
+	end
+end
+
 -------------------------------------------------
 -- global functions
 -------------------------------------------------
@@ -98,6 +105,7 @@ function get_task_data(task_id)
 
 	task_tbl.group_counter = count_entities(task_tbl.setup)
 	igi_synsugar.desugarize(task_tbl)
+	trace_dbg("after desugaring", task_tbl)
 	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl, task_tbl.setup)
 	return task_tbl
 end
