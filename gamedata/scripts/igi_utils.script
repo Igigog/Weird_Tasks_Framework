@@ -190,3 +190,12 @@ function MemoizeCache.reset(id)
 		MemoizeCache._reset_id(k)
 	end
 end
+
+function iterate_table(tbl, func)
+	for k,v in pairs(tbl) do
+		if type(v) == "table" then
+			iterate_table(v, func)
+		end
+		func(k, v, tbl)
+	end
+end
