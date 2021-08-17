@@ -102,10 +102,7 @@ end
 function on_after_target_creation(CACHE)
 	do_for_every_target(CACHE, TARGET_NAME, redirect_to_smart)
 	do_for_every_target(CACHE, TARGET_NAME, add_target_squads)
-	
-	if is_ara() then
-		do_for_every_target(CACHE, "assault", add_assault_squads_to_ara_tables)
-	end
+	do_for_every_target(CACHE, TARGET_NAME, add_assault_squads_to_ara_tables)
 end
 
 function is_failed(subtask_data)
@@ -117,9 +114,7 @@ function is_failed(subtask_data)
 end
 
 function entity_on_complete(subtask_data)
-	if is_ara() then
-		igi_ara.clear_ara_table(subtask_data)
-	end
+	igi_ara.clear_ara_table(subtask_data)
 end
 
 local function mark_distant_squads(subtask_data)
