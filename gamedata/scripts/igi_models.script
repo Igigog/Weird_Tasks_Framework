@@ -38,7 +38,7 @@ function create_SquadsData(ids, name, faction, location)
 		name = name,
 		faction = faction,
 		where = location,
-		where_link = location,
+		where_link = igi_linker.Dependency(location):get_link(),
 	}
 	return tbl
 end
@@ -66,6 +66,7 @@ function create_ItemData(ids, sec_name, location, how_much)
 		ids = ids,
 		section_name = sec_name,
 		where = location,
+		where_link = igi_linker.Dependency(location):get_link(),
 		how_much = how_much,
 	}
 	return tbl
