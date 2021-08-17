@@ -141,6 +141,6 @@ local function mark_distant_squads(subtask_data)
 	end
 end
 
-function entity_on_status_functor(subtask_data)
+function entity_on_task_update(subtask_data)
 	mark_distant_squads(subtask_data)
 end

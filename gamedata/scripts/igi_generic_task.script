@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "3nightly1"
+TASKS_VERSION = "3nightly2"
 local TASK_SETUP = {}
 local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 local trace_dbg = igi_helper.trace_dbg
@@ -134,7 +134,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	end
 	tsk.__actions_time = tg+3000
 	---------------------------<ACTIONS>---------------------
-	igi_callbacks.invoke_target_callbacks("on_status_functor", CACHE)
+	igi_callbacks.invoke_target_callbacks("on_task_update", CACHE)
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	if igi_subtask.process_instant_subtasks(CACHE.subtasks) == "fail" then
