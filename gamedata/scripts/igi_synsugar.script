@@ -38,7 +38,7 @@ add_entity_handler(set_default_amount)
 
 function set_default_creation_location(entity)
     if (not entity.where) and entity.to_create ~= false then
-        entity.where = "$location_1_1$"
+        entity.where = "$location_1_1.id$"
     end
 end
 add_entity_handler(set_default_creation_location)
@@ -52,6 +52,22 @@ function create_by_default(entity)
 end
 add_entity_handler(create_by_default)
 
+
+local function finalize_value_dependencies(k, v, tbl)
+    if type(v) ~= "string" then return end
+
+    if string.find(k, "link") then
+        tbl[k] = igi_linker.Dependency(v):get_link()
+    else
+        tbl[k] = igi_linker.finalize_all_dependencies(v)
+    end
+end
+
+function finalize_all_dependencies(CACHE)
+    igi_utils.iterate_table(CACHE, finalize_value_dependencies)
+end
+add_handler(finalize_all_dependencies)
+
 function unfold_inline_location(CACHE)
     local new_locations = {}
     for _, entity in ipairs(CACHE.setup) do
@@ -64,7 +80,7 @@ function unfold_inline_location(CACHE)
                 amount = 1
             }
             new_locations[#new_locations+1] = location
-            entity.where = "$location_"..tostring(CACHE.group_counter.location + #new_locations).."$"
+            entity.where = "$location_"..tostring(CACHE.group_counter.location + #new_locations).."_1.id$"
         end
     end
 
