@@ -39,7 +39,7 @@ local function is_squad_at_smart(se_squad, smart_id)
 end
 
 function is_complete(obj_data)
-	assert(SIMBOARD.smarts[obj_data.id], "Igi_tasks: assault but not smart")
+	assert(SIMBOARD.smarts[obj_data.id], "WTF: assault but not smart")
 	if is_ara() then
 		if not igi_ara.is_updated(obj_data) then return false end
 	end

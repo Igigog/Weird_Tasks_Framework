@@ -12,7 +12,7 @@ local function create_squad_data(squad_info, factions)
 	if not ini_sys:section_exist(section) then assert(nil, section) end
 	local faction = ini_sys:r_string_ex(section, "faction")
 	
-	assert(section, "Igi: setup_squad: Unable to set squad_name")
+	assert(section, "WTF: setup_squad: Unable to set squad_name")
 	-- set all default
 	local squad_data = igi_models.create_SquadsData(nil, section, faction or "mutant", squad_info.where)
 	local description = igi_models.create_DescriptionData(faction, nil, squad_info.where)
@@ -74,7 +74,7 @@ local function find_objects(object_data, amount)
 		object_data.only_endings)
 
 	if not next(objects) then
-		printf("Igi: no objects")
+		printf("WTF: no objects")
 		return nil
 	end
 
@@ -83,7 +83,7 @@ end
 
 local function create_item_data(item_info)
 	local section = item_info.section
-	assert(ini_sys:section_exist(section), "Igi: bad item section: "..(section or "nil"))
+	assert(ini_sys:section_exist(section), "WTF: bad item section: "..(section or "nil"))
 	
 	local item_data = igi_models.create_ItemData(nil, section, item_info.where)
 	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..section)
@@ -92,7 +92,7 @@ local function create_item_data(item_info)
 end
 
 local function fetch_item_data(item_info)
-	assert(item_info.item_list, "Igi: setup_item: No item list given")
+	assert(item_info.item_list, "WTF: setup_item: No item list given")
 
 	local objects = find_objects(item_info, item_info.amount)
 	if not objects then return nil end
@@ -209,7 +209,7 @@ end
 ------------------------------------------------
 
 function setup_location(loc_info)
-	assert(loc_info.where or loc_info.coords, "Igi Tasks: location has no info")
+	assert(loc_info.where or loc_info.coords, "WTF: location has no info")
 	if loc_info.coords then
 		return loc_info
 	end
@@ -226,7 +226,7 @@ function setup_location(loc_info)
 		return loc_info
 	end
 
-	local smart = assert(SIMBOARD.smarts_by_names[where], "Igi Tasks: unknown name "..where)
+	local smart = assert(SIMBOARD.smarts_by_names[where], "WTF: unknown name "..where)
 	loc_info.id = smart.id
 	loc_info.where = nil
 	return loc_info
@@ -253,7 +253,7 @@ function setup_smart(smart_info)
 	local smart_data
 	if smart_info.smart_name then
 		assert(SIMBOARD.smarts_by_names[smart_info.smart_name], 
-			"Igi Tasks: wrong smart name "..smart_info.smart_name)
+			"WTF: wrong smart name "..smart_info.smart_name)
 		smart_data = igi_models.create_SmartData({smart_info.smart_name})
 	else
 		local amount = smart_info.amount or 1

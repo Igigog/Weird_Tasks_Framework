@@ -1,4 +1,4 @@
-# Igi Tasks
+# Weird Tasks Framework
 # OUTDATED
 ### Special thanks to GhenTuong
 

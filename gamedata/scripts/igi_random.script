@@ -27,7 +27,7 @@ function set_seed(seed)
 		random_seed = seed * offset
 	else
 		callstack()
-		assert(nil, "Igi Tasks: random: bad seed of type "..type(seed))
+		assert(nil, "WTF: random: bad seed of type "..type(seed))
 	end
 end
 

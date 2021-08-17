@@ -5,7 +5,7 @@ function on_game_start()
 	-- crash tf out of here
 	RegisterScriptCallback("actor_on_first_update", function()
 		if igi_mcm.get_options_value("debug") then
-			assert(run_tests(), "Igi Tasks: Unit tests fucked up")
+			assert(run_tests(), "WTF: Unit tests fucked up")
 		end
 	end)
 end
@@ -28,7 +28,7 @@ function run_tests()
 			ok, err = pcall(test)
 			if not ok then
 				not_failed = false
-				trace_dbg("Igi Tasks: TEST FAILED IN MODULE "..module_name, name, err) 
+				trace_dbg("WTF: TEST FAILED IN MODULE "..module_name, name, err) 
 			end
 			module_tests[name] = nil -- no need to save it anymore
 		end

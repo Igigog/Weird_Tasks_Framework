@@ -8,7 +8,7 @@ function on_game_start()
 	RegisterScriptCallback("squad_on_npc_death", squad_on_npc_death)
 	RegisterScriptCallback("npc_on_hit_callback", npc_on_hit_callback)
 	RegisterScriptCallback("monster_on_hit_callback", npc_on_hit_callback)
-	printf("Igi Tasks: Arszi Realistic Assassinations loaded.")
+	printf("WTF: Arszi Realistic Assassinations loaded.")
 end
 
 

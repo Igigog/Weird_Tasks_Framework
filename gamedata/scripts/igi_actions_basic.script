@@ -3,7 +3,7 @@ local function change_squad_faction(_, se_squad, faction)
 	for npc in se_squad:squad_members() do
 		local member = npc and igi_helper.level_object(npc.id)
 		if member and not (character_community(member) == faction) then
-			printdbg("Igi: %s| %s => %s", npc.object:name(), character_community(member), faction)
+			printdbg("WTF: %s| %s => %s", npc.object:name(), character_community(member), faction)
 			member:set_character_community(faction, 0, 0)
 		end
 	end

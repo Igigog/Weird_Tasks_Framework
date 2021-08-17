@@ -295,7 +295,7 @@ function Finder._filter_by_args(self, objects, args)
 end
 
 function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
-	assert(with_ending or not only_ending, "Igi: setup: only_ending but no ending")
+	assert(with_ending or not only_ending, "WTF: setup: only_ending but no ending")
 	-- printf(utils_data.print_table(args, "args", true))
 	
 	local items_pool = {}
@@ -319,7 +319,7 @@ arg_handlers = {
 }
 function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
-			"Igi: Check object: enemy but not in_npc_inv")
+			"WTF: Check object: enemy but not in_npc_inv")
 
 	-- priority for parent bcs there's main filtering and it's cheap for world objects
 	if not parent_handler(se_obj, args, sim, gg) then

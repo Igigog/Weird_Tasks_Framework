@@ -52,7 +52,7 @@ function create_SmartData(names)
 end
 
 function create_GroupData(entity_data, target, amount)
-	assert(entity_data._cls == "EntityData", "Igi: setup: entity_data in not EntityData")
+	assert(entity_data._cls == "EntityData", "WTF: setup: entity_data in not EntityData")
 	
 	entity_data.target = target
 	entity_data.amount = amount

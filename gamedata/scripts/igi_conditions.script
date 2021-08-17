@@ -1,11 +1,11 @@
 
 local function print_time(t, title)
 	title = title or "time"
-	printf("Igi: "..title..": "..t:dateToString(0).." "..t:timeToString(2))
+	printf("WTF: "..title..": "..t:dateToString(0).." "..t:timeToString(2))
 end
 
 local function print_variables(...)
-	local str = "Igi: variables: "
+	local str = "WTF: variables: "
 	for k, v in pairs({...}) do
 		if k > 1 then
 			str = str..", "

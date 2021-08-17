@@ -148,7 +148,7 @@ function get_postpone_intel(task_id, desc)
 	local icon = task_manager.task_ini:r_string_ex(task_id, "icon")
 
 	local postpone_intel = {
-		caption = "[Igi] "..get_task_text(task_id, "title"),
+		caption = "[WTF] "..get_task_text(task_id, "title"),
 		text = desc,
 		icon = icon or "ui_iconsTotal_mutant"
 	}

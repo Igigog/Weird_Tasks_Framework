@@ -11,10 +11,10 @@ curl \
     -H "Accept: application/vnd.github.v3+json" \
     -H "Content-Type:application/json" \
     -H "Authorization: token $GITHUB_TOKEN" \
-    https://api.github.com/repos/Igigog/Igi_Tasks/releases \
+    https://api.github.com/repos/Igigog/Weird_Tasks_Framework/releases \
     -d "{\"tag_name\":\"$VERSION\"}" || exit
 
-NAME="Igi_Tasks_$VERSION"
+NAME="Weird_Tasks_Framework_$VERSION"
 NAME_FULL="${NAME}_DEV"
 cd .. && zip -r -q "Igi_Tasks/$NAME_FULL.zip" Igi_Tasks && cd -
 
@@ -23,8 +23,8 @@ cp -r gamedata ./"$NAME"/gamedata
 zip -r -q "$NAME.zip" "$NAME"
 rm -r ./"$NAME"
 
-./upload_asset.sh owner=Igigog repo=Igi_Tasks tag=$VERSION filename="$NAME.zip"
-./upload_asset.sh owner=Igigog repo=Igi_Tasks tag=$VERSION filename="$NAME_FULL.zip"
+./upload_asset.sh owner=Igigog repo=Weird_Tasks_Framework tag=$VERSION filename="$NAME.zip"
+./upload_asset.sh owner=Igigog repo=Weird_Tasks_Framework tag=$VERSION filename="$NAME_FULL.zip"
 
 rm ./"$NAME.zip"
 rm ./"$NAME_FULL.zip"

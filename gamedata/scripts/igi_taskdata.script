@@ -101,7 +101,7 @@ function get_task_data(task_id)
 	local prefix, task_name = igi_helper.get_task_name(task_id)
 	trace_dbg("get_task_data: "..prefix.." "..task_name)
 	local task_tbl = get_task_table(task_name, prefix)
-	assert(task_tbl, "Igi: no such task: "..tostring(task_id or "nil"))
+	assert(task_tbl, "WTF: no such task: "..tostring(task_id or "nil"))
 
 	task_tbl.group_counter = count_entities(task_tbl.setup)
 	igi_synsugar.desugarize(task_tbl)
@@ -131,7 +131,7 @@ function get_target_table(target)
 
 	if not target_tbl then
 		callstack()
-		assert(nil, "Igi Tasks: no target tbl for target "..tostring(target or "nil"))
+		assert(nil, "WTF: no target tbl for target "..tostring(target or "nil"))
 	end
 
 	if target_tbl.PATTERN then

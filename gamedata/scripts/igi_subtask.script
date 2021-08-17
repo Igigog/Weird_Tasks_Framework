@@ -10,7 +10,7 @@ function process_instant_subtasks(subtasks)
 	for k, subtask_data in pairs(subtasks.instant) do
 		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
 		assert(target_tbl.is_complete, 
-			"Igi Tasks: no complete functor for target "..subtask_data.target)
+			"WTF: no complete functor for target "..subtask_data.target)
 
 		if target_tbl.is_failed then
 			if target_tbl.is_failed(subtask_data) then return "fail" end
@@ -46,7 +46,7 @@ function check_continuous_running(subtasks_continuous)
 		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
 		local is_ready_functor = target_tbl.ready_to_finish
 		assert(is_ready_functor, 
-			"Igi Tasks: no ready functor for target "..subtask_data.target)
+			"WTF: no ready functor for target "..subtask_data.target)
 		
 		if not is_ready_functor(subtask_data) then
 			return true

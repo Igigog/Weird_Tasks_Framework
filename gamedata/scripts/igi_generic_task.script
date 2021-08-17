@@ -12,7 +12,7 @@ function on_game_start()
     RegisterScriptCallback("save_state",save_state)
     RegisterScriptCallback("load_state",load_state)
 	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-	printf("Igi_Tasks CTE "..TASKS_VERSION.." initialised")
+	printf("Weird Tasks Framework "..TASKS_VERSION.." initialised")
 end
 
 function actor_on_first_update()
@@ -20,7 +20,7 @@ function actor_on_first_update()
 		return
 	end
 
-	printf("Igi Tasks: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
+	printf("Weird Tasks Framework: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
 			.." -> "..TASKS_VERSION)
 	TASKS_CACHE.TASKS_VERSION = nil
 
@@ -33,8 +33,8 @@ function actor_on_first_update()
 	TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
 
 	igi_taskdata.reset_all_custom_tables()
-	printf("Igi Tasks: Update successful.")
-	news_manager.send_tip(db.actor, "Igi Tasks: Update complete. Welcome to Igi Tasks "..TASKS_VERSION, nil, nil, 30000)
+	printf("WTF: Update successful.")
+	news_manager.send_tip(db.actor, "WTF: Update complete. Welcome to WTF "..TASKS_VERSION, nil, nil, 30000)
 end
 
 function save_state(m_data)
@@ -70,11 +70,11 @@ local function get_cache(task_id)
 	if not TASKS_CACHE[task_id] then
 		TASKS_CACHE[task_id] = TASK_SETUP[task_id]
 	end
-	return assert(TASKS_CACHE[task_id], "Igi: task "..task_id.." : CACHE not initialised")
+	return assert(TASKS_CACHE[task_id], "WTF: task "..task_id.." : CACHE not initialised")
 end
 
 local function get_setup_cache(task_id)
-	return assert(TASK_SETUP[task_id], "Igi: task "..task_id.." : CACHE not initialised")
+	return assert(TASK_SETUP[task_id], "WTF: task "..task_id.." : CACHE not initialised")
 end
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
@@ -83,7 +83,7 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 	local task_id = p[1]
 
 	local task_data = assert(igi_taskdata.get_task_data(task_id),
-		"Igi: validate_task: task_id invalid")
+		"WTF: validate_task: task_id invalid")
 	trace_dbg("task_data", task_data)
 
 	-- TASK LIMIT CHECK (not working)
@@ -204,7 +204,7 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 	local text = igi_description.get_task_text(task_id, field)
 	local desc = field ~= "title" and ("\\n "..CACHE.description) or ""
 
-	return "[Igi] "..text..desc
+	return "[WTF] "..text..desc
 end
 --< Reward >--------------------------------------------------
 xr_effects.igi_task_generic_finish = function(actor,npc,p)

@@ -6,7 +6,7 @@ end
 local function rank_precondition(tier)
 	local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
 	assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
-			"Igi: Invalid quest tier")
+			"WTF: Invalid quest tier")
 
 	if quest_tiers[tier] then
 		lower_bound = quest_tiers[tier][1]

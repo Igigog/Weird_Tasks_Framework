@@ -62,7 +62,7 @@ setmetatable(LtxView, LtxView_mt)
 function LtxView_mt:__call(file)
 	if not file then
 		callstack()
-		assert(nil, "Igi: LtxView: no file")
+		assert(nil, "WTF: LtxView: no file")
 	end
 	
 	local view = {
@@ -72,7 +72,7 @@ function LtxView_mt:__call(file)
 
 	if not view._ini then
 		callstack()
-		assert(nil, "Igi: LtxView: no such file: "..file)
+		assert(nil, "WTF: LtxView: no such file: "..file)
 	end
 	setmetatable(view, LtxView_mt)
 	return view
@@ -118,7 +118,7 @@ SectionView._methods = {}
 function SectionView_mt:__call(ini, section)
 	if not ini or not section then
 		callstack()
-		assert(nil, "Igi: SectionView: no file or section")
+		assert(nil, "WTF: SectionView: no file or section")
 	end
 	
 	if type(ini) ~= "userdata" then

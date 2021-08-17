@@ -185,7 +185,7 @@ function release_targets_in_world(target_cache)
 	for _, entity in pairs(target_cache) do
 		local handler = handlers[entity.entity_type]
 		if handler then
-			printf("Igi: Release from world: "..entity.section_name.." with id: "..entity.id)
+			printf("WTF: Release from world: "..entity.section_name.." with id: "..entity.id)
 			handler(entity)
 		end
 	end
@@ -290,7 +290,7 @@ end
 
 function trace_dbg(title, ...)
 	if igi_mcm.get_options_value("debug") then
-		printf("Igi DBG: "..title)
+		printf("WTF DBG: "..title)
 		for k, v in pairs({...}) do
 			if type(v) == "table" then
 				printf(utils_data.print_table(v, k, true))

@@ -1,5 +1,5 @@
 function on_game_start()
-	assert(ui_mcm, "Igi Tasks: MCM not installed. Fuck you.")
+	assert(ui_mcm, "Weird Tasks Framework: MCM not installed. Fuck you.")
 end
 
 OPTION_IDS = {

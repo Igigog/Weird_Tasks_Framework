@@ -11,7 +11,7 @@ function Dependency.mt:__call(str, this_entity)
 	
 	local pattern = "%$([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%$"
 	local typ, group_id, entity_id, field = str:match(pattern)
-	assert(typ, "Igi: something went wrong"..typ)
+	assert(typ, "WTF: something went wrong"..typ)
 	
 	local tbl = {
 		type = typ,
@@ -105,7 +105,7 @@ end
 function make_link(typ, group_id, obj_id)
 	if not typ or not group_id then
 		callstack()
-		assert(nil, "Igi: linker: no typ "..typ.." or id "..group_id)
+		assert(nil, "WTF: linker: no typ "..typ.." or id "..group_id)
 	end
 
 	local id = "$"..typ.."_"..tostring(group_id)

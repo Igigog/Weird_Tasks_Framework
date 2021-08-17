@@ -78,7 +78,7 @@ local function do_activities(obj_data, condition, se_obj, CACHE)
 		if action_handlers[action] then
 			action_handlers[action](obj_data, se_obj, args, CACHE)
 		else
-			printf("Igi: unknown action: "..action.." with object: "..obj_data.section_name)
+			printf("WTF: unknown action: "..action.." with object: "..obj_data.section_name)
 		end
 	end
 end
