@@ -342,7 +342,7 @@ end
 
 function Finder.get_smarts(self, where)
 	if not next(self.smarts.nearby) then self:_sort_smarts() end
-	if where then where = wrap_smart_location(where) end
+	if where then where = wrap_smart_location(where) end	-- TODO: remove
 
 	local smart_list = {}
 	local extend = igi_utils.extend_list
