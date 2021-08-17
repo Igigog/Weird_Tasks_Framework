@@ -62,6 +62,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	-- if find squad: add smart entity squad is on,
 	-- assault smart instead of squad
 	-- may produce copies of existing smarts, but that's okay
+	igi_helper.trace_dbg("ASSAULT: redirect to smart "..subtask_key, CACHE)
 	local location_key = igi_models.LOCATION
 	if string.find(subtask_key, location_key) then return end
 	subtask_data.target = nil

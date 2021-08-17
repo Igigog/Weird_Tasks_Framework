@@ -87,7 +87,7 @@ function update_task_table_value(task_name, prefix, key, value)
 	igi_utils.MemoizeCache.reset("task_data")
 end
 
-local function reset_all_custom_tables()
+function reset_all_custom_tables()
 	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
 	for prefix in meta_ltx:iter() do
 		os.remove(configured_tasks_path..prefix)
@@ -99,7 +99,7 @@ end
 -------------------------------------------------
 function get_task_data(task_id)
 	local prefix, task_name = igi_helper.get_task_name(task_id)
-	trace_dbg("get_task_data: ", prefix, task_name)
+	trace_dbg("get_task_data: "..prefix.." "..task_name)
 	local task_tbl = get_task_table(task_name, prefix)
 	assert(task_tbl, "Igi: no such task: "..tostring(task_id or "nil"))
 
