@@ -416,7 +416,7 @@ add_test("setup_location", function()
 	}
 	result = setup_location(location_name)
 	assert(tables_are_same(result, expected))
-
+	--[[
 	local location_find = {
 		where = "nearby",
 		amount = 1
@@ -430,6 +430,7 @@ add_test("setup_location", function()
 	}
 	result = setup_location(location_find_arr)
 	assert(#result.smarts == 1)
+	--]]
 end)
 
 --[[add_test("setup_item", function()
