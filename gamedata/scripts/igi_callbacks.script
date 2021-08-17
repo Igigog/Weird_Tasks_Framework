@@ -1,5 +1,5 @@
 
-function invoke_target_callbacks(callback_name, CACHE, entity_table, ...)
+function invoke_callbacks(callback_name, CACHE, entity_table, ...)
 	local entity_table = entity_table or CACHE.target
 	local target_set = {}
 	

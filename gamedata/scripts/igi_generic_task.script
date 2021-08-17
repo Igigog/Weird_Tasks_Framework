@@ -119,7 +119,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if not (CACHE["target"]) then
 		trace_dbg("before target creation", CACHE)
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_id)
-		igi_callbacks.invoke_target_callbacks("on_after_target_creation", CACHE)
+		igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
@@ -134,7 +134,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	end
 	tsk.__actions_time = tg+3000
 	---------------------------<ACTIONS>---------------------
-	igi_callbacks.invoke_target_callbacks("on_task_update", CACHE)
+	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
 	igi_subtask.update_marks(CACHE.target)
 	igi_activities.do_online_activities(CACHE)
 	if igi_subtask.process_instant_subtasks(CACHE.subtasks) == "fail" then
@@ -212,7 +212,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	local task_id = p[1]
 	local is_completed = p[2] == "true"
 	local CACHE = get_cache(task_id)
-	igi_callbacks.invoke_target_callbacks("on_complete", CACHE, CACHE.target, is_completed)
+	igi_callbacks.invoke_callbacks("on_complete", CACHE, CACHE.target, is_completed)
 
 	--Release
 	igi_subtask.finish_continuous_subtasks(CACHE.subtasks.continuous, is_completed)

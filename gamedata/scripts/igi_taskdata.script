@@ -106,7 +106,7 @@ function get_task_data(task_id)
 	task_tbl.group_counter = count_entities(task_tbl.setup)
 	igi_synsugar.desugarize(task_tbl)
 	trace_dbg("after desugaring", task_tbl)
-	igi_callbacks.invoke_target_callbacks("on_get_taskdata", task_tbl, task_tbl.setup)
+	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, task_tbl.setup)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
