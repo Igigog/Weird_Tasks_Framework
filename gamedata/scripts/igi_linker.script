@@ -11,12 +11,12 @@ function Dependency.mt:__call(str, this_entity)
 	
 	local pattern = "%$([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%$"
 	local typ, group_id, entity_id, field = str:match(pattern)
-	assert(typ and group_id, "Igi: something went wrong"..typ..group_id)
+	assert(typ, "Igi: something went wrong"..typ)
 	
 	local tbl = {
 		type = typ,
-		group_id = group_id or "1",
-		entity_id = entity_id or "1",
+		group_id = group_id ~= "" and group_id or "1",
+		entity_id = entity_id ~= "" and entity_id or "1",
 		field = field ~= "" and field or "id",
 		original = str,
 		this = this_entity,
@@ -34,10 +34,12 @@ function Dependency:unwrap(str)
 end
 
 function Dependency:_get_unwrapped_group_link()
+	if self.type == "this" then return "this" end
 	return self.type.."_"..self.group_id
 end
 
 function Dependency:_get_unwrapped_link()
+	if self.type == "this" then return "this" end
 	return self:_get_unwrapped_group_link().."_"..self.entity_id
 end
 
@@ -137,20 +139,16 @@ function get_dependency_value(entity, field)
 	return entity[field]
 end
 
-local function is_group_dependency(str)
-	return not string.find(str, "%D+_%d+_%d+")
+function finalize_dependency(str)
+	return Dependency(str):to_string()
 end
 
-local function is_untargeted_dependency(str)
-	return not string.find(str, "_%d+%..+")
-end
-
-local function finalize_dependency(dep)
-	if is_group_dependency(dep) and not dep == "this" then 
-		dep = string.gsub(dep, "%$$", "_1$") 
+function finalize_all_dependencies(str)
+	if type(str) ~= "string" then
+		callstack()
+		assert(nil, "WTF: str is not string")
 	end
-	if is_untargeted_dependency(dep) then dep = string.gsub(dep, "%$$", ".id$") end
-	return dep
+	return str:gsub("%b$$", finalize_dependency)
 end
 
 function dependency_iterator(str)
