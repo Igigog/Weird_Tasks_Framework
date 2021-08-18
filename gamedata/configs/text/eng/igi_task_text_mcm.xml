@@ -6,6 +6,7 @@
 	<string id="ui_mcm_igi_tasks_title">
 		<text>Igi Tasks</text>
 	</string>
+
 	<string id="ui_mcm_menu_Options">
 		<text>Options</text>
 	</string>
@@ -18,7 +19,17 @@
 	<string id="ui_mcm_igi_tasks_Options_debug">
 		<text>Debug mode (May cause fps drops)</text>
 	</string>
+	<string id="ui_mcm_igi_tasks_Options_autosave_before">
+		<text>Save on taking task</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_autosave_after">
+		<text>Save on completing task</text>
+	</string>
+
 	<string id="ui_mcm_igi_tasks_disable_task">
 		<text>Disable</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_cancel_all">
+		<text>Finish all active tasks</text>
 	</string>
 </string_table>

@@ -6,11 +6,18 @@
 	<string id="ui_mcm_igi_tasks_title">
 		<text>Igi Tasks</text>
 	</string>
+
 	<string id="ui_mcm_igi_tasks_Options_autocomplete">
 		<text>Автозавершение</text>
 	</string>
 	<string id="ui_mcm_igi_tasks_Options_realistic_assassinations">
 		<text>(Arszi's) Реалистичные убийства</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_autosave_before">
+		<text>Сохранение при взятии задания</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_autosave_after">
+		<text>Сохранение при завершении задания</text>
 	</string>
 	<string id="ui_mcm_menu_Options">
 		<text>Настройки</text>
@@ -18,7 +25,11 @@
 	<string id="ui_mcm_igi_tasks_Options_debug">
 		<text>Режим дебага (Может вызывать падение фпс)</text>
 	</string>
+
 	<string id="ui_mcm_igi_tasks_disable_task">
 		<text>Выключить</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_cancel_all">
+		<text>Завершить все активные задания</text>
 	</string>
 </string_table>
