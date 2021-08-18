@@ -4,8 +4,8 @@
 --	Igigog
 -- =============================================================
 TASKS_VERSION = "3nightly2"
-local TASK_SETUP = {}
-local TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
+TASK_SETUP = {}
+TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 local trace_dbg = igi_helper.trace_dbg
 
 function on_game_start()
@@ -117,6 +117,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not (CACHE["target"]) then
+		igi_callbacks.invoke_callbacks("on_first_run", CACHE, CACHE.setup)
 		trace_dbg("before target creation", CACHE)
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_id)
 		igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
