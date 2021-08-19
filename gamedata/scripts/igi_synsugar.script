@@ -38,7 +38,7 @@ end
 add_entity_handler(set_default_amount)
 
 function set_default_creation_location(entity)
-    if (not entity.where) and entity.to_create ~= false then
+    if (not entity.where) and entity.to_create ~= false and entity.entity_type ~= "location" then
         entity.where = "$location_1_1.id$"
     end
 end
