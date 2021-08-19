@@ -8,13 +8,20 @@ OPTION_IDS = {
 	debug = "debug",
 }
 
-function add_mcm_option(key, name)
+OPTION_DEFAULTS = {
+	ara = false,
+	autocomplete = false,
+	debug = false,
+}
+
+function add_mcm_option(key, default, name)
     if not name then name = key end
     if not OPTION_IDS[key] then OPTION_IDS[key] = name end
+	if default then OPTION_DEFAULTS[name] = default end
 end
 
 local function get_default_option(option_id)
-	return igi_db.get_value("options.ltx", "defaults", option_id)
+	return OPTION_DEFAULTS[option_id]
 end
 
 local function get_mcm_option(option_id)

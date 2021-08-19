@@ -31,7 +31,7 @@ function autosave_on_game_start()
 end
 
 function add_mcm_options()
-    igi_mcm.add_mcm_option("autosave_before")
-    igi_mcm.add_mcm_option("autosave_after")
+    igi_mcm.add_mcm_option("autosave_before", false)
+    igi_mcm.add_mcm_option("autosave_after", false)
 end
 -------------
