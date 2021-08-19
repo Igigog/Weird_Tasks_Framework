@@ -311,9 +311,9 @@ function trace_assert_no_crash(val, err)
 end
 
 function trace_assert(val, err)
-	trace_assert_no_crash(val, err)
 	if not val then
 		callstack()
 		assert(nil, "WTF: "..err)
 	end
+	return val
 end
