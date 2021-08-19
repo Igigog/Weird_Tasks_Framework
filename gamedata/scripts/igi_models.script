@@ -40,8 +40,10 @@ function create_SquadsData(ids, name, faction, location)
 		name = name,
 		faction = faction,
 		where = location,
-		where_link = igi_linker.Dependency(location):get_link(),
 	}
+	if location and igi_linker.is_dependency(location) then
+		tbl.where_link = igi_linker.Dependency(location):get_link()
+	end
 	return tbl
 end
 
@@ -68,9 +70,11 @@ function create_ItemData(ids, sec_name, location, how_much)
 		ids = ids,
 		section_name = sec_name,
 		where = location,
-		where_link = igi_linker.Dependency(location):get_link(),
 		how_much = how_much,
 	}
+	if location and igi_linker.is_dependency(location) then
+		tbl.where_link = igi_linker.Dependency(location):get_link()
+	end
 	return tbl
 end
 
