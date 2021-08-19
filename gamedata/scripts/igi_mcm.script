@@ -94,6 +94,7 @@ local function build_option_entries()
 		entries[#entries+1] = {
 			id = id,
 			type = "check",
+			val = 1,
 			def = get_default_option(id)
 		}
 	end
