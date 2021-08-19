@@ -47,10 +47,10 @@ function create_SquadsData(ids, name, faction, location)
 	return tbl
 end
 
-function create_SmartData(names)
+function create_SmartData(smarts)
 	local tbl = {
 		_cls = "EntityData",
-		names = names,
+		smarts = smarts,
 	}
 	return tbl
 end
