@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 local function get_tg_and_tg_squad(tg)
 	if tg:clsid() == clsid.online_offline_group_s then
 		return igi_helper.alife_obj(tg:commander_id()), tg

@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 condition_handlers = {}		-- These are filled in igi_handlers.script
 action_handlers = {}		-- So you can add your own handlers to it. Modularity, desu.
 

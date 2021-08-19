@@ -11,6 +11,7 @@ local database_folder = "igi_tasks\\"
 -- ini_tables = ini_tables = LtxView("tables\\base.ltx")
 --------------------------------------------
 
+local trace_assert = igi_helper.trace_assert
 
 local function parse_values(str)
 	if not str then return nil end
@@ -60,20 +61,16 @@ local LtxView_mt = {}
 setmetatable(LtxView, LtxView_mt)
 
 function LtxView_mt:__call(file)
-	if not file then
-		callstack()
-		assert(nil, "WTF: LtxView: no file")
-	end
+	trace_assert(file, "LtxView: no file")
+	local ini = trace_assert(ini_file(database_folder..file), 
+		"LtxView: no such file: "..file)
 	
 	local view = {
 		_filename = file,
-		_ini = ini_file(database_folder..file),
+		_ini = ini,
 	}
 
-	if not view._ini then
-		callstack()
-		assert(nil, "WTF: LtxView: no such file: "..file)
-	end
+	
 	setmetatable(view, LtxView_mt)
 	return view
 end
@@ -116,10 +113,7 @@ setmetatable(SectionView, SectionView_mt)
 SectionView._methods = {}
 
 function SectionView_mt:__call(ini, section)
-	if not ini or not section then
-		callstack()
-		assert(nil, "WTF: SectionView: no file or section")
-	end
+	trace_assert(ini and section, "SectionView: no file or section")
 	
 	if type(ini) ~= "userdata" then
 		ini = ini_file(database_folder..ini)

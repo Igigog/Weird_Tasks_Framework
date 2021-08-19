@@ -6,7 +6,7 @@ function alife_obj(id)
 	id = tonumber(id)
 	if not id then
 		callstack()
-		assert(nil, "Don't look at me, senpai >//////<\n")
+		trace_assert(nil, "Don't look at me, senpai >//////<\n")
 	end
 	return alife_object(id)
 end
@@ -15,7 +15,7 @@ function level_object(id)
 	id = tonumber(id)
 	if not id then
 		callstack()
-		assert(nil, "Don't look at me, senpai >//////<\n")
+		trace_assert(nil, "Don't look at me, senpai >//////<\n")
 	end
 	return level.object_by_id(id)
 end
@@ -302,10 +302,18 @@ function trace_dbg(title, ...)
 	end
 end
 
-function trace_assert(val, err)
+function trace_assert_no_crash(val, err)
 	if not val then
 		local func_name = debug.getinfo(2, "n").name
 		trace_dbg("ASSERTION FAILED: "..func_name, err)
 	end
 	return val
+end
+
+function trace_assert(val, err)
+	trace_assert_no_crash(val, err)
+	if not val then
+		callstack()
+		assert(nil, "WTF: "..err)
+	end
 end

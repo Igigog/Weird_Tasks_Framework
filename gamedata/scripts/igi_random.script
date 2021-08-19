@@ -3,6 +3,7 @@ local sbyte = string.byte
 local floor = math.floor
 local random_seed = device():time_global()
 local offset
+local trace_assert = igi_helper.trace_assert
 
 function on_game_start()
 	RegisterScriptCallback("on_game_load", on_game_load)
@@ -26,8 +27,7 @@ function set_seed(seed)
 	elseif type(seed) == "number" then
 		random_seed = seed * offset
 	else
-		callstack()
-		assert(nil, "WTF: random: bad seed of type "..type(seed))
+		trace_assert(nil, "random: bad seed of type "..type(seed))
 	end
 end
 

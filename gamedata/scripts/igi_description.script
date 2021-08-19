@@ -1,5 +1,6 @@
 
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 
 -- TaskDescription class
 -- Takes care of all description preparations, get_description will return description string
@@ -24,7 +25,7 @@ end
 
 function TaskDescription.add_entries(self, tbl)
 	if not tbl then return end
-	assert(tbl._cls == "DescriptionData")
+	trace_assert(tbl._cls == "DescriptionData")
 	
 	for _, field in pairs(self.fields) do
 		igi_utils.extend_list(self[field], tbl[field])

@@ -1,5 +1,6 @@
 
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 
 Dependency = {}
 Dependency.mt = {}
@@ -7,11 +8,11 @@ setmetatable(Dependency, Dependency.mt)
 
 function Dependency.mt:__call(str, this_entity)
 	-- Won't work with dependencies with macros
-	if type(str) ~= "string" then assert(nil, str) end
+	trace_assert(type(str) == "string", str)
 	
 	local pattern = "%$([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%$"
 	local typ, group_id, entity_id, field = str:match(pattern)
-	assert(typ, "WTF: something went wrong"..typ)
+	trace_assert(typ, "Dependency can't be resolved: "..str)
 	
 	local tbl = {
 		type = typ,
@@ -103,10 +104,7 @@ function assign_group_id(entities)
 end
 
 function make_link(typ, group_id, obj_id)
-	if not typ or not group_id then
-		callstack()
-		assert(nil, "WTF: linker: no typ "..typ.." or id "..group_id)
-	end
+	trace_assert(typ and group_id, "linker: no typ "..typ.." or id "..group_id)
 
 	local id = "$"..typ.."_"..tostring(group_id)
 	if obj_id then id = id.."_"..tostring(obj_id) end
@@ -144,10 +142,7 @@ function finalize_dependency(str)
 end
 
 function finalize_all_dependencies(str)
-	if type(str) ~= "string" then
-		callstack()
-		assert(nil, "WTF: str is not string")
-	end
+	trace_assert(type(str) == "string", "str is not string")
 	return str:gsub("%b$$", finalize_dependency)
 end
 

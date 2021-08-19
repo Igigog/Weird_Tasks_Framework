@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 TARGET_TYPES = {	-- Enum to be clear everywhere and no typos
 	CONTINUOUS = "continuous",
 	INSTANT = "instant",
@@ -9,8 +11,8 @@ function process_instant_subtasks(subtasks)
 	
 	for k, subtask_data in pairs(subtasks.instant) do
 		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-		assert(target_tbl.is_complete, 
-			"WTF: no complete functor for target "..subtask_data.target)
+		trace_assert(target_tbl.is_complete, 
+			"no complete functor for target "..subtask_data.target)
 
 		if target_tbl.is_failed then
 			if target_tbl.is_failed(subtask_data) then return "fail" end
@@ -45,8 +47,8 @@ function check_continuous_running(subtasks_continuous)
 	for k, subtask_data in pairs(subtasks_continuous) do
 		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
 		local is_ready_functor = target_tbl.ready_to_finish
-		assert(is_ready_functor, 
-			"WTF: no ready functor for target "..subtask_data.target)
+		trace_assert(is_ready_functor, 
+			"no ready functor for target "..subtask_data.target)
 		
 		if not is_ready_functor(subtask_data) then
 			return true

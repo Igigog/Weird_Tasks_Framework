@@ -2,6 +2,8 @@ TYP = igi_subtask.TARGET_TYPES.CONTINUOUS
 TARGET_NAME = "fetch"
 PATTERN = "basic"
 
+local trace_assert = igi_helper.trace_assert
+
 function ready_to_finish(obj_data)
 	local section = obj_data.section_name
 	local item = section and db.actor:object(section)
@@ -38,7 +40,7 @@ end
 function setup_item(item_info, factions)
 	local sec_name = item_info.section
 
-	assert(ini_sys:section_exist(sec_name or "nil"))
+	trace_assert(ini_sys:section_exist(sec_name or "nil"))
 	local text_name = ini_sys:r_string_ex(sec_name, "inv_name")
 	local desc_target = game.translate_string(text_name)..", "..tostring(item_info.how_much)
 

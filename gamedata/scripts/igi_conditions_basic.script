@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 local function is_parent_dead(obj_data, se_obj)
 	if not se_obj then return end
 

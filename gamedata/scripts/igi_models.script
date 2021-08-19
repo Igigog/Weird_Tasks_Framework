@@ -1,5 +1,7 @@
 -- DELETE etu huinyu nahui
 
+local trace_assert = igi_helper.trace_assert
+
 LOCATION = "location"
 ITEM = "item"
 SQUAD = "squad"
@@ -52,7 +54,7 @@ function create_SmartData(names)
 end
 
 function create_GroupData(entity_data, target, amount)
-	assert(entity_data._cls == "EntityData", "WTF: setup: entity_data in not EntityData")
+	trace_assert(entity_data._cls == "EntityData", "setup: entity_data in not EntityData")
 	
 	entity_data.target = target
 	entity_data.amount = amount

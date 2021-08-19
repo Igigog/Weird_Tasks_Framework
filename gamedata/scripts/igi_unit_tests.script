@@ -1,11 +1,12 @@
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 local tests = {}
 
 function on_game_start()
 	-- crash tf out of here
 	RegisterScriptCallback("actor_on_first_update", function()
 		if igi_mcm.get_options_value("debug") then
-			assert(run_tests(), "WTF: Unit tests fucked up")
+			trace_assert(run_tests(), "Unit tests fucked up")
 		end
 	end)
 end

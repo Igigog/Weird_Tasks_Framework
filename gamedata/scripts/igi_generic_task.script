@@ -6,7 +6,9 @@
 TASKS_VERSION = "3nightly2"
 TASK_SETUP = {}
 TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
+
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 
 function on_game_start()
     RegisterScriptCallback("save_state",save_state)
@@ -70,19 +72,19 @@ local function get_cache(task_id)
 	if not TASKS_CACHE[task_id] then
 		TASKS_CACHE[task_id] = TASK_SETUP[task_id]
 	end
-	return assert(TASKS_CACHE[task_id], "WTF: task "..task_id.." : CACHE not initialised")
+	return trace_assert(TASKS_CACHE[task_id], "task "..task_id.." : CACHE not initialised")
 end
 
 local function get_setup_cache(task_id)
-	return assert(TASK_SETUP[task_id], "WTF: task "..task_id.." : CACHE not initialised")
+	return trace_assert(TASK_SETUP[task_id], "WTF: task "..task_id.." : CACHE not initialised")
 end
 ---------------------------< Precondition >---------------------------
 xr_conditions.validate_generic_task = function(actor, npc, p)
 	trace_dbg("validate "..p[1])
-	assert(p and p[1], "No task id given")
+	trace_assert(p and p[1], "No task id given")
 	local task_id = p[1]
 
-	local task_data = assert(igi_taskdata.get_task_data(task_id),
+	local task_data = trace_assert(igi_taskdata.get_task_data(task_id),
 		"WTF: validate_task: task_id invalid")
 	trace_dbg("task_data", task_data)
 

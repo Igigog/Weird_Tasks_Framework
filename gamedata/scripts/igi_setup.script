@@ -1,5 +1,6 @@
 
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 
 local function add_predefined_values(group_data, entity_preset)
 	for k,v in pairs(entity_preset) do

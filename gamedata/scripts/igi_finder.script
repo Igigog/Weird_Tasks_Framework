@@ -6,6 +6,8 @@
 local alife_obj = igi_helper.alife_obj
 local ini_tables = igi_db.ini_tables
 
+local trace_assert = igi_helper.trace_assert
+
 local function object_in_world(se_obj)
 	return se_obj.parent_id == 65535
 end
@@ -295,7 +297,7 @@ function Finder._filter_by_args(self, objects, args)
 end
 
 function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
-	assert(with_ending or not only_ending, "WTF: setup: only_ending but no ending")
+	trace_assert(with_ending or not only_ending, "setup: only_ending but no ending")
 	-- printf(utils_data.print_table(args, "args", true))
 	
 	local items_pool = {}
@@ -318,7 +320,7 @@ arg_handlers = {
 	only_enemies = enemy_to_handler,
 }
 function Finder._check_object_by_args(self, se_obj, args, sim, gg)
-	assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
+	trace_assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
 			"WTF: Check object: enemy but not in_npc_inv")
 
 	-- priority for parent bcs there's main filtering and it's cheap for world objects

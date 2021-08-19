@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 local function get_daytime_bounds(daytime)
 	local bounds = igi_db.SectionView("daytime.ltx", "daytime_bounds")
 	return bounds[daytime]
@@ -5,8 +7,8 @@ end
 
 local function rank_precondition(tier)
 	local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
-	assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
-			"WTF: Invalid quest tier")
+	trace_assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
+			"Invalid quest tier")
 
 	if quest_tiers[tier] then
 		lower_bound = quest_tiers[tier][1]

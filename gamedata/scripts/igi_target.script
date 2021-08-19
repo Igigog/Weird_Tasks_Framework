@@ -1,5 +1,6 @@
 
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 
 function create_target_entry(se_obj, group_data)
 	if not se_obj then return end
@@ -15,10 +16,8 @@ function create_target_entry(se_obj, group_data)
 end
 
 function add_entry(tbl, typ, group_id, entity_id, se_obj, group_data)
-	if not (tbl and typ and group_id and entity_id and se_obj) then
-		callstack()
-		assert(nil, "WTF: Something went wrong while adding entry")
-	end
+	trace_assert(tbl and typ and group_id and entity_id and se_obj,
+		"Something went wrong while adding entry")
 
 	local id = igi_linker.make_link(typ, group_id, entity_id)
 	tbl[id] = create_target_entry(se_obj, group_data)

@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 local ini_tables = igi_db.ini_tables
 
 function has_macro(str)
@@ -49,10 +51,7 @@ function Macro.TableValueRandom(args)
 end
 
 function Macro.TableValueByKey(args)
-	if not args or not args[1] or not args[2] then 
-		callstack()
-		assert(nil)
-	end
+	trace_assert(args and args[1] and args[2])
 	
 	args = parse_args(args)
 	local tbl = ini_tables[args[1]]
@@ -98,10 +97,8 @@ local function has_macro(str)
 end
 
 local function resolve_macro(macro)
-	if not Macro[macro[1]] then
-		assert(nil, macro[1])
-	end
-	return Macro[macro[1]](macro[2])
+	local macro_func = trace_assert(Macro[macro[1]], macro[1])
+	return macro_func(macro[2])
 end
 
 local function parse_macro(str)

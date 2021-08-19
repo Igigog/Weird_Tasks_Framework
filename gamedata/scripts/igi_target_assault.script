@@ -6,6 +6,7 @@ local do_for_every_target = igi_helper.do_for_every_target
 local get_options_value = igi_mcm.get_options_value
 local igi_ara = igi_ara
 local alife_obj = igi_helper.alife_obj
+local trace_assert = igi_helper.trace_assert
 
 local function is_ara()
 	return get_options_value(igi_mcm.OPTION_IDS.ara)
@@ -39,7 +40,7 @@ local function is_squad_at_smart(se_squad, smart_id)
 end
 
 function is_complete(obj_data)
-	assert(SIMBOARD.smarts[obj_data.id], "WTF: assault but not smart")
+	trace_assert(SIMBOARD.smarts[obj_data.id], "assault but not smart")
 	if is_ara() then
 		if not igi_ara.is_updated(obj_data) then return false end
 	end

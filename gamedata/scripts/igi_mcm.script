@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 function on_game_start()
 	assert(ui_mcm, "Weird Tasks Framework: MCM not installed. Fuck you.")
 end

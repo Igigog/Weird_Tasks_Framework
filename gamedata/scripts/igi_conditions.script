@@ -1,4 +1,6 @@
 
+local trace_assert = igi_helper.trace_assert
+
 local function print_time(t, title)
 	title = title or "time"
 	printf("WTF: "..title..": "..t:dateToString(0).." "..t:timeToString(2))

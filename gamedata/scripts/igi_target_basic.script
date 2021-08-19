@@ -3,16 +3,17 @@
 -- No actual grouping, these are used to lower other functions complexity
 ------------------------------------------------
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 local ini_tables = igi_db.ini_tables
 
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 
 	local section = squad_info.section
-	if not ini_sys:section_exist(section) then assert(nil, section) end
+	trace_assert(ini_sys:section_exist(section), section)
 	local faction = ini_sys:r_string_ex(section, "faction")
 	
-	assert(section, "WTF: setup_squad: Unable to set squad_name")
+	trace_assert(section, "Unable to set squad_name")
 	-- set all default
 	local squad_data = igi_models.create_SquadsData(nil, section, faction or "mutant", squad_info.where)
 	local description = igi_models.create_DescriptionData(faction, nil, squad_info.where)
@@ -29,7 +30,7 @@ local function fetch_squad_data(squad_info, factions)
 	elseif squad_info.type == "enemy" then
 		enemy_factions = igi_helper.get_faction_enemies(character_community(db.actor))
 	end
-	assert(enemy_factions)
+	trace_assert(enemy_factions)
 	local squads = finder:get_squads_by_args(squad_info, enemy_factions)
 	local ids = igi_utils.get_random_items(squads, squad_info.amount)
 	if not ids then return end
@@ -83,7 +84,7 @@ end
 
 local function create_item_data(item_info)
 	local section = item_info.section
-	assert(ini_sys:section_exist(section), "WTF: bad item section: "..(section or "nil"))
+	trace_assert(ini_sys:section_exist(section), "bad item section: "..(section or "nil"))
 	
 	local item_data = igi_models.create_ItemData(nil, section, item_info.where)
 	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..section)
@@ -92,7 +93,7 @@ local function create_item_data(item_info)
 end
 
 local function fetch_item_data(item_info)
-	assert(item_info.item_list, "WTF: setup_item: No item list given")
+	trace_assert(item_info.item_list, "No item list given")
 
 	local objects = find_objects(item_info, item_info.amount)
 	if not objects then return nil end
@@ -150,14 +151,11 @@ local function get_vector(x,y,z)
 end
 
 local function get_coords(str)
-	assert(type(str) == "string")
+	trace_assert(type(str) == "string")
 	local lvl, x, y, z = str:match("(.*),(.*),(.*),(.*)")
 	x, y, z = tonumber(x), tonumber(y), tonumber(z)
 	lvl = igi_db.LtxView("map_config.ltx").map_names[lvl]
-	if not lvl then
-		trace_dbg("ERROR: Can't get lvl!", str)
-		assert(nil)
-	end
+	trace_assert(lvl, "ERROR: Can't get lvl! "..str)
 	return lvl, x, y, z
 end
 
@@ -209,7 +207,7 @@ end
 ------------------------------------------------
 
 function setup_location(loc_info)
-	assert(loc_info.where or loc_info.coords, "WTF: location has no info")
+	trace_assert(loc_info.where or loc_info.coords, "location has no info")
 	if loc_info.coords then
 		return loc_info
 	end
@@ -226,7 +224,7 @@ function setup_location(loc_info)
 		return loc_info
 	end
 
-	local smart = assert(SIMBOARD.smarts_by_names[where], "WTF: unknown name "..where)
+	local smart = trace_assert(SIMBOARD.smarts_by_names[where], "Unknown name "..where)
 	loc_info.id = smart.id
 	loc_info.where = nil
 	return loc_info
@@ -252,8 +250,8 @@ end
 function setup_smart(smart_info)
 	local smart_data
 	if smart_info.smart_name then
-		assert(SIMBOARD.smarts_by_names[smart_info.smart_name], 
-			"WTF: wrong smart name "..smart_info.smart_name)
+		trace_assert(SIMBOARD.smarts_by_names[smart_info.smart_name], 
+			"Wrong smart name "..smart_info.smart_name)
 		smart_data = igi_models.create_SmartData({smart_info.smart_name})
 	else
 		local amount = smart_info.amount or 1
@@ -388,7 +386,7 @@ add_test("setup_location", function()
 	}
 	expected = dup_table(location_coords)
 	result = setup_location(location_coords)
-	assert(tables_are_same(result, expected))
+	trace_assert(tables_are_same(result, expected))
 
 	local location_id = {
 		where = 0
@@ -397,7 +395,7 @@ add_test("setup_location", function()
 		id = 0
 	}
 	result = setup_location(location_id)
-	assert(tables_are_same(result, expected))
+	trace_assert(tables_are_same(result, expected))
 
 	local location_link = {
 		where = "$link$"
@@ -406,7 +404,7 @@ add_test("setup_location", function()
 		id = "$link$"
 	}
 	result = setup_location(location_link)
-	assert(tables_are_same(result, expected))
+	trace_assert(tables_are_same(result, expected))
 
 	local location_name = {
 		where = "mar_smart_terrain_6_10"
@@ -415,7 +413,7 @@ add_test("setup_location", function()
 		id = SIMBOARD.smarts_by_names["mar_smart_terrain_6_10"].id
 	}
 	result = setup_location(location_name)
-	assert(tables_are_same(result, expected))
+	trace_assert(tables_are_same(result, expected))
 	--[[
 	local location_find = {
 		where = "nearby",

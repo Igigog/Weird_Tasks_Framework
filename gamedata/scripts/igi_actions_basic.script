@@ -1,3 +1,5 @@
+local trace_assert = igi_helper.trace_assert
+
 local function change_squad_faction(_, se_squad, faction)
 	if not se_squad then return end
 	for npc in se_squad:squad_members() do

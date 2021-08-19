@@ -1,4 +1,5 @@
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert_no_crash = igi_helper.trace_assert_no_crash
 local trace_assert = igi_helper.trace_assert
 
 local function count_entities(task_setup)
@@ -28,9 +29,9 @@ local configured_tasks_path = get_game_path().."igi_tasks\\tasks\\"
 local function read_task_json(task_name, prefix)
 	local task_path = prefix.."\\"..task_name..".json"
 
-	local file = trace_assert(io.open(configured_tasks_path..task_path, "rb"))
+	local file = trace_assert_no_crash(io.open(configured_tasks_path..task_path, "rb"))
 	if not file then
-		file = trace_assert(io.open(default_tasks_path..task_path, "rb"))
+		file = trace_assert_no_crash(io.open(default_tasks_path..task_path, "rb"))
 	end
 
     if not file then return end
@@ -43,7 +44,7 @@ end
 
 local json = igi_json.get_json()
 function get_task_table(task_name, prefix)
-	local task_json = trace_assert(
+	local task_json = trace_assert_no_crash(
 		read_task_json(task_name, prefix),
 		"task_json: no json file for task "..prefix.."_"..task_name
 	)
@@ -52,10 +53,10 @@ function get_task_table(task_name, prefix)
 end
 
 local function save_file(path, content)
-	local file = trace_assert(io.open(path, "w"))
+	local file = trace_assert_no_crash(io.open(path, "w"))
 	if not file then
 		os.execute('echo 1 > '..path)
-		file = trace_assert(io.open(path, "w"))
+		file = trace_assert_no_crash(io.open(path, "w"))
 	end
 	file:write(content)
 	file:close()
@@ -101,7 +102,7 @@ function get_task_data(task_id)
 	local prefix, task_name = igi_helper.get_task_name(task_id)
 	trace_dbg("get_task_data: "..prefix.." "..task_name)
 	local task_tbl = get_task_table(task_name, prefix)
-	assert(task_tbl, "WTF: no such task: "..tostring(task_id or "nil"))
+	trace_assert(task_tbl, "No such task: "..tostring(task_id or "nil"))
 
 	task_tbl.group_counter = count_entities(task_tbl.setup)
 	igi_synsugar.desugarize(task_tbl)
@@ -128,11 +129,7 @@ end
 function get_target_table(target)
 	if not target then return end
 	local target_tbl = _G["igi_target_"..target]
-
-	if not target_tbl then
-		callstack()
-		assert(nil, "WTF: no target tbl for target "..tostring(target or "nil"))
-	end
+	trace_assert(target_tbl, "No target tbl for target "..tostring(target or "nil"))
 
 	if target_tbl.PATTERN then
 		setmetatable(target_tbl, {__index = get_target_table(target_tbl.PATTERN)})

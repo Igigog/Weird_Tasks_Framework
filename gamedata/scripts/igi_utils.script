@@ -1,5 +1,7 @@
 -- There are purely utility functions, not bound with tasks or STALKER
 
+local trace_assert = igi_helper.trace_assert
+
 Set = {}
 function Set.union(set1, set2)
 	local new_set = dup_table(set1)
@@ -46,7 +48,7 @@ function list_to_set(l)
 	
 	local set = {}
 	for _, v in pairs(l) do
-		assert(type(v) ~= "table", "list_to_set values mustn't be tables")
+		trace_assert(type(v) ~= "table", "list_to_set values mustn't be tables")
 		set[v] = true
 	end
 	return set
