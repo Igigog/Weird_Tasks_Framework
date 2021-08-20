@@ -7,6 +7,7 @@ local alife_obj = igi_helper.alife_obj
 local ini_tables = igi_db.ini_tables
 
 local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 
 local function object_in_world(se_obj)
 	return se_obj.parent_id == 65535
@@ -115,17 +116,17 @@ end
 local function check_squad_by_args(se_squad, smart, args, factions)
 	
 	if not simulation_objects.is_on_the_same_level(se_squad, smart) then
-		--printf("not same lvl")
+		trace_dbg("not same lvl")
 		return false
 	end
 	
 	if not (se_squad.current_target_id == smart.id) then
-		--printf("target wrong")
+		trace_dbg("target wrong")
 		return false
 	end
 	
 	if not (se_squad.current_action == 1 and se_squad.stay_time) then
-		--printf("action or stay time")
+		trace_dbg("action or stay time")
 		return false
 	end
 	
@@ -134,7 +135,7 @@ local function check_squad_by_args(se_squad, smart, args, factions)
 	end
 	
 	if is_rat(se_squad) or not factions[se_squad.player_id] then
-		--printf("factions sucked")
+		trace_dbg("factions sucked")
 		return false
 	end
 	
@@ -364,7 +365,7 @@ end
 
 function Finder.get_squads_by_args(self, args, factions)
 	local targets = {}
-	
+	trace_dbg("finder: get squad by args", args, factions)
 	if args.smart then
 		local smart = SIMBOARD.smarts_by_names[args.smart]
 		local smart_data = SIMBOARD.smarts[smart.id]
