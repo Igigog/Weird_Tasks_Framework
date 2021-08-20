@@ -73,6 +73,7 @@ function unfold_inline_location(CACHE)
     local new_locations = {}
     for _, entity in ipairs(CACHE.setup) do
         if entity.entity_type ~= "location" and
+                entity.to_create ~= false and
                 entity.where and
                 igi_finder.location_keys[entity.where] then
             local location = {
