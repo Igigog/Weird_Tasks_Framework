@@ -326,7 +326,7 @@ function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 
 	-- priority for parent bcs there's main filtering and it's cheap for world objects
 	if not parent_handler(se_obj, args, sim, gg) then
-		igi_helper.trace_dbg("parent sucked")
+		-- igi_helper.trace_dbg("parent sucked")
 		return false
 	end
 
@@ -334,7 +334,7 @@ function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 		local handler = args[k] and v
 		if handler then
 			if not handler(se_obj, args, sim, gg) then
-				igi_helper.trace_dbg(k.." sucked")
+				-- igi_helper.trace_dbg(k.." sucked")
 				return false
 			end
 		end
