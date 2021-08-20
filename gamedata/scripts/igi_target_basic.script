@@ -9,11 +9,10 @@ local ini_tables = igi_db.ini_tables
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 
-	local section = squad_info.section
+	local section = trace_assert(squad_info.section, "Section does not exist")
 	trace_assert(ini_sys:section_exist(section), section)
 	local faction = ini_sys:r_string_ex(section, "faction")
 	
-	trace_assert(section, "Unable to set squad_name")
 	-- set all default
 	local squad_data = igi_models.create_SquadsData(nil, section, faction or "mutant", squad_info.where)
 	local description = igi_models.create_DescriptionData(faction, nil, squad_info.where)
