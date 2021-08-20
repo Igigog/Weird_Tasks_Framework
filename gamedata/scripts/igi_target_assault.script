@@ -75,7 +75,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	local smart_id = alife_obj(subtask_data.id).current_target_id
 	local smart_entity = {id = smart_id, target = "assault"}
 	CACHE.group_counter[location_key] = CACHE.group_counter[location_key] + 1
-	local link = igi_linker.make_link(location_key, CACHE.group_counter.smart, 1)
+	local link = igi_linker.make_link(location_key, CACHE.group_counter.location, 1)
 
 	CACHE.target[link] = smart_entity
 end
