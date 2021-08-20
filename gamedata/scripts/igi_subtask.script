@@ -72,27 +72,28 @@ function finish_continuous_subtasks(subtasks_continuous, is_complete)
 	end
 end
 ---------------------------------------------------
-function quest_target(subtasks, CACHE)
-	local is_nothing = false
-	_, target_obj = next(subtasks.instant)
-	
-	if target_obj then
-		return target_obj.id
-	else
-		local no_target
-		for _, subtask_data in pairs(subtasks.continuous) do
-			local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-			local target = target_tbl.quest_target(subtask_data, CACHE)
+local function determine_target(entities, CACHE)
+	local no_target
+	for _, subtask_data in pairs(entities) do
+		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
+		local target = target_tbl.quest_target(subtask_data, CACHE)
 
-			-- use -1 if no target must be given
-			if target and target == -1 then
-				no_target = -1
-			elseif target and target ~= -1 then
-				return target
-			end
+		-- use -1 if no target must be given
+		if target and target == -1 then
+			no_target = -1
+		elseif target and target ~= -1 then
+			return target
 		end
-		return no_target
 	end
+	return no_target
+end
+
+function quest_target(subtasks, CACHE)
+	local instant_target = determine_target(subtasks.instant, CACHE)
+	if instant_target ~= -1 then return instant_target end
+
+	local continuous_target = determine_target(subtasks.continuous, CACHE)
+	return continuous_target and instant_target
 end
 ---------------------------------------------------
 function setup_subtask(targets)
