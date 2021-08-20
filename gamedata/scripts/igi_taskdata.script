@@ -17,10 +17,10 @@ end
 -------------------------------------------------
 -- JSON functions
 -------------------------------------------------
-local function get_game_path()
+function get_game_path()
   local info = debug.getinfo(1,'S');
   local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
-  local game_path = script_path:match("(.*)gamedata"):gsub("/", "\\")
+  local game_path = script_path:match("(.*)bin"):gsub("/", "\\")
   return game_path
 end
 
@@ -52,28 +52,20 @@ function get_task_table(task_name, prefix)
 	return json.decode(task_json)
 end
 
+function create_path(prefix)
+	local tasks_path = get_game_path().."igi_tasks\\"
+	lfs.mkdir(tasks_path)
+	lfs.mkdir(tasks_path.."tasks\\")
+	lfs.mkdir(tasks_path.."tasks\\"..prefix)
+end
+
 local function save_file(path, content)
 	local file = trace_assert_no_crash(io.open(path, "w"))
-	if not file then
-		os.execute('echo 1 > '..path)
-		file = trace_assert_no_crash(io.open(path, "w"))
-	end
 	file:write(content)
 	file:close()
 end
 
-local function create_path(prefix)
-	local tasks_path = '"'..get_game_path().."igi_tasks\\"..'"'
-	os.execute(
-		"mkdir "..tasks_path.." & "..
-		"mkdir "..tasks_path.."tasks\\".." & "..
-		"mkdir "..tasks_path.."tasks\\"..prefix
-	)
-end
-create_path = igi_utils.one_timer_one_variable(create_path, "ot_create_path")
-
 local function save_task_table(task_name, prefix, table)
-	create_path(prefix)
 	local task_path = prefix.."\\"..task_name..".json"
 	local path = configured_tasks_path..task_path
 	local content = json.encode(table)

@@ -66,6 +66,7 @@ local function build_task_entry(task, prefix, path)
 end
 
 local function build_tasks_entries(prefix, path)
+	igi_taskdata.create_path(prefix)
 	local entries = {}
 	local files = getFS():file_list_open("$game_config$", 
 		"igi_tasks\\tasks\\"..prefix.."\\",
