@@ -30,7 +30,7 @@ local function setup_entities(CACHE, description)
 	trace_dbg("finalized CACHE", task_data)
 	
 	for _, group_preset in pairs(task_data) do
-		trace_dbg('setup group '..tostring(_))
+		trace_dbg('setup group '..tostring(_), group_preset)
 		local group_data, desc = setup_group(group_preset, CACHE.factions)
 		trace_dbg('group_data, description', group_data, desc)
 		if not group_data then return nil end
