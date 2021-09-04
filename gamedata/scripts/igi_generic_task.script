@@ -224,7 +224,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 
 	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end
 	--Reward
-	igi_rewards.give_rewards(CACHE.reward, CACHE.fail, is_completed)
+	igi_rewards.give_rewards(CACHE, is_completed)
 
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil

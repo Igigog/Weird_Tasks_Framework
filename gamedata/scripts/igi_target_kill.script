@@ -65,7 +65,7 @@ local function get_npc_value(se_npc)
 	return value*factors[tier]
 end
 
-function get_money_reward(entity)
+function get_success_money(entity)
 	local reward = 0
 	local se_squad = igi_helper.alife_obj(entity.id)
 	local faction = se_squad:get_squad_community()
@@ -85,7 +85,7 @@ function get_money_reward(entity)
 	return reward
 end
 
-function get_goodwill_reward(entity)
+function get_success_goodwill(entity)
 	local npc_count = 0
 	local se_squad = igi_helper.alife_obj(entity.id)
 	for se_npc in se_squad:squad_members() do

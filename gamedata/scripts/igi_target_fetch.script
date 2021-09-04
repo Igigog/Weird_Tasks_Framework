@@ -61,16 +61,16 @@ local function get_cost_summed(entity)
 	return tonumber(cost)*entity.how_much
 end
 
-function get_money_reward(entity)
+function get_success_money(entity)
 	return get_cost_summed(entity)
 end
 
-function get_goodwill_reward(entity)
+function get_success_goodwill(entity)
 	local cost_sum = get_cost_summed(entity)
 	return 15 + math.floor(cost_sum/1000)
 end
 
-function get_goodwill_fail(entity)
+function get_fail_goodwill(entity)
 	local cost_sum = get_cost_summed(entity)
 	return -75 + math.floor(cost_sum/800)
 end

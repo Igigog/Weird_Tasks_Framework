@@ -35,14 +35,14 @@ function get_item_weight(entity)
 	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
 end
 
-function get_money_reward(entity)
+function get_success_money(entity)
 	return get_item_cost(entity)*get_item_weight(entity)/32
 end
 
-function get_goodwill_reward(entity)
+function get_success_goodwill(entity)
 	return get_item_weight(entity)*10
 end
 
-function get_goodwill_fail(entity)
+function get_fail_goodwill(entity)
 	return get_item_cost(entity)/(-400)
 end

@@ -1,5 +1,10 @@
 local trace_assert = igi_helper.trace_assert
 
+TASK_STATES = {"success", "fail"}
+REWARD_TYPES = {"money", "goodwill"}
+
+
+---------------------------< Setup >---------------------------
 local function get_tg_and_tg_squad(tg)
 	if tg:clsid() == clsid.online_offline_group_s then
 		return igi_helper.alife_obj(tg:commander_id()), tg
@@ -23,62 +28,107 @@ local function get_community_setup(tg_id)
 	return get_tg_community_setup(get_tg_and_tg_squad(se_tg))
 end
 
-local function update_reward_values(entity, values)
+local function add_rewards_to_table(state, reward_tbl, entity)
 	local target_tbl = igi_taskdata.get_target_table(entity.target)
-	local reward, fail = values.reward, values.fail
 
-	reward.goodwill = reward.goodwill + target_tbl.get_goodwill_reward(entity)
-	fail.goodwill = fail.goodwill + target_tbl.get_goodwill_fail(entity)
+	for _, reward_typ in pairs(REWARD_TYPES) do
+		local getter_name = "get_"..state.."_"..reward_typ
 
-	reward.money = reward.money + target_tbl.get_money_reward(entity)
-	fail.money = fail.money + target_tbl.get_money_fail(entity)
-end
-
-local function collect_rewards(CACHE)
-	local values = {
-		reward = {goodwill = 0, money = 0},
-		fail = {goodwill = 0, money = 0}
-	}
-
-	for _, entity in pairs(CACHE.target) do
-		if entity.target then
-			update_reward_values(entity, values)
+		if not reward_tbl[reward_typ] then
+			reward_tbl[reward_typ] = target_tbl[getter_name](entity)
 		end
 	end
-	return values
+end
+
+local function set_rewards(entity)
+	for _, state in pairs(TASK_STATES) do
+		local table_id = "reward_"..state
+		entity[table_id] = entity[table_id] or {}
+		add_rewards_to_table(state, entity[table_id], entity)
+	end
+end
+
+local function set_reward_factions(entity, default_factions)
+	for _, state in pairs(TASK_STATES) do
+		local tbl = entity["reward_"..state]
+		tbl.factions = tbl.factions or default_factions
+	end
+end
+
+local function add_factions_to_predefined_rewards(CACHE, factions)
+	for _, state in ipairs(TASK_STATES) do
+		local rewards = CACHE["reward_"..state]
+		if rewards and not rewards.factions  then
+			rewards.factions = factions
+		end
+	end
 end
 
 function define_reward(CACHE, task_giver_id)
-	local task_data = igi_taskdata.get_task_data(CACHE.task_id)
-
-	local reward = dup_table(task_data.reward or {})
-	local fail = dup_table(task_data.fail or {})
-
-	local possible_reward = collect_rewards(CACHE)
-	possible_reward.reward.community = get_community_setup(task_giver_id)
-	possible_reward.fail.community = possible_reward.reward.community
-	
-	for k,v in pairs(possible_reward.reward) do
-		reward[k] = reward[k] or v
+	local factions = get_community_setup(task_giver_id)
+	for _, entity in pairs(CACHE.target) do
+		if entity.target then
+			set_rewards(entity)
+			set_reward_factions(entity, factions)
+		end
 	end
 
-	for k,v in pairs(possible_reward.fail) do
-		fail[k] = fail[k] or v
-	end
-
-	return reward, fail
+	add_factions_to_predefined_rewards(CACHE, factions)
 end
 
-function give_rewards(complete_rewards, fail_rewards, is_completed)
-	local rewards = is_completed and complete_rewards or fail_rewards
-	-- Money
-	xr_effects.reward_random_money(nil, nil, {rewards.money*0.8, rewards.money*1.1})
+---------------------------< Give >---------------------------
+
+local function add_goodwill_reward(rewards, goodwill_tbl)
 	-- Goodwill (1/gaussian_sum to last community, 2/sum to second last, ..., 1/2 to first)
-	if not rewards.community then return end
-	local parts = (#rewards.community)*(#rewards.community+1)/2
-	for i=1,#rewards.community do
+	local parts = (#rewards.factions)*(#rewards.factions+1)/2
+
+	for i=1,#rewards.factions do
 		local value = math.floor((i*rewards.goodwill)/parts)
-		local faction = rewards.community[#rewards.community+1-i]
-		xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
+		local faction = rewards.factions[#rewards.factions+1-i]
+		goodwill_tbl[faction] = (goodwill_tbl[faction] or 0) + value
+	end
+end
+
+local function collect_rewards(CACHE, state)
+	local reward_table_id = "reward_"..state
+	local money = 0
+	local goodwill = {}
+
+	for _, entity in pairs(CACHE.target) do
+		local rewards = entity[reward_table_id]
+		if rewards then
+			money = money + rewards.money
+			add_goodwill_reward(rewards, goodwill)
+		end
+	end
+	return money, goodwill
+end
+
+local function finalize_predefined_rewards(rewards, money, goodwill)
+	money = rewards.money or money
+	if rewards.goodwill then
+		goodwill = {}
+		add_goodwill_reward(rewards, goodwill)
+	end
+
+	return money, goodwill
+end
+
+function give_rewards(CACHE, is_completed)
+	local state = is_completed and "success" or "fail"
+	local money, goodwill = collect_rewards(CACHE, state)
+	if CACHE["reward_"..state] then
+		money, goodwill = finalize_predefined_rewards(
+			CACHE["reward_"..state], money, goodwill)
+	end
+	-- Money
+	if money ~= 0 then
+		xr_effects.reward_random_money(nil, nil, {money*0.8, money*1.1})
+	end
+
+	for faction, value in pairs(goodwill) do
+		if value ~= 0 then
+			xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
+		end
 	end
 end

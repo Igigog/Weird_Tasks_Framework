@@ -25,8 +25,6 @@ local function setup_entities(CACHE, description)
 		trace_dbg("Not ok", task_data)
 		return
 	end
-	CACHE.group_counter = dup_table(
-			igi_taskdata.get_task_data(CACHE.task_id).group_counter)
 	trace_dbg("finalized CACHE", task_data)
 	
 	for _, group_preset in pairs(task_data) do
@@ -48,7 +46,12 @@ function setup_quest(task_id)
 	igi_random.set_seed(task_id..game_date)
 
 	local CACHE = igi_models.create_CACHE()
+	copy_table(CACHE, igi_taskdata.get_task_data(task_id))
 	CACHE.task_id = task_id
+
+	CACHE.setup = {}	-- setup will be filled in setup_entities
+	CACHE.disabled = nil	-- not needed anymore
+	CACHE.preconditions = nil	-- not needed
 
 	local description = igi_description.TaskDescription.new()
 	if not setup_entities(CACHE, description) then return end
