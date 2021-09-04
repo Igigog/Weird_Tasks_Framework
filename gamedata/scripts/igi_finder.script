@@ -198,6 +198,7 @@ local function clear_cache()
 	return true
 end
 
+local smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
 function Finder._sort_smarts(self)
 	--// Utilities
 	local sim = alife()
@@ -215,7 +216,7 @@ function Finder._sort_smarts(self)
 	
 	for _, smart in pairs(simboard.smarts_by_names) do
 		local smart_level = sim:level_name(gg:vertex(smart.m_game_vertex_id):level_id())
-		local in_blacklist = smart_level ~= actor_level and blacklist[smart_level]
+		local in_blacklist = smart_blacklist[smart] or (smart_level ~= actor_level and blacklist[smart_level])
 		
 		if is_avail[smart.id] and 
 				not simulation_objects.base_smarts[smart:name()]
