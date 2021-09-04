@@ -349,12 +349,12 @@ end
 
 function quest_target(obj_data)
 	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
-	if target_tbl.TYP == igi_subtask.TARGET_TYPES.INSTANT then
-		return obj_data.id
-	else
-		local is_ready = target_tbl.ready_to_finish
-		if not is_ready(obj_data) and obj_data.id then return obj_data.id end
+	if target_tbl.TYP == igi_subtask.TARGET_TYPES.CONTINUOUS and
+		target_tbl.ready_to_finish(obj_data) then
+			return
 	end
+
+	return obj_data.id
 end
 
 function get_money_reward(entity)
