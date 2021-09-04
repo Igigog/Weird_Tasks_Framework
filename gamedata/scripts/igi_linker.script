@@ -71,7 +71,7 @@ function Dependency:get_linked_entity(entities)
 	if self.type == "this" then
 		return self.this
 	else
-		trace_dbg("getting entity", self, entities)
+		-- trace_dbg("getting entity", self, entities)
 		return entities[self:get_link()] or entities[self:get_group_link()]
 	end
 end
