@@ -50,7 +50,7 @@ local function is_far(se_obj, sim, gg)
 	return not (is_online(se_obj, sim, gg) or is_nearby(se_obj, sim, gg))
 end
 
-local blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
+blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
 local function is_not_on_blacklisted_map(se_obj, sim, gg)
 	local object_lvl = igi_helper.get_object_level(se_obj, sim, gg)
 	return not blacklist[object_lvl]
@@ -198,7 +198,7 @@ local function clear_cache()
 	return true
 end
 
-local smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
+smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
 function Finder._sort_smarts(self)
 	--// Utilities
 	local sim = alife()
