@@ -24,7 +24,6 @@ end
 
 function create_DescriptionData(faction, target, location)
 	local tbl = {
-		_cls = "DescriptionData",
 		factions = faction,
 		targets = target,
 		locations = location,
@@ -34,10 +33,9 @@ end
 
 function create_SquadsData(ids, name, faction, location)
 	local tbl = {
-		_cls = "EntityData",
 		typ = "squad",
 		ids = ids,
-		name = name,
+		section_name = name,
 		faction = faction,
 		where = location,
 	}
@@ -49,15 +47,12 @@ end
 
 function create_SmartData(smarts)
 	local tbl = {
-		_cls = "EntityData",
 		smarts = smarts,
 	}
 	return tbl
 end
 
 function create_GroupData(entity_data, target, amount)
-	trace_assert(entity_data._cls == "EntityData", "setup: entity_data in not EntityData")
-	
 	entity_data.target = target
 	entity_data.amount = amount
 
@@ -66,7 +61,6 @@ end
 
 function create_ItemData(ids, sec_name, location, how_much)
 	local tbl = {
-		_cls = "EntityData",
 		ids = ids,
 		section_name = sec_name,
 		where = location,

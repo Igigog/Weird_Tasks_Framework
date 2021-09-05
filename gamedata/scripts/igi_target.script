@@ -12,6 +12,8 @@ function create_target_entry(se_obj, group_data)
 	for k,v in pairs(group_data or {}) do
 		entry[k] = v
 	end
+
+	entry.amount = nil
 	return entry
 end
 

@@ -9,7 +9,7 @@ local ini_tables = igi_db.ini_tables
 local function create_squad_data(squad_info, factions)
 	-- important: location, name, faction, description, target, amount
 
-	local section = trace_assert(squad_info.section, "Section does not exist")
+	local section = trace_assert(squad_info.section_name, "Section does not exist")
 	trace_assert(ini_sys:section_exist(section), section)
 	local faction = ini_sys:r_string_ex(section, "faction")
 	
@@ -82,7 +82,7 @@ local function find_objects(object_data, amount)
 end
 
 local function create_item_data(item_info)
-	local section = item_info.section
+	local section = item_info.section_name
 	trace_assert(ini_sys:section_exist(section), "bad item section: "..(section or "nil"))
 	
 	local item_data = igi_models.create_ItemData(nil, section, item_info.where)
@@ -313,7 +313,7 @@ end
 function create_squad(group_data)
 	local squads = {}
 
-	if group_data.name == "predefined_squad" then
+	if group_data.section_name == "predefined_squad" then
 		local ids = group_data.ids
 		for i=1, #ids do
 			local squad = igi_helper.alife_obj(ids[i])
@@ -325,7 +325,7 @@ function create_squad(group_data)
 	end
 	for i=1, group_data.amount or 1 do
 		local smart_name = SIMBOARD.smarts[group_data.where].smrt:name()
-		local squad = utils_obj.create_squad(group_data.name, smart_name)
+		local squad = utils_obj.create_squad(group_data.section_name, smart_name)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 

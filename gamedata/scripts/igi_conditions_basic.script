@@ -25,18 +25,13 @@ local function is_stalker_online(se_obj)
     end
 end
 
-local function is_object_online(se_obj)
-	if not se_obj then return nil end
-
-	local npc
-	if se_obj.squad_members and se_obj:squad_members() then
-		npc = se_obj:squad_members()()	-- stateful iterator, returns function
-	end
-
-	return npc and is_stalker_online(npc) or se_obj.online
+local function is_online ()
+	-- this condition is already checked when calling online activity
+	return true
 end
 
 igi_activities.add_condition_handlers{
 	on_parent_death = is_parent_dead,
 	if_low_condition = is_low_condition,
+	is_online = is_online,
 }

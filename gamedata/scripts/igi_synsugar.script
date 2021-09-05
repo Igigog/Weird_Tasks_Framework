@@ -54,6 +54,15 @@ end
 add_entity_handler(create_by_default)
 
 
+local function rename_section_to_section_name(entity)
+    if entity.section then
+        entity.section_name = entity.section
+        entity.section = nil
+    end
+end
+add_entity_handler(rename_section_to_section_name)
+
+
 local function finalize_value_dependencies(k, v, tbl)
     if type(v) ~= "string" then return end
 

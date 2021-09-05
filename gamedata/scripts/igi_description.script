@@ -25,8 +25,7 @@ end
 
 function TaskDescription.add_entries(self, tbl)
 	if not tbl then return end
-	trace_assert(tbl._cls == "DescriptionData")
-	
+
 	for _, field in pairs(self.fields) do
 		igi_utils.extend_list(self[field], tbl[field])
 	end
