@@ -4,25 +4,40 @@ local trace_assert = igi_helper.trace_assert
 
 function create_target_entry(se_obj, group_data)
 	if not se_obj then return end
-
 	local entry = {
 		id = se_obj.id,
 		section_name = se_obj:section_name()
 	}
+	return entry
+end
+
+local function prepare_entry_table(entry, group_data)
 	for k,v in pairs(group_data or {}) do
-		entry[k] = v
+		entry[k] = entry[k] or v
 	end
 
 	entry.amount = nil
-	return entry
 end
 
 function add_entry(tbl, typ, group_id, entity_id, se_obj, group_data)
 	trace_assert(tbl and typ and group_id and entity_id and se_obj,
 		"Something went wrong while adding entry")
 
+	local entry = create_target_entry(se_obj, group_data)
+	prepare_entry_table(entry, group_data)
+
 	local id = igi_linker.make_link(typ, group_id, entity_id)
-	tbl[id] = create_target_entry(se_obj, group_data)
+	tbl[id] = entry
+end
+
+function add_custom_entry(dest, typ, group_id, entity_id, obj_data, group_data)
+	trace_assert(dest and typ and group_id and entity_id and obj_data,
+		"Something went wrong while adding entry")
+
+	prepare_entry_table(obj_data, group_data)
+
+	local id = igi_linker.make_link(typ, group_id, entity_id)
+	dest[id] = obj_data
 end
 
 local function create_group_by_setup(entities_setup)

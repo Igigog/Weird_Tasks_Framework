@@ -201,3 +201,115 @@ function iterate_table(tbl, func)
 		func(k, v, tbl)
 	end
 end
+
+function heap_new()
+	return {
+		priorities = {},
+		payloads = {},
+	}
+end
+
+function heap_swap(heap, index1, index2)
+	heap.priorities[index1], heap.priorities[index2] =
+		heap.priorities[index2], heap.priorities[index1]
+
+	heap.payloads[index1], heap.payloads[index2] =
+		heap.payloads[index2], heap.payloads[index1]
+end
+
+function heap_compare(heap, index1, index2)
+	return heap.priorities[index1] > heap.priorities[index2]
+end
+
+function heap_sift_up(heap, index)
+	if index == 1 then return end
+
+	local parent_index = math.floor(index/2)
+	if heap_compare(heap, parent_index, index) then
+		heap_swap(heap, index, parent_index)
+		heap_sift_up(heap, parent_index)
+	end
+end
+
+function heap_sift_down(heap, index)
+	local minIndex, leftChildIndex, rightChildIndex
+	leftChildIndex, rightChildIndex = index * 2, index * 2 + 1
+	local priorities = heap.priorities
+
+	if rightChildIndex > #priorities then
+		if leftChildIndex > #priorities then
+			return
+		else
+			minIndex = leftChildIndex
+		end
+	else
+		if heap_compare(heap, leftChildIndex, rightChildIndex) then
+			minIndex = rightChildIndex
+		else
+			minIndex = leftChildIndex
+		end
+	end
+
+	if heap_compare(heap, index, minIndex) then
+		heap_swap(heap, index, minIndex)
+		heap_sift_down(heap, minIndex)
+	end
+end
+
+function heap_push(heap, payload, priority)
+	heap.priorities[#heap.priorities+1] = priority
+	heap.payloads[#heap.payloads+1] = payload
+	heap_sift_up(heap, #heap.priorities)
+end
+
+function heap_pop(heap)
+	if #heap.payloads == 0 then return end
+	local to_return = heap.payloads[1]
+
+	heap.priorities[1] = heap.priorities[#heap.priorities]
+	heap.payloads[1] = heap.payloads[#heap.payloads]
+
+	heap.priorities[#heap.priorities] = nil
+	heap.payloads[#heap.payloads] = nil
+	if #heap.priorities > 0 then
+		heap_sift_down(heap, 1)
+	end
+
+	return to_return
+end
+
+function heap_peek(heap)
+	return heap.payloads[1]
+end
+
+function heap_change_priority(heap, payload, priority)
+	for i, payload2 in ipairs(heap.payloads) do
+		if payload2 == payload then
+			local old_priority = heap.priorities[i]
+			heap.priorities[i] = priority
+
+			if priority < old_priority then
+				heap_sift_up(heap, i)
+			else
+				heap_sift_down(heap, i)
+			end
+		end
+	end
+end
+
+function heap_remove_by_index(heap, index)
+	heap.priorities[index] = heap.priorities[#heap.priorities]
+	heap.payloads[index] = heap.payloads[#heap.payloads]
+
+	heap.payloads[#heap.payloads] = nil
+	heap.priorities[#heap.priorities] = nil
+	heap_sift_down(heap, index)
+end
+
+function heap_remove_element(heap, payload)
+	for i=#heap.payloads, 1, -1 do
+		if heap.payloads[i] == payload then
+			heap_remove_by_index(heap, i)
+		end
+	end
+end

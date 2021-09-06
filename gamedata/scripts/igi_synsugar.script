@@ -101,3 +101,14 @@ function unfold_inline_location(CACHE)
     end
 end
 add_handler(unfold_inline_location)
+
+function set_order(CACHE)
+    local counter = 1
+    for _, entity in ipairs(CACHE.setup) do
+        if not entity.order then
+            entity.order = counter
+            counter = counter + 1
+        end
+    end
+end
+add_handler(set_order)

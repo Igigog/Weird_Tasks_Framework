@@ -1,4 +1,5 @@
 local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 
 local callbacks = {
 	on_get_taskdata = {},
@@ -14,7 +15,10 @@ local callbacks = {
 	entity_on_task_update = {},
 
 	on_complete = {},
-	entity_on_complete = {}
+	entity_on_complete = {},
+
+	on_subtask_status_change = {},
+	entity_on_subtask_status_change = {},
 }
 
 function add_callback(name, func)
@@ -25,8 +29,8 @@ function remove_callback(name, func)
 	if callbacks[name] then callbacks[name][func] = nil end
 end
 
-local function send_target_callbacks(callback_name, CACHE, entity_table, ...)
-	local entity_table = entity_table or CACHE.target
+local function send_target_callbacks(callback_name, CACHE, ...)
+	local entity_table = CACHE.target or CACHE.setup
 	local target_set = {}
 	
 	for k, entity in pairs(entity_table) do
@@ -52,8 +56,8 @@ local function send_target_callbacks(callback_name, CACHE, entity_table, ...)
 end
 
 
-local function send_custom_callbacks(callback_name, CACHE, entity_table, ...)
-	local entity_table = entity_table or CACHE.target
+local function send_custom_callbacks(callback_name, CACHE, ...)
+	local entity_table = CACHE.target or CACHE.setup
 	for callback in pairs(callbacks[callback_name]) do
 		callback(CACHE, entity_table, ...)
 	end
@@ -65,7 +69,8 @@ local function send_custom_callbacks(callback_name, CACHE, entity_table, ...)
 	end
 end
 
-function invoke_callbacks(callback_name, CACHE, entity_table, ...)
-	send_target_callbacks(callback_name, CACHE, entity_table, ...)
-	send_custom_callbacks(callback_name, CACHE, entity_table, ...)
+function invoke_callbacks(callback_name, CACHE, ...)
+	trace_dbg(callback_name, CACHE)
+	send_target_callbacks(callback_name, CACHE, ...)
+	send_custom_callbacks(callback_name, CACHE, ...)
 end

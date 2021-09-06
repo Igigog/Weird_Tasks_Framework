@@ -1,8 +1,9 @@
-TYP = igi_subtask.TARGET_TYPES.INSTANT
 TARGET_NAME = "get"
 PATTERN = "basic"
 
-function is_complete(obj_data)
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
+
+function is_completed(obj_data)
 	-- Complete if in player inventory
 	local se_obj = igi_helper.alife_obj(obj_data.id)
 	return se_obj and se_obj.parent_id == 0
@@ -12,6 +13,12 @@ function is_failed(obj_data)
 	local se_obj = igi_helper.alife_obj(obj_data.id)
 	if not se_obj then return true end
 	if se_obj:section_name() ~= obj_data.section_name then return true end
+end
+
+function get_status(entity)
+	if is_completed(entity) then return TASK_STATUSES.COMPLETED
+	elseif is_failed(entity) then return TASK_STATUSES.FAILED
+	else return TASK_STATUSES.RUNNING end
 end
 
 function quest_target(obj_data)

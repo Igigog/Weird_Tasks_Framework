@@ -1,8 +1,8 @@
-TYP = igi_subtask.TARGET_TYPES.CONTINUOUS
 TARGET_NAME = "fetch"
 PATTERN = "basic"
 
 local trace_assert = igi_helper.trace_assert
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function ready_to_finish(obj_data)
 	local section = obj_data.section_name
@@ -24,6 +24,10 @@ function finish_subtask(obj_data)
 	xr_effects.remove_item(nil, nil, {obj_data.section_name, amt})
 end
 
+function get_status(entity)
+	return ready_to_finish(entity) and TASK_STATUSES.READY_TO_FINISH or TASK_STATUSES.RUNNING
+end
+
 function entity_on_get_taskdata(entity)
 	-- change amount with "how_much" bcs amount is target creation flag
 	entity.how_much = entity.amount
@@ -34,7 +38,7 @@ function entity_on_get_taskdata(entity)
 end
 
 function quest_target(obj_data)
-	if not ready_to_finish(obj_data) then return -1 end
+	return -1
 end
 
 function setup_item(item_info, factions)

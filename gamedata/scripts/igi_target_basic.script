@@ -302,10 +302,11 @@ function create_location(group_data)
 	if group_data.smarts then
 		for i, id in pairs(group_data.smarts) do
 			local loc_data = {id = id}
+			igi_target.add_custom_entry(locations, "location", group_data.group_id, i, loc_data, group_data)
 			locations[igi_linker.make_link("location", group_data.group_id, i)] = loc_data
 		end
 	else
-		locations[igi_linker.make_link("location", group_data.group_id, 1)] = group_data
+		igi_target.add_custom_entry(locations, "location", group_data.group_id, 1, group_data, group_data)
 	end
 	return locations
 end
@@ -348,12 +349,6 @@ function create_item(group_data)
 end
 
 function quest_target(obj_data)
-	local target_tbl = igi_taskdata.get_target_table(obj_data.target)
-	if target_tbl.TYP == igi_subtask.TARGET_TYPES.CONTINUOUS and
-		target_tbl.ready_to_finish(obj_data) then
-			return
-	end
-
 	return obj_data.id
 end
 

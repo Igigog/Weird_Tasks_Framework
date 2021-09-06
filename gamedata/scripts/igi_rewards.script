@@ -117,6 +117,9 @@ end
 function give_rewards(CACHE, is_completed)
 	local state = is_completed and "success" or "fail"
 	local money, goodwill = collect_rewards(CACHE, state)
+	if is_completed then
+		local money_completed, goodwill_completed
+	end
 	if CACHE["reward_"..state] then
 		money, goodwill = finalize_predefined_rewards(
 			CACHE["reward_"..state], money, goodwill)

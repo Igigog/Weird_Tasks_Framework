@@ -1,113 +1,105 @@
 local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 
-TARGET_TYPES = {	-- Enum to be clear everywhere and no typos
-	CONTINUOUS = "continuous",
-	INSTANT = "instant",
+TASK_STATUSES = {
+	RUNNING = "running",
+	COMPLETED = "completed",
+	FAILED = "failed",
+	READY_TO_FINISH = "ready_to_finish",
+	DISABLED = "disabled",
 }
 
-function process_instant_subtasks(subtasks)
-	-- Instant = instant without completed tasks
-	local completed_keys = {}
-	
-	for k, subtask_data in pairs(subtasks.instant) do
-		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-		trace_assert(target_tbl.is_complete, 
-			"no complete functor for target "..subtask_data.target)
+function get_subtasks_of_status(status, CACHE)
+	return CACHE.subtasks[status].payloads
+end
 
-		if target_tbl.is_failed then
-			if target_tbl.is_failed(subtask_data) then return "fail" end
+function get_completed_subtasks(CACHE)
+	return get_subtasks_of_status(TASK_STATUSES.COMPLETED, CACHE)
+end
+
+function get_running_subtasks(CACHE)
+	return get_subtasks_of_status(TASK_STATUSES.RUNNING, CACHE)
+end
+
+function get_ready_to_finish_subtasks(CACHE)
+	return get_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE)
+end
+
+local function get_status_by_link(link, CACHE)
+	local subtask = igi_linker.get_entity_from_link(link, CACHE)
+	local target_tbl = igi_taskdata.get_target_table(subtask.target)
+	return target_tbl.get_status(subtask)
+end
+
+local function update_subtasks_of_status(status, CACHE, new_statuses)
+	local subtasks_heap = CACHE.subtasks[status]
+	for i=#subtasks_heap.payloads, 1, -1 do
+		local link = subtasks_heap.payloads[i]
+		local new_status = get_status_by_link(link, CACHE)
+
+		if new_status ~= status then
+			new_statuses[new_status] = new_statuses[new_status] or {}
+			new_statuses[new_status][#new_statuses[new_status]+1] = link
+			igi_utils.heap_remove_by_index(subtasks_heap, i)
 		end
-		if target_tbl.is_complete(subtask_data) then
-			table.insert(completed_keys, k)
-		else
-			
-		end
-	end
-	
-	-- remove completed tasks
-	for _, v in pairs(completed_keys) do
-		subtasks.instant[v] = nil
 	end
 end
 
-function check_continuous_failed(subtasks_continuous)
-	for k, subtask_data in pairs(subtasks_continuous) do
-		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-		local is_not_failed_functor = target_tbl.is_not_failed
-		if is_not_failed_functor then
-			if not is_not_failed_functor(subtask_data) then
-				return true
-			end
-		end
+function is_task_failed(CACHE)
+	for _, link in ipairs(CACHE.subtasks[TASK_STATUSES.FAILED].payloads) do
+		local subtask = igi_linker.get_entity_from_link(link, CACHE)
+		if not subtask.optional then return true end
 	end
 	return false
 end
 
-function check_continuous_running(subtasks_continuous)
-	for k, subtask_data in pairs(subtasks_continuous) do
-		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-		local is_ready_functor = target_tbl.ready_to_finish
-		trace_assert(is_ready_functor, 
-			"no ready functor for target "..subtask_data.target)
-		
-		if not is_ready_functor(subtask_data) then
-			return true
+function process_subtasks(CACHE)
+	local new_statuses = {}
+	local subtasks = CACHE.subtasks
+	update_subtasks_of_status(TASK_STATUSES.RUNNING, CACHE, new_statuses)
+	update_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE, new_statuses)
+
+	for status, links in pairs(new_statuses) do
+		for _, link in pairs(links) do
+			local subtask = igi_linker.get_entity_from_link(link, CACHE)
+			trace_dbg("Change status: "..status, subtask)
+			igi_utils.heap_push(subtasks[status], link, subtask.order)
+			igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, status)
 		end
 	end
-	return false
 end
 
-function finish_continuous_subtasks(subtasks_continuous, is_complete)
-	for _, subtask_data in pairs(subtasks_continuous) do
-		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-		local complete_functor = target_tbl.finish_subtask
-		local fail_functor = target_tbl.fail_subtask
-		-- printf("Igi: subtask finish: "..subtask_data.section_name..tostring(subtask_data.id))
-		
-		if is_complete and complete_functor then 
-			complete_functor(subtask_data)
-		elseif not is_complete and fail_functor then
-			fail_functor(subtask_data)
-		end
-	end
-end
 ---------------------------------------------------
-local function determine_target(entities, CACHE)
-	local no_target
-	for _, subtask_data in pairs(entities) do
+function quest_target(subtasks, CACHE)
+	local links = subtasks[TASK_STATUSES.RUNNING]
+	if not links then return end
+	for _, link in ipairs(links.payloads) do
+		local subtask_data = CACHE.target[link]
 		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
 		local target = target_tbl.quest_target(subtask_data, CACHE)
-
-		-- use -1 if no target must be given
-		if target and target == -1 then
-			no_target = -1
-		elseif target and target ~= -1 then
-			return target
-		end
+		if target then return target end
 	end
-	return no_target
-end
-
-function quest_target(subtasks, CACHE)
-	local instant_target = determine_target(subtasks.instant, CACHE)
-	if instant_target ~= -1 then return instant_target end
-
-	local continuous_target = determine_target(subtasks.continuous, CACHE)
-	return continuous_target and instant_target
 end
 ---------------------------------------------------
+
+local function create_subtasks_table()
+	local subtasks = {}
+	for _, status in pairs(TASK_STATUSES) do
+		subtasks[status] = igi_utils.heap_new()
+	end
+	return subtasks
+end
+
 function setup_subtask(targets)
 	-- prepare_targets(targets)
-	local subtasks = {
-		instant = {},
-		continuous = {},
-	}
+	local subtasks = create_subtasks_table()
 	for id, entity in pairs(targets) do
 		if entity.target then
-			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			local target_type = target_tbl.TYP
-			printf(entity.target.."added to "..target_type)
-			subtasks[target_type][id] = entity
+			igi_utils.heap_push(
+				subtasks[entity.status or TASK_STATUSES.RUNNING],
+				id,
+				entity.order
+			)
 		end
 	end
 

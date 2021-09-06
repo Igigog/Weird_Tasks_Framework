@@ -91,6 +91,10 @@ function Dependency:to_repr()
 	return str
 end
 
+function get_entity_from_link(link, CACHE)
+	return CACHE.target[link]
+end
+
 function assign_group_id(entities)
 	local counters = {}
 	local grouped_entities = {}

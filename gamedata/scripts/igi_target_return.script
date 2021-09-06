@@ -1,16 +1,24 @@
-TYP = igi_subtask.TARGET_TYPES.CONTINUOUS
 TARGET_NAME = "return"
 PATTERN = "basic"
 
-function is_not_failed(obj_data)
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
+
+function is_failed(obj_data)
 	local obj = igi_helper.alife_obj(obj_data.id)
-	return obj and obj:section_name() == obj_data.section_name
+	if not obj then return true end
+	return obj:section_name() ~= obj_data.section_name
 end
 
 function ready_to_finish(obj_data)
 	local obj = igi_helper.alife_obj(obj_data.id)
 	if not obj then return end
 	return obj.parent_id == 0
+end
+
+function get_status(entity)
+	if is_failed(entity) then return TASK_STATUSES.FAILED
+	elseif ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH
+	else return TASK_STATUSES.RUNNING end
 end
 
 function finish_subtask(obj_data)
@@ -20,7 +28,6 @@ function finish_subtask(obj_data)
 end
 
 function quest_target(obj_data)
-	if ready_to_finish(obj_data) then return end
 	local se_obj = igi_helper.alife_obj(obj_data.id)
 	if not se_obj then return end
 

@@ -12,10 +12,7 @@ function create_CACHE()
 		task_name = "",
 		description = "",
 		objects = {},
-		subtasks = {
-			instant = {},
-			continuous = {},
-		},
+		subtasks = {},
 		activities = {},
 		group_counter = {},
 	}

@@ -1,6 +1,7 @@
-TYP = igi_subtask.TARGET_TYPES.INSTANT
 TARGET_NAME = "kill"
 PATTERN = "basic"
+
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 local function is_ara()
 	return igi_mcm.get_options_value(igi_mcm.OPTION_IDS.ara)
@@ -28,6 +29,12 @@ function is_failed(subtask_data)
 				and igi_ara.is_not_killed_by_player(subtask_data)
 	end
 	return false
+end
+
+function get_status(entity)
+	if is_completed(entity) then return TASK_STATUSES.COMPLETED
+	elseif is_failed(entity) then return TASK_STATUSES.FAILED
+	else return TASK_STATUSES.RUNNING end
 end
 
 function entity_on_complete(subtask_data)

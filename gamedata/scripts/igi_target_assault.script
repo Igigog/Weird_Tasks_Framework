@@ -1,4 +1,3 @@
-TYP = igi_subtask.TARGET_TYPES.INSTANT
 TARGET_NAME = "assault"
 PATTERN = "basic"
 
@@ -7,6 +6,7 @@ local get_options_value = igi_mcm.get_options_value
 local igi_ara = igi_ara
 local alife_obj = igi_helper.alife_obj
 local trace_assert = igi_helper.trace_assert
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 local function is_ara()
 	return get_options_value(igi_mcm.OPTION_IDS.ara)
@@ -59,6 +59,30 @@ function is_complete(obj_data)
 	return cleared
 end
 
+local function mark_distant_squads(subtask_data)
+	local sim = alife()
+	local smart_position = sim:object(subtask_data.id).position
+
+	for _, sq_id in pairs(subtask_data.squads) do
+		local se_squad = sim:object(sq_id)
+		if se_squad then
+			local is_marked = level.map_has_object_spot(se_squad.id,"red_location") == 1
+			local is_nearby = smart_position:distance_to_sqr(se_squad.position) < 2500
+
+			if not (is_nearby or is_marked) then
+				level.map_add_object_spot(se_squad.id, "red_location", "st_ui_pda_task_unknown_enemy")
+			elseif is_nearby and is_marked then
+				level.map_remove_object_spot(se_squad.id, "red_location")
+			end
+		end
+	end
+end
+
+function get_status(entity)
+	mark_distant_squads(entity)
+	return is_complete(entity) and TASK_STATUSES.COMPLETED or TASK_STATUSES.RUNNING
+end
+
 local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	-- if find squad: add smart entity squad is on,
 	-- assault smart instead of squad
@@ -73,7 +97,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	end
 
 	local smart_id = alife_obj(subtask_data.id).current_target_id
-	local smart_entity = {id = smart_id, target = "assault"}
+	local smart_entity = {id = smart_id, target = "assault", order = subtask_data.order}
 	CACHE.group_counter[location_key] = CACHE.group_counter[location_key] + 1
 	local link = igi_linker.make_link(location_key, CACHE.group_counter.location, 1)
 
@@ -116,27 +140,4 @@ end
 
 function entity_on_complete(subtask_data)
 	igi_ara.clear_ara_table(subtask_data)
-end
-
-local function mark_distant_squads(subtask_data)
-	local sim = alife()
-	local smart_position = sim:object(subtask_data.id).position
-
-	for _, sq_id in pairs(subtask_data.squads) do
-		local se_squad = sim:object(sq_id)
-		if se_squad then
-			local is_marked = level.map_has_object_spot(se_squad.id,"red_location") == 1
-			local is_nearby = smart_position:distance_to_sqr(se_squad.position) < 2500
-
-			if not (is_nearby or is_marked) then
-				level.map_add_object_spot(se_squad.id, "red_location", "st_ui_pda_task_unknown_enemy")
-			elseif is_nearby and is_marked then
-				level.map_remove_object_spot(se_squad.id, "red_location")
-			end
-		end
-	end
-end
-
-function entity_on_task_update(subtask_data)
-	mark_distant_squads(subtask_data)
 end
