@@ -62,7 +62,7 @@ function process_subtasks(CACHE)
 	for status, links in pairs(new_statuses) do
 		for _, link in pairs(links) do
 			local subtask = igi_linker.get_entity_from_link(link, CACHE)
-			trace_dbg("Change status: "..status, subtask)
+			subtask.status = status
 			igi_utils.heap_push(subtasks[status], link, subtask.order)
 			igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, status)
 		end
@@ -91,12 +91,11 @@ local function create_subtasks_table()
 end
 
 function setup_subtask(targets)
-	-- prepare_targets(targets)
 	local subtasks = create_subtasks_table()
 	for id, entity in pairs(targets) do
 		if entity.target then
 			igi_utils.heap_push(
-				subtasks[entity.status or TASK_STATUSES.RUNNING],
+				subtasks[entity.status],
 				id,
 				entity.order
 			)

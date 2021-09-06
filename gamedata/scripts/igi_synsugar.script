@@ -63,6 +63,12 @@ end
 add_entity_handler(rename_section_to_section_name)
 
 
+local function set_default_status(entity)
+    if not entity.status then entity.status = igi_subtask.TASK_STATUSES.RUNNING end
+end
+add_entity_handler(set_default_status)
+
+
 local function finalize_value_dependencies(k, v, tbl)
     if type(v) ~= "string" then return end
 
