@@ -17,11 +17,11 @@ end
 -------------------------------------------------
 -- JSON functions
 -------------------------------------------------
-function get_game_path()
-  local info = debug.getinfo(1,'S');
-  local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
-  local game_path = script_path:match("(.*)bin"):gsub("/", "\\")
-  return game_path
+local function get_game_path()
+	local info = debug.getinfo(1,'S');
+	local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
+	local game_path = script_path:match("(.*)gamedata"):gsub("/", "\\")
+	return game_path
 end
 
 local default_tasks_path = get_game_path().."gamedata\\configs\\igi_tasks\\tasks\\"
