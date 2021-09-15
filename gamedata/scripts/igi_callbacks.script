@@ -19,6 +19,9 @@ local callbacks = {
 
 	on_subtask_status_change = {},
 	entity_on_subtask_status_change = {},
+
+	on_before_rewarding = {},
+	entity_on_before_rewarding = {},
 }
 
 function add_callback(name, func)
