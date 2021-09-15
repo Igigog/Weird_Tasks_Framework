@@ -1,6 +1,11 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
+local rewards_table_pattern = {
+	money = 0,
+	goodwill = {},
+}
+
 ---------------------------< Setup >---------------------------
 
 local function get_tg_and_tg_squad(tg)
@@ -38,7 +43,7 @@ end
 
 ---------------------------< Give >--------------------------
 
-local function add_goodwill_reward(rewards, goodwill_tbl)
+local function add_raw_goodwill_reward(rewards, goodwill_tbl)
 	-- Goodwill (1/gaussian_sum to last community, 2/sum to second last, ..., 1/2 to first)
 	local parts = (#rewards.factions)*(#rewards.factions+1)/2
 
@@ -49,23 +54,31 @@ local function add_goodwill_reward(rewards, goodwill_tbl)
 	end
 end
 
-local function add_subtask_reward(dest, subtask, status)
-	local reward_tbl = subtask.reward and subtask.reward[status]
+local function add_money_reward(dest, reward_tbl)
+	if not reward_tbl.money then return end
+	dest.money = dest.money + reward_tbl.money
+end
 
-	if not reward_tbl then return end
-	dest.money = (reward_tbl.money or 0) + dest.money
-
+local function add_goodwill_reward(dest, reward_tbl)
 	if not reward_tbl.goodwill then return end
 	for faction, value in pairs(reward_tbl.goodwill) do
-		dest.goodwill[faction] = (dest.goodwill[faction] or 0) + value
+		if not dest.goodwill[faction] then
+			dest.goodwill[faction] = 0
+		end
+		dest.goodwill[faction] = dest.goodwill[faction] + value
 	end
 end
 
+local function add_subtask_reward(dest, subtask, status)
+	local reward_tbl = subtask.reward and subtask.reward[status]
+	if not reward_tbl then return end
+
+	add_money_reward(dest, reward_tbl)
+	add_goodwill_reward(dest, reward_tbl)
+end
+
 local function collect_rewards_from_subtasks(subtasks, status)
-	local subtask_rewards = {
-		money = 0,
-		goodwill = {},
-	}
+	local subtask_rewards = dup_table(rewards_table_pattern)
 	for _, subtask in pairs(subtasks) do
 		add_subtask_reward(subtask_rewards, subtask, status)
 	end
@@ -75,26 +88,28 @@ end
 local function collect_rewards(CACHE)
 	local status = CACHE.status
 	local reward_tbl = collect_rewards_from_subtasks(CACHE.target, status)
-
 	CACHE.reward = reward_tbl
-
-	local predefined_rewards = CACHE.reward and CACHE.reward[status]
-	if not predefined_rewards then return end
-	if predefined_rewards.money then reward_tbl.money = predefined_rewards.money end
-	if predefined_rewards.goodwill then reward_tbl.goodwill = predefined_rewards.goodwill end
 end
 
-local function give_rewards(CACHE)
-	local money, goodwill = CACHE.reward.money, CACHE.reward.goodwill
-	if money and money ~= 0 then
+local function give_money_reward(CACHE)
+	local money = CACHE.reward.money
+	if money ~= 0 then
 		xr_effects.reward_random_money(nil, nil, {money*0.8, money*1.1})
 	end
+end
 
-	for faction, value in pairs(goodwill or {}) do
+local function give_goodwill_reward(CACHE)
+	local goodwill = CACHE.reward.goodwill
+	for faction, value in pairs(goodwill) do
 		if value ~= 0 then
 			xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
 		end
 	end
+end
+
+local function give_rewards(CACHE)
+	give_money_reward(CACHE)
+	give_goodwill_reward(CACHE)
 end
 
 function collect_and_give_rewards(CACHE)
