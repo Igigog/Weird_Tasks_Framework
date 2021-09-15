@@ -352,12 +352,16 @@ function quest_target(obj_data)
 	return obj_data.id
 end
 
-function get_success_money(entity)
+function get_money(entity)
 	return 3000
 end
 
-function get_success_goodwill(entity)
+function get_goodwill(entity)
 	return 25
+end
+
+function get_factions(entity, task_giver_id)
+	return igi_rewards.get_community_setup(task_giver_id)
 end
 
 function get_fail_money(entity)
@@ -374,6 +378,20 @@ end
 
 function get_cancel_goodwill(entity)
 	return 0
+end
+
+function setup_rewards(entity, task_giver_id)
+	local target_tbl = igi_taskdata.get_target_table(entity.target)
+	local success = {
+		money = target_tbl.get_money(entity),
+		goodwill = {
+			stalker = 50
+		}
+	}
+	entity.reward = {
+		success = success,
+		fail = success
+	}
 end
 ------------------------------------------------
 -- TESTS

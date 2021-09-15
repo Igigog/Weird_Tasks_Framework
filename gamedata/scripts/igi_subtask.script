@@ -7,6 +7,7 @@ TASK_STATUSES = {
 	FAILED = "failed",
 	READY_TO_FINISH = "ready_to_finish",
 	DISABLED = "disabled",
+	CANCELLED = "cancelled",
 }
 
 function get_subtasks_of_status(status, CACHE)
@@ -23,6 +24,14 @@ end
 
 function get_ready_to_finish_subtasks(CACHE)
 	return get_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE)
+end
+
+function iterate_subtasks(CACHE, func, ...)
+	for _, subtask in pairs(CACHE.target) do
+		if subtask.target then
+			func(subtask, ...)
+		end
+	end
 end
 
 local function get_status_by_link(link, CACHE)
@@ -62,8 +71,12 @@ function process_subtasks(CACHE)
 	for status, links in pairs(new_statuses) do
 		for _, link in pairs(links) do
 			local subtask = igi_linker.get_entity_from_link(link, CACHE)
-			subtask.status = status
 			igi_utils.heap_push(subtasks[status], link, subtask.order)
+
+			-- call all callbacks
+			subtask.status = status
+			local target_tbl = igi_taskdata.get_target_table(subtask.target)
+			if target_tbl["on_"..status] then target_tbl["on_"..status](subtask) end
 			igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, status)
 		end
 	end
