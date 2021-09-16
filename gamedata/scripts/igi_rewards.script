@@ -43,15 +43,26 @@ end
 
 ---------------------------< Give >--------------------------
 
-local function add_raw_goodwill_reward(rewards, goodwill_tbl)
+local function populate_goodwill_table(tbl, factions, value)
+	trace_assert(factions and value, "reward: no factions or value")
 	-- Goodwill (1/gaussian_sum to last community, 2/sum to second last, ..., 1/2 to first)
-	local parts = (#rewards.factions)*(#rewards.factions+1)/2
+	local parts = (#factions)*(#factions+1)/2
 
-	for i=1,#rewards.factions do
-		local value = math.floor((i*rewards.goodwill)/parts)
-		local faction = rewards.factions[#rewards.factions+1-i]
-		goodwill_tbl[faction] = (goodwill_tbl[faction] or 0) + value
+	for i=1,#factions do
+		local faction_value = math.floor((i*value)/parts)
+		local faction = factions[#factions+1-i]
+		tbl[faction] = (tbl[faction] or 0) + faction_value
 	end
+end
+
+local function normalize_goodwill_table(goodwill_tbl)
+	local factions, value = goodwill_tbl.factions, goodwill_tbl.value
+	if not value then return end
+
+	trace_dbg("REWARD: goodwill table before", goodwill_tbl)
+	empty_table(goodwill_tbl)
+	populate_goodwill_table(goodwill_tbl, factions, value)
+	trace_dbg("REWARD: goodwill table normalized", goodwill_tbl)
 end
 
 local function add_money_reward(dest, reward_tbl)
@@ -61,6 +72,7 @@ end
 
 local function add_goodwill_reward(dest, reward_tbl)
 	if not reward_tbl.goodwill then return end
+	normalize_goodwill_table(reward_tbl.goodwill)
 	for faction, value in pairs(reward_tbl.goodwill) do
 		if not dest.goodwill[faction] then
 			dest.goodwill[faction] = 0
