@@ -120,14 +120,14 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	-- First run, create target
 	if not (CACHE["target"]) then
 		CACHE.task_giver_id = tsk.task_giver_id
-		igi_callbacks.invoke_callbacks("on_first_run", CACHE, CACHE.setup)
+		igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
 		trace_dbg("before target creation", CACHE)
 		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_id)
 		igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
-		igi_rewards.setup_reward(CACHE)
+		igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 		trace_dbg("after target creation", CACHE)
 	end
 

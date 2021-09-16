@@ -380,7 +380,7 @@ function get_cancel_goodwill(entity)
 	return 0
 end
 
-function setup_rewards(entity, task_giver_id)
+function entity_on_first_run(entity, CACHE)
 	local target_tbl = igi_taskdata.get_target_table(entity.target)
 	local success = {
 		money = target_tbl.get_money(entity),
@@ -388,10 +388,18 @@ function setup_rewards(entity, task_giver_id)
 			stalker = 50
 		}
 	}
-	entity.reward = {
+	local dyn_reward = {
 		success = success,
 		fail = success
 	}
+	entity.immutable_reward = {
+		success = {
+			goodwill = {
+				factions = {"killer", "bandit"}
+			}
+		}
+	}
+	entity.reward = dyn_reward
 end
 ------------------------------------------------
 -- TESTS
