@@ -152,7 +152,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 
 	if tasks_done and skip_return then return "complete" end
 
-	tsk.stage = tasks_done and 2 or 0
+	tsk.stage = tasks_done and 1 or 0
 end
 --< Target >--------------------------------------------------
 task_functor.igi_task_generic_target = function(task_id,field,p,tsk)

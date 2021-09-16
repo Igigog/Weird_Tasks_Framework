@@ -7,7 +7,7 @@ from textwrap import dedent
 ANOMALY_VERSION = "1.5.1"
 TEXT_HEADER = "igi_task_text_"
 FILE_PATH = "task/tm_igi_"
-STAGES = 2
+STAGES = 1
 SPACE_COUNT = 21
 OP = "{"
 CL = "}"
