@@ -392,7 +392,7 @@ function entity_on_first_run(entity, CACHE)
 		success = success,
 		fail = success
 	}
-	entity.immutable_reward = {
+	CACHE.immutable_reward = {
 		success = {
 			goodwill = {
 				factions = {"killer", "bandit"}
