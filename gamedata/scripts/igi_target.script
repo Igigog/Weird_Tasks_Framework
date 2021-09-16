@@ -48,6 +48,7 @@ local function create_group_by_setup(entities_setup)
 	return group_data
 end
 
+-- ? Needed?
 local function pass_group_values(entity, entity_setup)
 	entity.where_link = entity_setup.where_link
 	entity.target = entity_setup.target
