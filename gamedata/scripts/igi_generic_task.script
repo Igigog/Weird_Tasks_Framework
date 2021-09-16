@@ -138,7 +138,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	tsk.__actions_time = tg+3000
 	---------------------------<ACTIONS>---------------------
 	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
-	igi_subtask.update_marks(CACHE.target)
+	igi_map_marks.update_marks(CACHE)
 	igi_activities.do_online_activities(CACHE)
 	igi_subtask.process_subtasks(CACHE)
 	if igi_subtask.is_task_failed(CACHE) then return "fail" end
@@ -202,7 +202,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 
 	--Release
 	igi_helper.release_targets_in_world(CACHE.target)	-- Needed? Works? Idk
-	igi_subtask.unmark_all(CACHE.target)
+	igi_map_marks.unmark_all(CACHE)
 
 	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end
 	--Reward
