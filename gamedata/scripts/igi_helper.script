@@ -24,6 +24,12 @@ function get_task_name(task_id)
 	return task_id:match(".*task_([^_]*)_(.*)")
 end
 
+function get_subtask_se_obj(entity)
+	local se_obj = igi_helper.alife_obj(entity.id)
+	if not se_obj then return end
+	return se_obj:section_name() == entity.section_name and se_obj or nil
+end
+
 function raise(errname, ...)
 	-- Just a small wrapper for error(), meaning this error will
 	-- probably be handled by pcall()
