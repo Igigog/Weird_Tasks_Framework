@@ -141,10 +141,12 @@ end
 local function collect_rewards(CACHE)
 	local status = CACHE.status
 	local reward_tbl = collect_rewards_from_subtasks(CACHE.target, status)
+	trace_dbg("Rewards from subtasks: ", reward_tbl)
 
 	local immutable_reward = CACHE.immutable_reward and CACHE.immutable_reward[status]
 	if immutable_reward then
 		set_immutable_rewards(reward_tbl, immutable_reward)
+		trace_dbg("Rewards with immutables: ", reward_tbl)
 	end
 	CACHE.reward = reward_tbl
 end

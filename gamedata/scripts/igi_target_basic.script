@@ -389,11 +389,11 @@ function entity_on_first_run(entity, CACHE)
 		}
 	}
 	local dyn_reward = {
-		success = success,
-		fail = success
+		completed = success,
+		failed = success
 	}
 	CACHE.immutable_reward = {
-		success = {
+		completed = {
 			goodwill = {
 				factions = {"killer", "bandit"}
 			}
