@@ -352,11 +352,11 @@ function quest_target(obj_data)
 	return obj_data.id
 end
 
-function get_money(entity)
+function get_completed_money(entity)
 	return 3000
 end
 
-function get_goodwill(entity)
+function get_completed_goodwill(entity)
 	return 25
 end
 
@@ -364,43 +364,37 @@ function get_factions(entity, task_giver_id)
 	return igi_rewards.get_community_setup(task_giver_id)
 end
 
-function get_fail_money(entity)
+function get_failed_money(entity)
 	return 0
 end
 
-function get_fail_goodwill(entity)
+function get_failed_goodwill(entity)
 	return -25
 end
 
-function get_cancel_money(entity)
-	return 0
-end
-
-function get_cancel_goodwill(entity)
-	return 0
-end
-
-function entity_on_first_run(entity, CACHE)
+function get_basic_reward_for_status(status, entity, task_giver_id)
 	local target_tbl = igi_taskdata.get_target_table(entity.target)
-	local success = {
-		money = target_tbl.get_money(entity),
+	return {
+		money = target_tbl["get_"..status.."_money"](entity),
 		goodwill = {
-			stalker = 50
+			value = target_tbl["get_"..status.."_goodwill"](entity),
+			factions = target_tbl.get_factions(entity, task_giver_id)
 		}
 	}
-	local dyn_reward = {
-		completed = success,
-		failed = success
-	}
-	CACHE.immutable_reward = {
-		completed = {
-			goodwill = {
-				factions = {"killer", "bandit"}
-			}
-		}
-	}
-	entity.reward = dyn_reward
 end
+
+function initialise_rewards(entity, CACHE)
+	local task_giver_id = CACHE.task_giver_id
+	entity.reward = {}
+	local completed = igi_subtask.TASK_STATUSES.COMPLETED
+	local failed = igi_subtask.TASK_STATUSES.FAILED
+	entity.reward[completed] = get_basic_reward_for_status(
+		completed, entity, task_giver_id)
+	entity.reward[failed] = get_basic_reward_for_status(
+		failed, entity, task_giver_id
+	)
+end
+
 ------------------------------------------------
 -- TESTS
 -- Well... tests ._.
