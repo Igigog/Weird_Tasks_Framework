@@ -26,6 +26,10 @@ function get_ready_to_finish_subtasks(CACHE)
 	return get_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE)
 end
 
+function get_failed_subtasks(CACHE)
+	return get_subtasks_of_status(TASK_STATUSES.FAILED, CACHE)
+end
+
 function iterate_subtasks(CACHE, func, ...)
 	for _, subtask in pairs(CACHE.target) do
 		if subtask.target then
