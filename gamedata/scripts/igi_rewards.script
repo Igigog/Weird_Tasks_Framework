@@ -193,3 +193,12 @@ function collect_and_give_rewards(CACHE)
 	igi_callbacks.invoke_callbacks("on_before_rewarding", CACHE)
 	give_rewards(CACHE)
 end
+
+function initialise_rewards(CACHE)
+	for _, entity in pairs(CACHE.target) do
+		if entity.target then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			target_tbl.initialise_rewards(entity, CACHE)
+		end
+	end
+end

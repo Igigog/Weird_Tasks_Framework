@@ -127,6 +127,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 		CACHE.setup = nil	-- you don't need setup after object creation
 		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
 		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
+		igi_rewards.initialise_rewards(CACHE)
 		igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 		trace_dbg("after target creation", CACHE)
 	end
