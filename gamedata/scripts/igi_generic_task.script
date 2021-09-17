@@ -218,6 +218,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil
 	--Finish
+	--? Needed?
 	xr_effects.drx_sl_unregister_task_giver(nil, nil, {task_id})
 	xr_effects.drx_sl_reset_stored_task(nil, nil, {task_id})
 end

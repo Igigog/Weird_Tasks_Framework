@@ -130,24 +130,39 @@ local function add_subtask_reward(dest, subtask, status)
 	add_goodwill_reward(dest, reward_tbl)
 end
 
-local function collect_rewards_from_subtasks(subtasks, status)
-	local subtask_rewards = dup_table(rewards_table_pattern)
-	for _, subtask in pairs(subtasks) do
-		add_subtask_reward(subtask_rewards, subtask, status)
+local function add_rewards_from_subtasks(dest, subtasks, status, CACHE)
+	for _, subtask_link in pairs(subtasks) do
+		local subtask = igi_linker.get_entity_from_link(subtask_link, CACHE)
+		add_subtask_reward(dest, subtask, status)
 	end
-	return subtask_rewards
+end
+
+local function collect_rewards_from_subtasks(dest, CACHE)
+	local status = CACHE.status
+	local completed = igi_subtask.get_completed_subtasks(CACHE)
+	local failed = igi_subtask.get_failed_subtasks(CACHE)
+
+	-- Always add failed: if task is successful then these ones are failed optionals
+	add_rewards_from_subtasks(dest, failed, status, CACHE)
+	if status == igi_subtask.TASK_STATUSES.COMPLETED then
+		add_rewards_from_subtasks(dest, completed, status, CACHE)
+	end
+	trace_dbg("Rewards from subtasks: ", dest)
+end
+
+local function set_global_immutable_rewards(dest, CACHE)
+	if not CACHE.immutable_reward then return end
+	local immutable_reward = CACHE.immutable_reward[CACHE.status]
+	if not immutable_reward then return end
+
+	set_immutable_rewards(dest, immutable_reward)
+	trace_dbg("Rewards with immutables: ", dest)
 end
 
 local function collect_rewards(CACHE)
-	local status = CACHE.status
-	local reward_tbl = collect_rewards_from_subtasks(CACHE.target, status)
-	trace_dbg("Rewards from subtasks: ", reward_tbl)
-
-	local immutable_reward = CACHE.immutable_reward and CACHE.immutable_reward[status]
-	if immutable_reward then
-		set_immutable_rewards(reward_tbl, immutable_reward)
-		trace_dbg("Rewards with immutables: ", reward_tbl)
-	end
+	local reward_tbl = dup_table(rewards_table_pattern)
+	collect_rewards_from_subtasks(reward_tbl, CACHE)
+	set_global_immutable_rewards(reward_tbl, CACHE)
 	CACHE.reward = reward_tbl
 end
 
