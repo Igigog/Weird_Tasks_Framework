@@ -111,7 +111,8 @@ local function set_immutable_rewards(reward_tbl, immutable_rewards)
 	end
 end
 
-local function get_subtask_reward_tbl(subtask, status)
+local function get_subtask_reward_tbl(subtask)
+	local status = subtask.status
 	local reward_tbl = subtask.reward and subtask.reward[status]
 	if not reward_tbl then return end
 
@@ -122,8 +123,8 @@ local function get_subtask_reward_tbl(subtask, status)
 	return reward_tbl
 end
 
-local function add_subtask_reward(dest, subtask, status)
-	local reward_tbl = get_subtask_reward_tbl(subtask, status)
+local function add_subtask_reward(dest, subtask)
+	local reward_tbl = get_subtask_reward_tbl(subtask)
 	if not reward_tbl then return end
 
 	add_money_reward(dest, reward_tbl)
@@ -133,7 +134,7 @@ end
 local function add_rewards_from_subtasks(dest, subtasks, status, CACHE)
 	for _, subtask_link in pairs(subtasks) do
 		local subtask = igi_linker.get_entity_from_link(subtask_link, CACHE)
-		add_subtask_reward(dest, subtask, status)
+		add_subtask_reward(dest, subtask)
 	end
 end
 
