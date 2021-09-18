@@ -13,6 +13,8 @@ function add_mcm_options()
     igi_mcm.add_mcm_option("autosave_before", false)
     igi_mcm.add_mcm_option("autosave_after", false)
     igi_mcm.add_mcm_option("autocomplete", false)
+    igi_mcm.add_mcm_option("ara", false, "realistic_assassinations")
+    igi_mcm.add_mcm_option("debug", false)
 end
 
 ---------------- AUTOSAVE -------------------
