@@ -117,6 +117,13 @@ local function parse_macro(str)
 	return {typ, arg_table}
 end
 
+local function stringify(shit)
+	if type(shit) == "table" then
+		return table.concat(shit, ",")
+	end
+	return tostring(shit)
+end
+
 function resolve_all_macros(str, entities)
 	if not str then return nil end
     if not has_macro(str) then return str end
@@ -130,7 +137,7 @@ function resolve_all_macros(str, entities)
 		local macro = parse_macro(macro_str)
 		local resolved = resolve_macro(macro)
 		if not resolved then igi_helper.raise("MacroUnresolvableException", before) end
-		new_str = string.gsub(new_str, '%&'..before..'%&', tostring(resolved))
+		new_str = string.gsub(new_str, '%&'..before..'%&', stringify(resolved))
 	end
 	return new_str
 end

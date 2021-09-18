@@ -1,0 +1,28 @@
+TARGET_NAME = "visit"
+PATTERN = "basic"
+
+local function distance(position_1, position_2)
+	local x = math.abs(position_1.x - position_2.x)
+    local z = math.abs(position_1.z - position_2.z)
+	return x*x + z*z
+end
+
+function is_complete(obj_data)
+	local MAX_DISTANCE = 2500
+	local position_of_target = igi_helper.alife_obj(obj_data.id).position
+    local position_of_player = db.actor:position()
+	return distance(position_of_target, position_of_player) < MAX_DISTANCE
+end
+
+function get_status(subtask)
+    if is_complete(subtask) then return igi_subtask.TASK_STATUSES.COMPLETED end
+    return igi_subtask.TASK_STATUSES.RUNNING
+end
+
+function get_success_money(entity)
+	return 300
+end
+
+function get_success_goodwill(entity)
+	return 10
+end
