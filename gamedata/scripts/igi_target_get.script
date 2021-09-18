@@ -3,22 +3,21 @@ PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-function is_completed(obj_data)
+function is_completed(se_obj)
 	-- Complete if in player inventory
-	local se_obj = igi_helper.alife_obj(obj_data.id)
-	return se_obj and se_obj.parent_id == 0
+	return se_obj.parent_id == 0
 end
 
-function is_failed(obj_data)
-	local se_obj = igi_helper.alife_obj(obj_data.id)
+function is_failed(se_obj, section_name)
 	if not se_obj then return true end
-	if se_obj:section_name() ~= obj_data.section_name then return true end
+	if se_obj:section_name() ~= section_name then return true end
 end
 
 function get_status(entity)
-	if is_completed(entity) then return TASK_STATUSES.COMPLETED
-	elseif is_failed(entity) then return TASK_STATUSES.FAILED
-	else return TASK_STATUSES.RUNNING end
+	local se_obj = igi_helper.alife_obj(entity.id)
+	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
+	if is_completed(se_obj) then return TASK_STATUSES.COMPLETED end
+	return TASK_STATUSES.RUNNING
 end
 
 function quest_target(obj_data)
@@ -28,4 +27,8 @@ function quest_target(obj_data)
 	else
 		return se_obj.parent_id
 	end
+end
+
+function get_completed_money(entity)
+	return 0
 end
