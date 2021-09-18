@@ -199,15 +199,16 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	if not (p and p[1] and p[2]) then return end
 	local task_id = p[1]
 	local CACHE = get_cache(task_id)
+	local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 	if p[2] == "true" then
-		CACHE.status = igi_subtask.TASK_STATUSES.COMPLETED
+		CACHE.status = TASK_STATUSES.COMPLETED
 	else
-		CACHE.status = igi_subtask.TASK_STATUSES.FAILED
+		CACHE.status = TASK_STATUSES.FAILED
 	end
 
 	igi_callbacks.invoke_callbacks("on_complete", CACHE)
-
+	igi_subtask.change_subtasks_status(CACHE, TASK_STATUSES.READY_TO_FINISH, CACHE.status)
 	--Release
 	igi_helper.release_targets_in_world(CACHE.target)	-- Needed? Works? Idk
 	igi_map_marks.unmark_all(CACHE)

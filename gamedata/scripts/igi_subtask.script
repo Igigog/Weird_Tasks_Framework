@@ -66,22 +66,33 @@ function is_task_failed(CACHE)
 	return false
 end
 
+function update_subtask_status_by_link(link, new_status, CACHE)
+	local subtask = igi_linker.get_entity_from_link(link, CACHE)
+	igi_utils.heap_remove_element(CACHE.subtasks[subtask.status], link)
+	igi_utils.heap_push(CACHE.subtasks[new_status], link, subtask.order)
+
+	-- call all callbacks
+	subtask.status = new_status
+	local target_tbl = igi_taskdata.get_target_table(subtask.target)
+	if target_tbl["on_"..new_status] then target_tbl["on_"..new_status](subtask, CACHE) end
+	igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, new_status)
+end
+
+function change_subtasks_status(CACHE, old_status, new_status)
+	local links = get_subtasks_of_status(old_status, CACHE)
+	for _, link in pairs(links) do
+		update_subtask_status_by_link(link, new_status, CACHE)
+	end
+end
+
 function process_subtasks(CACHE)
 	local new_statuses = {}
-	local subtasks = CACHE.subtasks
 	update_subtasks_of_status(TASK_STATUSES.RUNNING, CACHE, new_statuses)
 	update_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE, new_statuses)
 
 	for status, links in pairs(new_statuses) do
 		for _, link in pairs(links) do
-			local subtask = igi_linker.get_entity_from_link(link, CACHE)
-			igi_utils.heap_push(subtasks[status], link, subtask.order)
-
-			-- call all callbacks
-			subtask.status = status
-			local target_tbl = igi_taskdata.get_target_table(subtask.target)
-			if target_tbl["on_"..status] then target_tbl["on_"..status](subtask) end
-			igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, status)
+			update_subtask_status_by_link(link, status, CACHE)
 		end
 	end
 end
