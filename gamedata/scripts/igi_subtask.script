@@ -68,14 +68,17 @@ end
 
 function update_subtask_status_by_link(link, new_status, CACHE)
 	local subtask = igi_linker.get_entity_from_link(link, CACHE)
-	igi_utils.heap_remove_element(CACHE.subtasks[subtask.status], link)
-	igi_utils.heap_push(CACHE.subtasks[new_status], link, subtask.order)
-
-	-- call all callbacks
+	local old_status = subtask.status
+	-- call all callbacks; new status may be changed by callbacks
 	subtask.status = new_status
 	local target_tbl = igi_taskdata.get_target_table(subtask.target)
 	if target_tbl["on_"..new_status] then target_tbl["on_"..new_status](subtask, CACHE) end
 	igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, new_status)
+
+	if subtask.status ~= old_status then
+		igi_utils.heap_remove_element(CACHE.subtasks[old_status], link)
+		igi_utils.heap_push(CACHE.subtasks[subtask.status], link, subtask.order)
+	end
 end
 
 function change_subtasks_status(CACHE, old_status, new_status)

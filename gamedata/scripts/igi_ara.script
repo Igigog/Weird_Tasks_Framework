@@ -1,8 +1,7 @@
-local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 
 killed_by_player = {}
 is_dead = {}
-local do_for_every_target = igi_helper.do_for_every_target
 
 function on_game_start()
 	RegisterScriptCallback("save_state",save_state)
@@ -10,9 +9,17 @@ function on_game_start()
 	RegisterScriptCallback("squad_on_npc_death", squad_on_npc_death)
 	RegisterScriptCallback("npc_on_hit_callback", npc_on_hit_callback)
 	RegisterScriptCallback("monster_on_hit_callback", npc_on_hit_callback)
+
+	local add_callback = igi_callbacks.add_callback
+	add_callback("entity_on_subtask_status_change", entity_on_subtask_status_change)
+	add_callback("entity_on_complete", entity_on_complete)
+	add_callback("entity_on_after_target_creation", entity_on_after_target_creation)
 	printf("WTF: Arszi Realistic Assassinations loaded.")
 end
 
+local function is_ara()
+	return igi_mcm.get_options_value(igi_mcm.OPTION_IDS.ara)
+end
 
 local function is_around(target_id, radius)
 	local position_of_target = igi_helper.alife_obj(target_id).position
@@ -109,7 +116,35 @@ end
 function clear_ara_table(object_data)
 	if object_data.ara_to_kill then
 		for id in pairs(object_data.ara_to_kill) do
-			CreateTimeEvent("ara_remove_from_table", tostring(id), 10, remove_from_tables, id)
+			CreateTimeEvent("ara_remove_from_table", id, 10, remove_from_tables, id)
 		end
+	end
+end
+
+function entity_on_subtask_status_change(entity)
+	if not is_ara() then return	end
+	if entity.target ~= "assault" then return end
+	if entity.status ~= igi_subtask.TASK_STATUSES.COMPLETED then return end
+
+	if not is_updated(entity) then
+		entity.status = igi_subtask.TASK_STATUSES.RUNNING
+	end
+
+	if is_not_killed_by_player(entity) then
+		trace_dbg("ara: failed", entity)
+		entity.status = igi_subtask.TASK_STATUSES.FAILED
+	end
+end
+
+function entity_on_complete(entity)
+	if entity.target ~= "assault" then return end
+	clear_ara_table(entity)
+end
+
+function entity_on_after_target_creation(entity)
+	if entity.target ~= "assault" then return end
+
+	for _, squad_id in pairs(entity.squads) do
+		add_squad_to_tables(squad_id, entity)
 	end
 end
