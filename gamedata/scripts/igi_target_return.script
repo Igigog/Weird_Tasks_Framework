@@ -3,25 +3,23 @@ PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-function is_failed(obj_data)
-	local obj = igi_helper.alife_obj(obj_data.id)
-	if not obj then return true end
-	return obj:section_name() ~= obj_data.section_name
+function is_failed(se_obj, section_name)
+	if not se_obj then return true end
+	return se_obj:section_name() ~= section_name
 end
 
-function ready_to_finish(obj_data)
-	local obj = igi_helper.alife_obj(obj_data.id)
-	if not obj then return end
-	return obj.parent_id == 0
+function ready_to_finish(se_obj)
+	return se_obj.parent_id == 0
 end
 
 function get_status(entity)
-	if is_failed(entity) then return TASK_STATUSES.FAILED
-	elseif ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH
-	else return TASK_STATUSES.RUNNING end
+	local se_obj = igi_helper.alife_obj(entity.id)
+	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
+	if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
+	return TASK_STATUSES.RUNNING
 end
 
-function finish_subtask(obj_data)
+function on_completed(obj_data)
 	local obj = igi_helper.alife_obj(obj_data.id)
 	alife_release(obj)
 	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
@@ -42,14 +40,14 @@ function get_item_weight(entity)
 	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
 end
 
-function get_success_money(entity)
+function get_completed_money(entity)
 	return get_item_cost(entity)*get_item_weight(entity)/32
 end
 
-function get_success_goodwill(entity)
+function get_completed_goodwill(entity)
 	return get_item_weight(entity)*10
 end
 
-function get_fail_goodwill(entity)
+function get_failed_goodwill(entity)
 	return get_item_cost(entity)/(-400)
 end
