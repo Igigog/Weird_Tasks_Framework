@@ -3,44 +3,15 @@ PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-local function is_ara()
-	return igi_mcm.get_options_value(igi_mcm.OPTION_IDS.ara)
-end
-
 function is_complete(obj_data)
-	if is_ara() then
-		if not igi_ara.is_updated(obj_data) then return false end
-	end
-	
 	local se_obj = igi_helper.alife_obj(obj_data.id)
 	if not se_obj then return true end
 	if se_obj:section_name() ~= obj_data.section_name then return true end
 end
 
-function entity_on_after_target_creation(subtask_data)
-	if is_ara() then
-		igi_ara.add_squad_to_tables(subtask_data.id, subtask_data)
-	end
-end
-
-function is_failed(subtask_data)
-	if is_ara() then
-		return igi_target_kill.is_complete(subtask_data) 
-				and igi_ara.is_not_killed_by_player(subtask_data)
-	end
-	return false
-end
-
 function get_status(entity)
-	if is_completed(entity) then return TASK_STATUSES.COMPLETED
-	elseif is_failed(entity) then return TASK_STATUSES.FAILED
-	else return TASK_STATUSES.RUNNING end
-end
-
-function entity_on_complete(subtask_data)
-	if is_ara() then
-		igi_ara.clear_ara_table(subtask_data)
-	end
+	if is_completed(entity) then return TASK_STATUSES.COMPLETED end
+	return TASK_STATUSES.RUNNING
 end
 
 local function get_monster_value(se_npc)
@@ -52,7 +23,7 @@ local function get_monster_value(se_npc)
 			break
 		end
 	end
-	
+
 	local value = 100
 	for k, new_value in pairs(igi_db.SectionView('misc.ltx', 'money_reward_mutants'):as_table()) do
 		if string.find(npc_section, k) then
@@ -72,7 +43,7 @@ local function get_npc_value(se_npc)
 	return value*factors[tier]
 end
 
-function get_success_money(entity)
+function get_completed_money(entity)
 	local reward = 0
 	local se_squad = igi_helper.alife_obj(entity.id)
 	local faction = se_squad:get_squad_community()
@@ -92,10 +63,10 @@ function get_success_money(entity)
 	return reward
 end
 
-function get_success_goodwill(entity)
+function get_completed_goodwill(entity)
 	local npc_count = 0
 	local se_squad = igi_helper.alife_obj(entity.id)
-	for se_npc in se_squad:squad_members() do
+	for _ in se_squad:squad_members() do
 		npc_count = npc_count + 1
 	end
 
