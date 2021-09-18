@@ -2,6 +2,10 @@ local trace_dbg = igi_helper.trace_dbg
 
 killed_by_player = {}
 is_dead = {}
+ARA_TARGETS = {
+	kill = true,
+	assault = true,
+}
 
 function on_game_start()
 	RegisterScriptCallback("save_state",save_state)
@@ -123,7 +127,7 @@ end
 
 function entity_on_subtask_status_change(entity)
 	if not is_ara() then return	end
-	if entity.target ~= "assault" then return end
+	if ARA_TARGETS[entity.target] then return end
 	if entity.status ~= igi_subtask.TASK_STATUSES.COMPLETED then return end
 
 	if not is_updated(entity) then
@@ -131,20 +135,23 @@ function entity_on_subtask_status_change(entity)
 	end
 
 	if is_not_killed_by_player(entity) then
-		trace_dbg("ara: failed", entity)
 		entity.status = igi_subtask.TASK_STATUSES.FAILED
 	end
 end
 
 function entity_on_complete(entity)
-	if entity.target ~= "assault" then return end
+	if ARA_TARGETS[entity.target] then return end
 	clear_ara_table(entity)
 end
 
 function entity_on_after_target_creation(entity)
-	if entity.target ~= "assault" then return end
+	if ARA_TARGETS[entity.target] then return end
 
-	for _, squad_id in pairs(entity.squads) do
-		add_squad_to_tables(squad_id, entity)
+	if entity.squads then
+		for _, squad_id in pairs(entity.squads) do
+			add_squad_to_tables(squad_id, entity)
+		end
+	else
+		add_squad_to_tables(entity.id, entity)
 	end
 end
