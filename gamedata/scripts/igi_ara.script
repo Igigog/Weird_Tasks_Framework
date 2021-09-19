@@ -17,7 +17,7 @@ function on_game_start()
 	local add_callback = igi_callbacks.add_callback
 	add_callback("entity_on_subtask_status_change", entity_on_subtask_status_change)
 	add_callback("entity_on_complete", entity_on_complete)
-	add_callback("entity_on_after_target_creation", entity_on_after_target_creation)
+	add_callback("entity_on_first_run", entity_on_first_run)
 	printf("WTF: Arszi Realistic Assassinations loaded.")
 end
 
@@ -127,7 +127,7 @@ end
 
 function entity_on_subtask_status_change(entity)
 	if not is_ara() then return	end
-	if ARA_TARGETS[entity.target] then return end
+	if not ARA_TARGETS[entity.target] then return end
 	if entity.status ~= igi_subtask.TASK_STATUSES.COMPLETED then return end
 
 	if not is_updated(entity) then
@@ -140,12 +140,12 @@ function entity_on_subtask_status_change(entity)
 end
 
 function entity_on_complete(entity)
-	if ARA_TARGETS[entity.target] then return end
+	if not ARA_TARGETS[entity.target] then return end
 	clear_ara_table(entity)
 end
 
-function entity_on_after_target_creation(entity)
-	if ARA_TARGETS[entity.target] then return end
+function entity_on_first_run(entity)
+	if not ARA_TARGETS[entity.target] then return end
 
 	if entity.squads then
 		for _, squad_id in pairs(entity.squads) do
