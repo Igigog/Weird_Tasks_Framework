@@ -42,6 +42,17 @@ local function read_task_json(task_name, prefix)
     return content
 end
 
+local function read_raw_task_json(task_name, prefix)
+	local task_path = prefix.."\\"..task_name..".json"
+	file = trace_assert_no_crash(io.open(default_tasks_path..task_path, "rb"))
+	if not file then return end
+
+	local content = file:read "*a" -- *a or *all reads the whole file
+	trace_dbg("raw task content: ", content)
+    file:close()
+    return content
+end
+
 local json = igi_json.get_json()
 function get_task_table(task_name, prefix)
 	local task_json = trace_assert_no_crash(
@@ -83,7 +94,15 @@ end
 function reset_all_custom_tables()
 	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
 	for prefix in meta_ltx:iter() do
-		os.remove(configured_tasks_path..prefix)
+		local files = getFS():file_list_open("$game_config$", 
+		"igi_tasks\\tasks\\"..prefix.."\\",
+		1+4+8)
+
+		for i=0,files:Size()-1 do
+			local task_name = files:GetAt(i)
+			local raw_task = json.decode(read_raw_task_json(task_name, prefix))
+			save_task_table(task_name, prefix, raw_task)
+		end
 	end
 end
 

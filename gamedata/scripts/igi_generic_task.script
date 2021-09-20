@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "3nightly6.5"
+TASKS_VERSION = "3nightly7"
 TASK_SETUP = {}
 TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 
@@ -24,46 +24,29 @@ function actor_on_first_update()
 
 	printf("Weird Tasks Framework: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
 			.." -> "..TASKS_VERSION)
-	TASKS_CACHE.TASKS_VERSION = nil
-
-	local task_manager = task_manager.get_task_manager()
-	for k, _ in pairs(TASKS_CACHE) do
-		TASKS_CACHE[k] = nil
-		task_manager.task_info[k] = nil
-	end
-
 	TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
-
-	igi_taskdata.reset_all_custom_tables()
-	printf("WTF: Update successful.")
 	news_manager.send_tip(db.actor, "WTF: Update complete. Welcome to WTF "..TASKS_VERSION, nil, nil, 30000)
 end
 
 function save_state(m_data)
 	m_data.igi_tasks_cache = TASKS_CACHE
-	m_data.igi_tasks_ver = TASKS_VERSION
 end
 
 function load_state(m_data)
 	TASKS_CACHE = m_data.igi_tasks_cache or {TASKS_VERSION = TASKS_VERSION}
-	
-	if m_data.igi_tasks_ver ~= TASKS_VERSION then
-		-- Remove tasks from Task Manager
-		local tm = task_manager.get_task_manager()
-		if tm and tm.task_info and #tm.task_info ~= 0 then
-			for task_id in pairs(tm.task_info) do
-				if TASKS_CACHE[task_id] then
-					tm.task_info[task_id] = nil
-				end
-			end
-		end
-		-- Remove tasks from loading to task manager
-		if m_data.task_info then
-			for task_id in pairs(m_data.task_info) do
-				if TASKS_CACHE[task_id] then
-					m_data.task_info[task_id] = nil
-				end
-			end
+
+	if TASKS_CACHE.TASKS_VERSION == TASKS_VERSION then
+		return
+	end
+
+	tm = task_manager.get_task_manager()
+	for task_id in pairs(TASKS_CACHE) do
+		m_data.task_info[task_id] = nil
+		TASKS_CACHE[task_id] = nil
+		if tm.task_info[task_id] then
+			-- idk if repeat timeout step is needed
+			tm.task_info[task_id].repeat_timeout = 1
+			tm.task_info[task_id] = nil
 		end
 	end
 end

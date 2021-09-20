@@ -102,7 +102,19 @@ local function build_option_entries()
 	return entries
 end
 
+local function reset_tasks_on_new_framework()
+	local TASKS_VERSION = igi_generic_task.TASKS_VERSION
+	local old_version = axr_main.config:r_value("igi_tasks", "tasks_version", 0)
+	if old_version ~= TASKS_VERSION then
+		igi_helper.trace_dbg("Updating framework: ", old_version, "=>", TASKS_VERSION)
+		axr_main.config:w_value("igi_tasks", "tasks_version", TASKS_VERSION)
+		axr_main.config:save()
+		igi_taskdata.reset_all_custom_tables()
+	end
+end
+
 function on_mcm_load()
+	reset_tasks_on_new_framework()
 	igi_mcm_features.add_mcm_options()
 	local op = {id= "igi_tasks", sh=false, gr={
 					{id="Options", sh=true, gr={
