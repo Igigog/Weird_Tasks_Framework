@@ -138,21 +138,24 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if tasks_done and skip_return then return "complete" end
 
 	tsk.stage = tasks_done and 1 or 0
+
+	---------------------------<TARGET>----------------------
+	if tsk.stage == 1 then
+		CACHE.current_target_id = CACHE.task_giver_id
+	else
+		CACHE.current_target_id = igi_subtask.quest_target(CACHE.subtasks, CACHE)
+	end
 end
 --< Target >--------------------------------------------------
 task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 	--This function point to a task target in PDA
 	local CACHE = get_cache(task_id)
 	if not CACHE then return end
-
-	if tsk.stage == 2 then return tsk.task_giver_id end
-
-	local target_id = igi_subtask.quest_target(CACHE.subtasks, CACHE)
-	if not target_id then return end
+	local target_id = CACHE.current_target_id
 
 	-- trace target in debug mode
 	if igi_mcm.get_options_value("debug") then
-		if target_id > 0 then
+		if target_id and target_id > 0 then
 			local se_obj = igi_helper.alife_obj(target_id)
 			if se_obj then
 				local sec = se_obj and se_obj:section_name() or "nil"
