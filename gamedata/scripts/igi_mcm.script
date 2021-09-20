@@ -109,7 +109,9 @@ local function reset_tasks_on_new_framework()
 		igi_helper.trace_dbg("Updating framework: ", old_version, "=>", TASKS_VERSION)
 		axr_main.config:w_value("igi_tasks", "tasks_version", TASKS_VERSION)
 		axr_main.config:save()
-		igi_taskdata.reset_all_custom_tables()
+		if old_version then
+			igi_taskdata.reset_all_custom_tables()
+		end
 	end
 end
 
