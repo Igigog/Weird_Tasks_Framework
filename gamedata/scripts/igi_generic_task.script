@@ -171,7 +171,7 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 	--This function return a text for title_functor and descr_functor
 	local CACHE = get_cache(task_id)
 
-	if field == "descr" and tsk.stage == 2 then
+	if field == "descr" and tsk.stage == 1 then
 		field = "done"
 	end
 
