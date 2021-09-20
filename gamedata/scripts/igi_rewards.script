@@ -18,12 +18,13 @@ end
 
 local function get_tg_community_setup(se_tg, se_tg_squad)
 	local community = get_object_community(se_tg)
+	local setup = community
 	if string.find(community, "trader") then
-		local community_setup = igi_db.get_value("misc.ltx", "trader_faction", se_tg:section_name())
-		return community_setup or {se_tg_squad:get_squad_community()}
-	else
-		return {community}
+		setup = igi_db.get_value("misc.ltx", "trader_faction", se_tg:section_name())
+		setup = setup or {se_tg_squad:get_squad_community()}
 	end
+	if type(setup) ~= "table" then setup = {setup} end
+	return setup
 end
 
 function get_community_setup(task_giver_id)
