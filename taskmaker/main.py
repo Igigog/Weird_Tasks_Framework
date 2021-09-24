@@ -136,7 +136,7 @@ class Writer:
         on_job_descr {spaces("on_job_descr")}= %=igi_task_generic_setup({task_id})%
 
         on_complete {spaces("on_complete")}= %=igi_task_generic_finish({task_id}:true)%
-        on_fail {spaces("on_fail")}= %=igi_task_generic_finish({task_id}:false))%
+        on_fail {spaces("on_fail")}= %=igi_task_generic_finish({task_id}:false)%
         condlist_0 {spaces("condlist_0")}= {OP + f"!task_giver_alive({task_id})" + CL} fail
 
         """
