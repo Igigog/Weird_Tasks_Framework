@@ -196,10 +196,14 @@ function collect_and_give_rewards(CACHE)
 end
 
 function initialise_rewards(CACHE)
-	for _, entity in pairs(CACHE.target) do
+	for _, entity in pairs(igi_target.get_entities(CACHE)) do
 		if entity.target then
 			local target_tbl = igi_taskdata.get_target_table(entity.target)
 			target_tbl.initialise_rewards(entity, CACHE)
 		end
 	end
+end
+
+function has_no_money_reward(CACHE)
+	return CACHE.reward and CACHE.reward.money == 0
 end

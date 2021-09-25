@@ -16,7 +16,7 @@ local function update_mark(obj_data, mark_type)
 end
 
 function update_marks(CACHE)
-    local entities = CACHE.target
+    local entities = igi_target.get_entities(CACHE)
 	for _, entity in pairs(entities) do
 		local mark = entity.mark
 		if mark then
@@ -26,7 +26,7 @@ function update_marks(CACHE)
 end
 
 function unmark_all(CACHE)
-    local entities = CACHE.target
+    local entities = igi_target.get_entities(CACHE)
 	for _, entity in pairs(entities) do
 		local mark = entity.mark
 		if mark then

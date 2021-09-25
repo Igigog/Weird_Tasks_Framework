@@ -56,13 +56,18 @@ local function are_conditions_met(obj_data, condition, CACHE, se_obj)
 	return condition_handlers[condition](obj_data, se_obj, CACHE)
 end
 
-function do_online_activities(CACHE)
-	-- TODO: rework
-	if not CACHE.online_activities then return CACHE, false end
+function get_activities(CACHE)
+	return CACHE.online_activities
+end
 
-	for condition, links in pairs(CACHE.online_activities) do
+function do_online_activities(CACHE)
+	local activities = get_activities(CACHE)
+	-- TODO: rework
+	if not activities then return CACHE, false end
+
+	for condition, links in pairs(activities) do
 		for k, obj_link in pairs(links) do
-			local obj_data = CACHE.target[obj_link]
+			local obj_data = igi_linker.get_entity_from_link(obj_link, CACHE)
 			local se_obj = igi_helper.alife_obj(obj_data.id)
 			if are_conditions_met(obj_data, condition, CACHE, se_obj) then
 				do_activities(obj_data, condition, se_obj, CACHE)
@@ -72,13 +77,14 @@ function do_online_activities(CACHE)
 			end
 		end
 		-- delete activities if there's no more objects
-		if not next(links) then CACHE.online_activities[condition] = nil end
+		if not next(links) then activities[condition] = nil end
 	end
 end
 
-function sort_online_activities(targets)
+function sort_online_activities(CACHE)
 	-- Adds all objects with online activities to CACHE
 	-- CACHE.online_activities = {*condition* = {*list of obj_data*}}
+	local targets = igi_target.get_entities(CACHE)
 	local online_acts = {}
 	for k, entity in pairs(targets) do
 		if entity.online_activities then
@@ -89,5 +95,5 @@ function sort_online_activities(targets)
 		end
 	end
 
-	return online_acts
+	CACHE.online_activities = online_acts
 end

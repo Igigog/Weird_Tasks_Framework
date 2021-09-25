@@ -20,12 +20,12 @@ function add_entity_handler(handler)
     synsugar_entity_handlers[handler] = true
 end
 
-function desugarize(cache)
+function desugarize(CACHE)
     for handler in pairs(synsugar_handlers) do
-        handler(cache)
+        handler(CACHE)
     end
 
-    for _, entity in pairs(cache.setup) do
+    for _, entity in pairs(igi_setup.get_setup_entities(CACHE)) do
         for handler in pairs(synsugar_entity_handlers) do
             handler(entity)
         end
@@ -85,8 +85,9 @@ end
 add_handler(finalize_all_dependencies)
 
 function unfold_inline_location(CACHE)
+    local setup = igi_setup.get_setup_entities(CACHE)
     local new_locations = {}
-    for _, entity in ipairs(CACHE.setup) do
+    for _, entity in ipairs(setup) do
         if entity.entity_type ~= "location" and
                 entity.to_create ~= false and
                 entity.where and
@@ -102,7 +103,7 @@ function unfold_inline_location(CACHE)
     end
 
     for _, loc in ipairs(new_locations) do
-        CACHE.setup[#CACHE.setup+1] = loc
+        setup[#setup+1] = loc
         CACHE.group_counter.location = CACHE.group_counter.location + 1
     end
 end
@@ -110,7 +111,7 @@ add_handler(unfold_inline_location)
 
 function set_order(CACHE)
     local counter = 1
-    for _, entity in ipairs(CACHE.setup) do
+    for _, entity in ipairs(igi_setup.get_setup_entities(CACHE)) do
         if not entity.order then
             entity.order = counter
             counter = counter + 1
@@ -132,7 +133,7 @@ end
 
 function unfold_rewards(CACHE)
     unfold_rewards_of_tbl(CACHE)
-    for k, subtask in pairs(CACHE.setup) do
+    for k, subtask in pairs(igi_setup.get_setup_entities(CACHE)) do
         unfold_rewards_of_tbl(subtask)
     end
 end

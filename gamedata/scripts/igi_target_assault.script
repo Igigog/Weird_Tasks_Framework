@@ -85,7 +85,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	if string.find(subtask_key, location_key) then return end
 	subtask_data.target = nil
 	if subtask_data.where_link then
-		CACHE.target[subtask_data.where_link].target = "assault"
+		igi_linker.get_entity_from_link(subtask_data.where_link).target = "assault"
 		return
 	end
 
@@ -96,10 +96,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 		order = subtask_data.order,
 		status = igi_subtask.TASK_STATUSES.RUNNING,
 	}
-	CACHE.group_counter[location_key] = CACHE.group_counter[location_key] + 1
-	local link = igi_linker.make_link(location_key, CACHE.group_counter.location, 1)
-
-	CACHE.target[link] = smart_entity
+	igi_target.add_entity(CACHE, smart_entity)
 end
 
 local function add_target_squads(subtask_data)

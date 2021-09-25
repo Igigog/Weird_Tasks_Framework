@@ -2,6 +2,14 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
+function get_setup_entities(CACHE)
+	return CACHE.setup
+end
+
+function remove_setup_entities(CACHE)
+	CACHE.setup = nil
+end
+
 local function add_predefined_values(group_data, entity_preset)
 	for k,v in pairs(entity_preset) do
 		group_data[k] = group_data[k] or entity_preset[k]

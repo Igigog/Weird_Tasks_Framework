@@ -92,7 +92,7 @@ function Dependency:to_repr()
 end
 
 function get_entity_from_link(link, CACHE)
-	return CACHE.target[link]
+	return igi_target.get_entities(CACHE)[link]
 end
 
 function assign_group_id(entities)

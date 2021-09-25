@@ -79,7 +79,6 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 
 	TASK_SETUP[task_id] = igi_setup.setup_quest(task_id)
 	trace_dbg("setup", TASK_SETUP[task_id])
-	TASK_SETUP.task_id = task_id
 	return TASK_SETUP[task_id] and true or false
 end
 
@@ -91,28 +90,34 @@ xr_effects.igi_task_generic_setup = function(actor,npc,p)
 	--Setup
 	local CACHE = get_setup_cache(task_id)
 	--Give message
-	local description = igi_description.get_postpone_intel(task_id, CACHE.description)
+	local description = igi_description.get_postpone_intel(CACHE)
 	--Print the message
 	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0, igi_description.postpone_function, description)
 end
 --< Status >--------------------------------------------------
+local function initialise_CACHE(CACHE, task_giver_id)
+	CACHE.task_giver_id = task_giver_id
+
+	igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
+	trace_dbg("before target creation", CACHE)
+
+	igi_target.create_target(CACHE)
+	igi_setup.remove_setup_entities(CACHE)	-- you don't need setup after object creation
+	igi_subtask.setup_subtasks(CACHE)
+	igi_activities.sort_online_activities(CACHE)
+	igi_rewards.initialise_rewards(CACHE)
+
+	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
+	trace_dbg("after target creation", CACHE)
+end
+
 task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if not (db.actor and tsk) then return end
 	local CACHE = get_cache(task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
-	if not (CACHE["target"]) then
-		CACHE.task_giver_id = tsk.task_giver_id
-		igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
-		trace_dbg("before target creation", CACHE)
-		CACHE.target = igi_target.create_target(CACHE.setup, CACHE.task_id)
-		igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
-		CACHE.setup = nil	-- you don't need setup after object creation
-		CACHE.subtasks = igi_subtask.setup_subtask(CACHE.target)
-		CACHE.online_activities = igi_activities.sort_online_activities(CACHE.target)
-		igi_rewards.initialise_rewards(CACHE)
-		igi_callbacks.invoke_callbacks("on_first_run", CACHE)
-		trace_dbg("after target creation", CACHE)
+	if not igi_target.get_entities(CACHE) then
+		initialise_CACHE(CACHE, tsk.task_giver_id)
 	end
 
 	-- Timer for less pressure (totally stolen from tasks_assault.script)
@@ -132,7 +137,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	local tasks_done = #igi_subtask.get_running_subtasks(CACHE) == 0
 
 	local no_ready_subtasks = #igi_subtask.get_ready_to_finish_subtasks(CACHE) == 0
-	local no_money_reward = CACHE.reward and CACHE.reward.money == 0
+	local no_money_reward = igi_rewards.has_no_money_reward(CACHE)
 	local skip_return = no_ready_subtasks and no_money_reward
 
 	if tasks_done and skip_return then return "complete" end
@@ -140,18 +145,15 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	tsk.stage = tasks_done and 1 or 0
 
 	---------------------------<TARGET>----------------------
-	if tsk.stage == 1 then
-		CACHE.current_target_id = CACHE.task_giver_id
-	else
-		CACHE.current_target_id = igi_subtask.quest_target(CACHE.subtasks, CACHE)
-	end
+	local is_last_stage = tsk.stage == 1
+	igi_subtask.set_current_map_target(CACHE, is_last_stage)
 end
 --< Target >--------------------------------------------------
 task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 	--This function point to a task target in PDA
 	local CACHE = get_cache(task_id)
 	if not CACHE then return end
-	local target_id = CACHE.current_target_id
+	local target_id = igi_subtask.get_current_target_id(CACHE)
 
 	-- trace target in debug mode
 	if igi_mcm.get_options_value("debug") then
@@ -176,7 +178,7 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 	end
 
 	local text = igi_description.get_task_text(task_id, field)
-	local desc = field ~= "title" and ("\\n "..CACHE.description) or ""
+	local desc = field ~= "title" and ("\\n "..igi_description.get_description(CACHE)) or ""
 
 	return "[WTF] "..text..desc
 end
@@ -196,7 +198,7 @@ xr_effects.igi_task_generic_finish = function(actor,npc,p)
 	igi_callbacks.invoke_callbacks("on_complete", CACHE)
 	igi_subtask.change_subtasks_status(CACHE, TASK_STATUSES.READY_TO_FINISH, CACHE.status)
 	--Release
-	igi_helper.release_targets_in_world(CACHE.target)	-- Needed? Works? Idk
+	igi_helper.release_targets_in_world(igi_target.get_entities(CACHE))	-- Needed? Works? Idk
 	igi_map_marks.unmark_all(CACHE)
 
 	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end

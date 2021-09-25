@@ -15,7 +15,7 @@ end
 function get_status(entity)
 	local se_obj = igi_helper.alife_obj(entity.id)
 	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
-	if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
+	if ready_to_finish(se_obj) then return TASK_STATUSES.READY_TO_FINISH end
 	return TASK_STATUSES.RUNNING
 end
 

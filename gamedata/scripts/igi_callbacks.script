@@ -36,7 +36,7 @@ function remove_callback(name, func)
 end
 
 local function send_target_callbacks(callback_name, CACHE, ...)
-	local entity_table = CACHE.target or CACHE.setup
+	local entity_table = igi_target.get_entities(CACHE) or igi_setup.get_setup_entities(CACHE)
 	local target_set = {}
 	
 	for k, entity in pairs(entity_table) do
@@ -63,7 +63,7 @@ end
 
 
 local function send_custom_callbacks(callback_name, CACHE, ...)
-	local entity_table = CACHE.target or CACHE.setup
+	local entity_table = igi_target.get_entities(CACHE) or igi_setup.get_setup_entities(CACHE)
 	for callback in pairs(callbacks[callback_name]) do
 		callback(CACHE, entity_table, ...)
 	end

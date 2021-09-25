@@ -282,7 +282,7 @@ function is_in_actor_squad(id)
 end
 
 function do_for_every_target(CACHE, target_name, f, ...)
-	for k, v in pairs(CACHE.target) do
+	for k, v in pairs(igi_target.get_entities(CACHE)) do
 		if v.target == target_name then
 			if ... then
 				f(..., v, CACHE, k)

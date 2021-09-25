@@ -82,8 +82,8 @@ function TaskDescription._setup_description(self)
 	return content
 end
 
-function TaskDescription.get_description(self, cache)
-	self:_link(cache.setup)
+function TaskDescription.get_description(self, CACHE)
+	self:_link(igi_setup.get_setup_entities(CACHE))
 	self:_delete_duplicates()
 	self:_delete_empty()
 
@@ -124,6 +124,10 @@ end
 
 ------------------------------------------------------------
 
+function get_description(CACHE)
+	return CACHE.description
+end
+
 function get_task_text(task_id, field)
 	if not task_id then callstack() end
 	-- returns exclusive task text if exist; basic otherwise
@@ -144,12 +148,13 @@ function get_task_text(task_id, field)
 	return text
 end
 
-function get_postpone_intel(task_id, desc)
+function get_postpone_intel(CACHE)
+	local task_id = CACHE.task_id
 	local icon = task_manager.task_ini:r_string_ex(task_id, "icon")
 
 	local postpone_intel = {
 		caption = "[WTF] "..get_task_text(task_id, "title"),
-		text = desc,
+		text = get_description(CACHE),
 		icon = icon or "ui_iconsTotal_mutant"
 	}
 	return postpone_intel
