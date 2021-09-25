@@ -25,6 +25,9 @@
 	<string id="ui_mcm_igi_tasks_Options_debug">
 		<text>Режим дебага (Может вызывать падение фпс)</text>
 	</string>
+	<string id="ui_mcm_igi_tasks_Options_reset_all">
+		<text>Сбросить все настройки групп заданий</text>
+	</string>
 
 	<string id="ui_mcm_igi_tasks_disable_task">
 		<text>Выключить</text>

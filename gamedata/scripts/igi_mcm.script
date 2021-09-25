@@ -99,6 +99,13 @@ local function build_option_entries()
 			def = get_default_option(id)
 		}
 	end
+	entries[#entries+1] = {
+		id = "reset_all",
+		type = "check",
+		val = 1,
+		curr = {function () return false end},
+		functor = {igi_taskdata.reset_all_custom_tables}
+	}
 	return entries
 end
 
