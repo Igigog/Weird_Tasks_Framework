@@ -37,7 +37,7 @@ function quest_target(obj_data)
 	return -1
 end
 
-function setup_item(item_info, factions)
+function setup_item(item_info)
 	local sec_name = item_info.section_name
 
 	trace_assert(ini_sys:section_exist(sec_name or "nil"))

@@ -2,8 +2,8 @@ TARGET_NAME = "visit"
 PATTERN = "basic"
 
 local function distance(position_1, position_2)
-	local x = math.abs(position_1.x - position_2.x)
-    local z = math.abs(position_1.z - position_2.z)
+	local x = position_1.x - position_2.x
+    local z = position_1.z - position_2.z
 	return x*x + z*z
 end
 

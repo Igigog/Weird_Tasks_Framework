@@ -17,10 +17,10 @@ local function add_predefined_values(group_data, entity_preset)
 end
 
 ------------------------------------------------
-local function setup_group(entity, factions)
+local function setup_group(entity)
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
 	local setup_func = target_tbl["setup_"..entity.entity_type]
-	local group_data, desc = setup_func(entity, factions)
+	local group_data, desc = setup_func(entity)
 	if not group_data then return end
 
 	add_predefined_values(group_data, entity)
@@ -37,7 +37,7 @@ local function setup_entities(CACHE, description)
 	
 	for _, group_preset in pairs(task_data) do
 		trace_dbg('setup group '..tostring(_), group_preset)
-		local group_data, desc = setup_group(group_preset, CACHE.factions)
+		local group_data, desc = setup_group(group_preset)
 		trace_dbg('group_data, description', group_data, desc)
 		if not group_data then return nil end
 

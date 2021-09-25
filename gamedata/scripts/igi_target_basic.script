@@ -6,7 +6,7 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local ini_tables = igi_db.ini_tables
 
-local function create_squad_data(squad_info, factions)
+local function create_squad_data(squad_info)
 	-- important: location, name, faction, description, target, amount
 
 	local section = trace_assert(squad_info.section_name, "Section does not exist")
@@ -20,7 +20,7 @@ local function create_squad_data(squad_info, factions)
 	return squad_data, description
 end
 
-local function fetch_squad_data(squad_info, factions)
+local function fetch_squad_data(squad_info)
 	-- important: ids, predefined name, description, target
 	local finder = igi_finder.get_finder()
 	local enemy_factions
@@ -65,7 +65,7 @@ local function fetch_item_description(objects, item_type)
 	return igi_models.create_DescriptionData(factions, targets, locations)
 end
 
-local function find_objects(object_data, amount)
+local function find_objects(object_data)
 	local finder = igi_finder.get_finder()
 	objects = finder:get_objects_by_args(
 		object_data.item_list,
@@ -229,12 +229,12 @@ function setup_location(loc_info)
 	return loc_info
 end
 
-function setup_squad(squad_info, factions)
+function setup_squad(squad_info)
 	local squad_data, description
 	if squad_info.to_create then
-		squad_data, description = create_squad_data(squad_info, factions)
+		squad_data, description = create_squad_data(squad_info)
 	else
-		squad_data, description = fetch_squad_data(squad_info, factions)
+		squad_data, description = fetch_squad_data(squad_info)
 		if not squad_data then return end
 	end
 
@@ -274,13 +274,13 @@ function setup_smart(smart_info)
 	return group_data
 end
 
-function setup_item(item_info, factions)
+function setup_item(item_info)
 	local item_data, description
 
 	if item_info.to_create then
-		item_data, description = create_item_data(item_info, factions)
+		item_data, description = create_item_data(item_info)
 	else
-		item_data, description = fetch_item_data(item_info, factions)
+		item_data, description = fetch_item_data(item_info)
 		if not item_data then return end
 	end
 

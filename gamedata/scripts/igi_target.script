@@ -7,7 +7,7 @@ function get_entities(CACHE)
 	return CACHE.target
 end
 
-function create_target_entry(se_obj, group_data)
+function create_target_entry(se_obj)
 	if not se_obj then return end
 	local entry = {
 		id = se_obj.id,
