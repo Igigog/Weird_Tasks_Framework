@@ -84,6 +84,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 	local location_key = igi_models.LOCATION
 	if string.find(subtask_key, location_key) then return end
 	subtask_data.target = nil
+
 	if subtask_data.where_link then
 		igi_linker.get_entity_from_link(subtask_data.where_link).target = "assault"
 		return

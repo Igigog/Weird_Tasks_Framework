@@ -14,8 +14,17 @@ function get_subtasks(CACHE)
 	return CACHE.subtasks
 end
 
-function get_subtasks_of_status(status, CACHE)
+function get_subtask_links_of_status(status, CACHE)
 	return get_subtasks(CACHE)[status].payloads
+end
+
+function get_subtasks_of_status(status, CACHE)
+	local links = get_subtask_links_of_status(status, CACHE)
+	local subtasks = {}
+	for i, link in ipairs(links) do
+		subtasks[i] = igi_linker.get_entity_from_link(link, CACHE)
+	end
+	return subtasks
 end
 
 function get_completed_subtasks(CACHE)
@@ -63,8 +72,7 @@ local function update_subtasks_of_status(status, CACHE, new_statuses)
 end
 
 function is_task_failed(CACHE)
-	for _, link in ipairs(get_failed_subtasks(CACHE)) do
-		local subtask = igi_linker.get_entity_from_link(link, CACHE)
+	for _, subtask in ipairs(get_failed_subtasks(CACHE)) do
 		if not subtask.optional then return true end
 	end
 	return false
@@ -87,7 +95,7 @@ function update_subtask_status_by_link(link, new_status, CACHE)
 end
 
 function change_subtasks_status(CACHE, old_status, new_status)
-	local links = get_subtasks_of_status(old_status, CACHE)
+	local links = get_subtask_links_of_status(old_status, CACHE)
 	for _, link in pairs(links) do
 		update_subtask_status_by_link(link, new_status, CACHE)
 	end
@@ -107,11 +115,9 @@ end
 
 ---------------------------------------------------
 function quest_target(CACHE)
-	local links = get_running_subtasks(CACHE)
-	for _, link in ipairs(links) do
-		local subtask_data = igi_linker.get_entity_from_link(link, CACHE)
-		local target_tbl = igi_taskdata.get_target_table(subtask_data.target)
-		local target = target_tbl.quest_target(subtask_data, CACHE)
+	for _, subtask in ipairs(get_running_subtasks(CACHE)) do
+		local target_tbl = igi_taskdata.get_target_table(subtask.target)
+		local target = target_tbl.quest_target(subtask, CACHE)
 		if target then return target end
 	end
 end

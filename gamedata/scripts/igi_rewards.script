@@ -132,22 +132,21 @@ local function add_subtask_reward(dest, subtask)
 	add_goodwill_reward(dest, reward_tbl)
 end
 
-local function add_rewards_from_subtasks(dest, subtasks, status, CACHE)
-	for _, subtask_link in pairs(subtasks) do
-		local subtask = igi_linker.get_entity_from_link(subtask_link, CACHE)
+local function add_rewards_from_subtasks(dest, subtasks, CACHE)
+	for _, subtask in pairs(subtasks) do
 		add_subtask_reward(dest, subtask)
 	end
 end
 
 local function collect_rewards_from_subtasks(dest, CACHE)
 	local status = CACHE.status
-	local completed = igi_subtask.get_completed_subtasks(CACHE)
-	local failed = igi_subtask.get_failed_subtasks(CACHE)
+	local completed_subtasks = igi_subtask.get_completed_subtasks(CACHE)
+	local failed_subtasks = igi_subtask.get_failed_subtasks(CACHE)
 
 	-- Always add failed: if task is successful then these ones are failed optionals
-	add_rewards_from_subtasks(dest, failed, status, CACHE)
+	add_rewards_from_subtasks(dest, failed_subtasks, CACHE)
 	if status == igi_subtask.TASK_STATUSES.COMPLETED then
-		add_rewards_from_subtasks(dest, completed, status, CACHE)
+		add_rewards_from_subtasks(dest, completed_subtasks, CACHE)
 	end
 	trace_dbg("Rewards from subtasks: ", dest)
 end
