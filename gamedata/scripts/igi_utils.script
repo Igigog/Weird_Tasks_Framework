@@ -313,3 +313,17 @@ function heap_remove_element(heap, payload)
 		end
 	end
 end
+
+function combine_tables(tbl1, tbl2)
+	for k in pairs(tbl2) do
+		igi_helper.trace_assert(
+			type(tbl1[k]) == type(tbl2[k]) or not tbl1[k],
+			"combine tables: can't combine", tbl1, tbl2)
+
+		if type(tbl1[k]) == "table" then
+			combine_tables(tbl1[k], tbl2[k])
+		else
+			tbl1[k] = tbl2[k]
+		end
+	end
+end

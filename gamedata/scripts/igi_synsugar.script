@@ -120,20 +120,51 @@ function set_order(CACHE)
 end
 add_handler(set_order)
 
-local function unfold_rewards_of_tbl(tbl)
+local function collect_immutable_rewards(tbl)
     local immutable = {}
+
+    if tbl.rewards and not tbl.rewards_completed then
+        tbl.rewards_completed = tbl.rewards
+        tbl.rewards = nil
+    end
+
     for _, status in pairs(igi_subtask.TASK_STATUSES) do
         if tbl["rewards_"..status] then
             immutable[status] = tbl["rewards_"..status]
             tbl["rewards_"..status] = nil
         end
     end
-    tbl.immutable_rewards = immutable
+    return immutable
+end
+
+local function unfold_goodwill(rewards_tbl)
+    for _, rewards in pairs(rewards_tbl) do
+        if type(rewards.goodwill) == "number" then
+            rewards.goodwill = {
+                value = rewards.goodwill
+            }
+        end
+    end
+end
+
+local function unfold_rewards_of_tbl(tbl)
+    local immutable = collect_immutable_rewards(tbl)
+    if not next(immutable) then return end
+
+    tbl.immutable_rewards = tbl.immutable_rewards or {}
+    igi_utils.combine_tables(tbl.immutable_rewards, immutable)
+    unfold_goodwill(tbl.immutable_rewards)
 end
 
 function unfold_rewards(CACHE)
+    if CACHE.rewards then
+        CACHE.rewards_completed = CACHE.rewards
+        CACHE.rewards = nil
+    end
+
     unfold_rewards_of_tbl(CACHE)
-    for k, subtask in pairs(igi_setup.get_setup_entities(CACHE)) do
+    for _, subtask in pairs(igi_setup.get_setup_entities(CACHE)) do
         unfold_rewards_of_tbl(subtask)
     end
 end
+add_handler(unfold_rewards)
