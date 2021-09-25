@@ -134,11 +134,11 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	if igi_subtask.is_task_failed(CACHE) then return "fail" end
 
 	---------------------------<STAGE>----------------------
-	local tasks_done = #igi_subtask.get_running_subtasks(CACHE) == 0
+	local tasks_done = igi_subtask.is_task_completed(CACHE)
 
-	local no_ready_subtasks = #igi_subtask.get_ready_to_finish_subtasks(CACHE) == 0
+	local must_return = igi_subtask.must_return_to_task_giver(CACHE)
 	local no_money_reward = igi_rewards.has_no_money_reward(CACHE)
-	local skip_return = no_ready_subtasks and no_money_reward
+	local skip_return = no_money_reward and not must_return
 
 	if tasks_done and skip_return then return "complete" end
 

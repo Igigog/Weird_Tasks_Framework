@@ -78,6 +78,22 @@ function is_task_failed(CACHE)
 	return false
 end
 
+local function has_no_running_subtasks(CACHE)
+	return #get_subtask_links_of_status(TASK_STATUSES.RUNNING, CACHE) == 0
+end
+
+local function has_ready_to_finish_subtasks(CACHE)
+	return #get_subtask_links_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE) == 0
+end
+
+function is_task_completed(CACHE)
+	return has_no_running_subtasks(CACHE)
+end
+
+function must_return_to_task_giver(CACHE)
+	return has_ready_to_finish_subtasks(CACHE)
+end
+
 function update_subtask_status_by_link(link, new_status, CACHE)
 	local subtasks = get_subtasks(CACHE)
 	local subtask = igi_linker.get_entity_from_link(link, CACHE)
