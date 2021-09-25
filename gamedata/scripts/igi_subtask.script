@@ -54,7 +54,7 @@ local function update_subtasks_of_status(status, CACHE, new_statuses)
 		local link = subtasks_heap.payloads[i]
 		local new_status = get_status_by_link(link, CACHE)
 
-		if new_status ~= status then
+		if new_status and new_status ~= status then
 			new_statuses[new_status] = new_statuses[new_status] or {}
 			new_statuses[new_status][#new_statuses[new_status]+1] = link
 			igi_utils.heap_remove_by_index(subtasks_heap, i)
