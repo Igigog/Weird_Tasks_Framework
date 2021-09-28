@@ -19,10 +19,10 @@ function get_status(subtask)
     return igi_subtask.TASK_STATUSES.RUNNING
 end
 
-function get_success_money(entity)
+function get_completed_money(entity)
 	return 300
 end
 
-function get_success_goodwill(entity)
+function get_completed_goodwill(entity)
 	return 10
 end
