@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "3"
+TASKS_VERSION = "3h1"
 TASK_SETUP = {}
 TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 
