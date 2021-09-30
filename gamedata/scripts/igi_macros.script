@@ -63,6 +63,14 @@ function Macro.ChooseOne(args)
 	return igi_utils.random_table_element(args)
 end
 
+local constant_functions = {
+	actor_level = igi_helper.get_player_level
+}
+function Macro.Constant(args)
+	args = parse_args(args)
+	return constant_functions[args[1]]()
+end
+
 local function get_faction(keyword)
 	if keyword == "actor" then
 		return db.actor:character_community()

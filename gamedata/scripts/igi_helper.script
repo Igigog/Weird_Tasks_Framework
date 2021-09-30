@@ -125,6 +125,10 @@ function get_object_level(obj, sim, gg)
 	return alife():level_name(igi_helper.get_object_level_id(obj))
 end
 
+function get_player_level()
+	return level.name()
+end
+
 function change_goodwill(faction, task_id, task_successful)
 	if not faction then return nil, "gt_goodwill: no faction given" end
 	local task_info = igi_taskdata.get_task_data(task_id)
