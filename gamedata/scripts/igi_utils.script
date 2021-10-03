@@ -218,6 +218,7 @@ function heap_swap(heap, index1, index2)
 end
 
 function heap_compare(heap, index1, index2)
+	trace_assert(heap.priorities[index1] and heap.priorities[index2], "No priorities?", heap)
 	return heap.priorities[index1] > heap.priorities[index2]
 end
 
@@ -257,6 +258,7 @@ function heap_sift_down(heap, index)
 end
 
 function heap_push(heap, payload, priority)
+	trace_assert(priority and payload, "No priority or payload")
 	heap.priorities[#heap.priorities+1] = priority
 	heap.payloads[#heap.payloads+1] = payload
 	heap_sift_up(heap, #heap.priorities)

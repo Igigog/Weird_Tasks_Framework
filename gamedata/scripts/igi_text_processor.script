@@ -7,6 +7,10 @@ local smatch = string.match
 local sgmatch = string.gmatch
 local pairs, type = pairs, type
 
+function has_link_or_macro(str)
+	return igi_linker.has_dependency(str) or igi_macros.has_macro(str)
+end
+
 function convert_strings_type(tbl)
 	for k,v in pairs(tbl) do
 		if type(v) == "string" then
@@ -39,10 +43,10 @@ end
 local function find_resolve_self_references(entity)
 	local tables_pool = {entity}
     local changes_made = false
-	while #tables_pool > 0 do	
+	while #tables_pool > 0 do
 		local tbl = tables_pool[#tables_pool]
 		tables_pool[#tables_pool] = nil
-		
+
 		for k,v in pairs(tbl) do
 			if type(v) == 'string' and not sfind(k, "link") then
 				local new_str = v
@@ -77,20 +81,21 @@ local function collect_dependencies(str, this_entity)
 		macros[#macros+1] = macro
 		str = str:gsub(escape_pattern(macro), "c"..tostring(#macros))
 		for k,v in pairs(collect_dependencies(macro, this_entity)) do
-			deps[#deps+1] = v 
+			deps[#deps+1] = v
 		end
 	end
-	
+
 	for dep in str:gmatch("%b$$") do
 		for macro in dep:gmatch("c(%d)") do
 			dep = dep:gsub("c"..macro, macros[tonumber(macro)])
 		end
 		deps[#deps+1] = igi_linker.Dependency(dep, this_entity)
 	end
-	
+
 	return deps
 end
 
+-- TODO: rework, too complicated
 local function resolve_free_dependencies(entity, entities)
 	local tbl_pool = {entity}
 	local has_unresolved = false
@@ -121,11 +126,11 @@ local function resolve_free_dependencies(entity, entities)
 	return has_unresolved
 end
 
-function link_virtual_variables(entities)
+function resolve_unlinked_macros_and_link_virtual_variables(entities)
 	local has_unresolved
 	repeat
 		has_unresolved = false
-		for k,entity in pairs(entities) do
+		for _, entity in pairs(entities) do
 			resolve_unlinked_macros(entity)
 			has_unresolved = resolve_free_dependencies(entity, entities) or has_unresolved
 		end

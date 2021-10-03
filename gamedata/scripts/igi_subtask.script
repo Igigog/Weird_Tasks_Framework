@@ -161,6 +161,8 @@ end
 
 function setup_subtasks(CACHE)
 	local targets = igi_target.get_entities(CACHE)
+	trace_dbg("Setup subtasks: entities", targets)
+
 	local subtasks = create_subtasks_table()
 	for id, entity in pairs(targets) do
 		if entity.target then

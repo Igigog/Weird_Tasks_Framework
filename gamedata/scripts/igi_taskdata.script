@@ -130,10 +130,16 @@ end
 function get_finalized_task_setup(task_id)
 	local tbl = get_task_data(task_id)
 	local task_setup = dup_table(tbl.setup)
+	local resolve_and_link = igi_text_processor.resolve_unlinked_macros_and_link_virtual_variables
 
-	task_setup = igi_linker.assign_group_id(task_setup)
-	task_setup = igi_text_processor.resolve_unlinked_macros(task_setup)
-	igi_text_processor.link_virtual_variables(task_setup)
+	igi_linker.assign_group_id(task_setup)
+
+	resolve_and_link(task_setup)
+	igi_generate.unfold_generation(task_setup)
+	resolve_and_link(task_setup)	-- once more to link gen ids
+
+	igi_linker.assign_group_id(task_setup)
+
 	return task_setup
 end
 

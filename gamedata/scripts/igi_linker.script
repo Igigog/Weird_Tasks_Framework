@@ -95,16 +95,40 @@ function get_entity_from_link(link, CACHE)
 	return igi_target.get_entities(CACHE)[link]
 end
 
-function assign_group_id(entities)
+function set_missing_group_ids(entities)
 	local counters = {}
-	local grouped_entities = {}
+	local unassigned_keys = {}
 	for k, entity in pairs(entities) do
-		counters[entity.entity_type] = counters[entity.entity_type] and counters[entity.entity_type] + 1 or 1
-		entity.group_id = counters[entity.entity_type]
-
-		grouped_entities[make_entity_link(entity)] = entity
+		if not entity.group_id then
+			unassigned_keys[#unassigned_keys+1] = k
+		else
+			counters[entity.entity_type] = (counters[entity.entity_type] or 0) + 1
+		end
 	end
-	return grouped_entities, counters
+
+	for _, key in pairs(unassigned_keys) do
+		local entity = entities[key]
+		counters[entity.entity_type] = (counters[entity.entity_type] or 0) + 1
+		entity.group_id = counters[entity.entity_type]
+	end
+
+	return unassigned_keys
+end
+
+
+-- TODO: don't rework entity table here
+function assign_group_id(entities)
+	trace_dbg("Before assigning group id", entities)
+	local keys = set_missing_group_ids(entities)
+	for _, entity in pairs(entities) do
+		entities[make_entity_link(entity)] = entity
+	end
+
+	for _, k in pairs(keys) do
+		entities[k] = nil
+	end
+
+	trace_dbg("After assigning group id", entities)
 end
 
 function make_link(typ, group_id, obj_id)

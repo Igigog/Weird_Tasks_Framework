@@ -64,7 +64,8 @@ function Macro.ChooseOne(args)
 end
 
 local constant_functions = {
-	actor_level = igi_helper.get_player_level
+	actor_level = igi_helper.get_player_level,
+	player_level = igi_helper.get_player_level,
 }
 function Macro.Constant(args)
 	args = parse_args(args)

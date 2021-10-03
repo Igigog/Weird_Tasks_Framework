@@ -94,7 +94,7 @@ end
 local function fetch_item_data(item_info)
 	trace_assert(item_info.item_list, "No item list given")
 
-	local objects = find_objects(item_info, item_info.amount)
+	local objects = find_objects(item_info)
 	if not objects then return nil end
 
 	local ids = {}

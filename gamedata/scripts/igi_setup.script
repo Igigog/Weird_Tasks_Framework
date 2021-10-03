@@ -64,7 +64,7 @@ function setup_quest(task_id)
 	local description = igi_description.TaskDescription.new()
 	if not setup_entities(CACHE, description) then return end
 	CACHE.description = description:get_description(CACHE)
-	trace_dbg("end setup "..task_id)
+	trace_dbg("CACHE after setup "..task_id, CACHE)
 	return CACHE
 end
 

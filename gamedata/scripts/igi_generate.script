@@ -1,3 +1,4 @@
+local trace_assert = igi_helper.trace_assert
 
 function find_generate_key(entity)
     for k in pairs(entity) do
@@ -14,11 +15,13 @@ function unfold_one_level(entity)
     local new_entities = {}
     local table_key = key_to_unfold:match("generate:(.*)")
     local list = entity[key_to_unfold]
+    trace_assert(not igi_text_processor.has_link_or_macro(list),
+        "Generation list not resolved before generation", entity)
     entity[key_to_unfold] = nil
 
     local counter = 0
     local counter_id = table_key.."_gen_id"
-    for value in list:gmatch("[^,]") do
+    for value in list:gmatch("[^,]+") do
         counter = counter + 1
         local new_entity = dup_table(entity)
         new_entity[table_key] = value
@@ -58,6 +61,7 @@ function unfold_generation(setup)
     for _, entities in pairs(array_list) do
         for _, entity in pairs(entities) do
             setup[#setup+1] = entity
+            entity.group_id = nil   -- group id will be set once more
         end
     end
 end
