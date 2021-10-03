@@ -17,6 +17,8 @@ end
 -------------------------------------------------
 -- JSON functions
 -------------------------------------------------
+local json = igi_json.get_json()
+
 local function get_game_path()
 	local info = debug.getinfo(1,'S');
 	local script_path = info.source:match[[^@?(.*[\/])[^\/]-$]]
@@ -26,41 +28,49 @@ end
 
 local default_tasks_path = get_game_path().."gamedata\\configs\\igi_tasks\\tasks\\"
 local configured_tasks_path = get_game_path().."igi_tasks\\tasks\\"
-local function read_task_json(task_name, prefix)
-	local task_path = prefix.."\\"..task_name..".json"
 
-	local file = trace_assert_no_crash(io.open(configured_tasks_path..task_path, "rb"))
-	if not file then
-		file = trace_assert_no_crash(io.open(default_tasks_path..task_path, "rb"))
-	end
-
-    if not file then return end
-
-    local content = file:read "*a" -- *a or *all reads the whole file
-	trace_dbg("json content: ", content)
-    file:close()
-    return content
+local function get_task_path(task_name, prefix)
+	return prefix.."\\"..task_name..".json"
 end
 
-local function read_raw_task_json(task_name, prefix)
-	local task_path = prefix.."\\"..task_name..".json"
-	file = trace_assert_no_crash(io.open(default_tasks_path..task_path, "rb"))
+local function get_file_content(path)
+	file = trace_assert_no_crash(io.open(path, "rb"))
 	if not file then return end
-
 	local content = file:read "*a" -- *a or *all reads the whole file
-	trace_dbg("raw task content: ", content)
-    file:close()
-    return content
+	file:close()
+	return content
 end
 
-local json = igi_json.get_json()
+local function get_raw_task_table(task_name, prefix)
+	local task_path = get_task_path(task_name, prefix)
+	local content = get_file_content(default_tasks_path..task_path)
+	if not content then return end
+
+	trace_dbg("raw task content: ", content)
+    return json.decode(content)
+end
+
+function get_task_table_config(task_name, prefix)
+	local task_path = get_task_path(task_name, prefix)
+	local content = get_file_content(configured_tasks_path..task_path)
+	if not content then return end
+
+	trace_dbg("raw task config: ", content)
+    return json.decode(content)
+end
+
 function get_task_table(task_name, prefix)
-	local task_json = trace_assert_no_crash(
-		read_task_json(task_name, prefix),
+	local task_table = trace_assert(
+		get_raw_task_table(task_name, prefix),
 		"task_json: no json file for task "..prefix.."_"..task_name
 	)
-	if not task_json then return end
-	return json.decode(task_json)
+
+	local task_config = get_task_table_config(task_name, prefix)
+	if task_config then
+		igi_utils.combine_tables(task_table, task_config)
+	end
+
+	return task_table
 end
 
 function create_path(prefix)
@@ -76,7 +86,7 @@ local function save_file(path, content)
 	file:close()
 end
 
-local function save_task_table(task_name, prefix, table)
+local function save_task_config(task_name, prefix, table)
 	local task_path = prefix.."\\"..task_name..".json"
 	local path = configured_tasks_path..task_path
 	local content = json.encode(table)
@@ -84,10 +94,17 @@ local function save_task_table(task_name, prefix, table)
 	save_file(path, content)
 end
 
-function update_task_table_value(task_name, prefix, key, value)
-	local new_tbl = dup_table(get_task_table(task_name, prefix))
-	new_tbl[key] = value
-	save_task_table(task_name, prefix, new_tbl)
+function update_task_config_value(task_name, prefix, path, value)
+	local config = get_task_table_config(task_name, prefix)
+
+	local cur_tbl = config
+	for i=1,#path-1 do
+		cur_tbl[path[i]] = cur_tbl[path[i]] or {}
+		cur_tbl = cur_tbl[path[i]]
+	end
+
+	cur_tbl[path[#path]] = value
+	save_task_config(task_name, prefix, config)
 	igi_utils.MemoizeCache.reset("task_data")
 end
 
@@ -100,8 +117,7 @@ function reset_all_custom_tables()
 
 		for i=0,files:Size()-1 do
 			local task_name = files:GetAt(i)
-			local raw_task = json.decode(read_raw_task_json(task_name, prefix))
-			save_task_table(task_name, prefix, raw_task)
+			save_task_config(task_name, prefix, {})
 		end
 	end
 end

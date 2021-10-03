@@ -22,13 +22,19 @@ local function get_mcm_option(option_id)
 end
 get_options_value = get_mcm_option
 
-local function task_table_value(task_name, prefix, key)
-	return igi_taskdata.get_task_table(task_name, prefix)[key]
+local function task_table_value(task_name, prefix, path)
+	local tbl = igi_taskdata.get_task_table(task_name, prefix)
+
+	local cur_tbl = tbl
+	for i=1,#path-1 do
+		cur_tbl = cur_tbl[path[i]]
+	end
+
+	return cur_tbl[path[#path]]
 end
 
-local function toggle_boolean(task_name, prefix, key)
-	local val = not task_table_value(task_name, prefix, key)
-	igi_taskdata.update_task_table_value(task_name, prefix, key, val)
+local function set_config_value(task_name, prefix, path, value)
+	igi_taskdata.update_task_config_value(task_name, prefix, path, value)
 end
 
 function reset_all_tasks(task, prefix)
@@ -44,13 +50,14 @@ local function build_task_entry(task, prefix, path)
 	local entry = {
 		id=task, sh=true, text="igi_task_text_"..prefix.."_"..task.."_title", gr={
 			{id = "check_disabled", type = "check", hint="igi_tasks_disable_task", val = 1, 
-			curr = {task_table_value, task, prefix, "disabled"},
-			functor = {toggle_boolean, task, prefix, "disabled"}},
-			
+			curr = {task_table_value, task, prefix, {"disabled"}},
+			functor = {set_config_value, task, prefix, {"disabled"}}
+			},
+
 			{id = "cancel_all", type = "check", hint = "igi_tasks_cancel_all", val=1,
 			curr = {function () return false end},
 			functor = {reset_all_tasks, task, prefix}
-		}
+			}
 		}
 	}
 	return entry
