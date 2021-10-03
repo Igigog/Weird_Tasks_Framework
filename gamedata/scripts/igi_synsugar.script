@@ -120,6 +120,11 @@ function set_order(CACHE)
 end
 add_handler(set_order)
 
+function not_disabled_by_default(CACHE)
+    if CACHE.disabled == nil then CACHE.disabled = false end
+end
+add_handler(not_disabled_by_default)
+
 local function collect_immutable_rewards(tbl)
     local immutable = {}
 
