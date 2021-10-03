@@ -133,12 +133,12 @@ function get_finalized_task_setup(task_id)
 	local resolve_and_link = igi_text_processor.resolve_unlinked_macros_and_link_virtual_variables
 
 	igi_linker.assign_group_id(task_setup)
-
 	resolve_and_link(task_setup)
+
 	igi_generate.unfold_generation(task_setup)
-	resolve_and_link(task_setup)	-- once more to link gen ids
 
 	igi_linker.assign_group_id(task_setup)
+	resolve_and_link(task_setup)	-- once more to link gen ids
 
 	return task_setup
 end
