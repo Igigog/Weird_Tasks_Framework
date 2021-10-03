@@ -55,3 +55,52 @@ Statuses are defined in igi_subtask.script. Every task cycle status functors for
 Rewards may be static or dynamic. Dynamic rewards are defined by *target*, static are written in "predefined_rewards" entity table. You may also set static reward for the whole task.
 
 On task fail rewards are defined by *failed* subtasks. On success by both *failed* and *completed* subtasks because *failed* must be all optional.
+
+## Dynamic groups
+Whenever static number of groups is not enough, you can generate group entities dynamically with generate pattern. It unfolds lists (comma-separated strings) into separate entity per list value.
+
+For example, we want to dynamically create location entities by random path from some table. Group entity:
+```lua
+{
+    entity_type = "location",
+    path = "&TableValueRandom(paths_table)&"
+}
+```
+Obviously, it won't work since *where* field is not defined and *where* field can only direct to one location. We can generate locations like this:
+```lua
+{
+    entity_type = "location",
+    path = "&TableValueRandom(paths_table)&",
+    ["generate:where"] = "$this.path$"
+}
+```
+Let our path be `"aaa,bbb,ccc"`. Then this construct will unfold into:
+```lua
+{
+    entity_type = "location",
+    path = "&TableValueRandom(paths_table)&",
+    where_gen_id = 1,
+    where = "aaa"
+}
+{
+    entity_type = "location",
+    path = "&TableValueRandom(paths_table)&",
+    where_gen_id = 2,
+    where = "bbb"
+}
+{
+    entity_type = "location",
+    path = "&TableValueRandom(paths_table)&",
+    where_gen_id = 3,
+    where = "ccc"
+}
+```
+Note that after desugaring every generated entity will have the same *order*. You can reference *gen_id* field to set it customly:
+```lua
+{
+    entity_type = "location",
+    path = "&TableValueRandom(paths_table)&",
+    ["generate:where"] = "$this.path$",
+    order = "$this.where_gen_id$"
+}
+```
