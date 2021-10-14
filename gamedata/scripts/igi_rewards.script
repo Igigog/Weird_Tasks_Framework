@@ -93,7 +93,6 @@ end
 
 local function add_goodwill_reward(dest, reward_tbl)
 	if not reward_tbl.goodwill then return end
-	normalize_goodwill_table(reward_tbl.goodwill)
 	for faction, value in pairs(reward_tbl.goodwill) do
 		if not dest.goodwill[faction] then
 			dest.goodwill[faction] = 0
@@ -124,10 +123,58 @@ local function get_subtask_reward_tbl(subtask)
 	return reward_tbl
 end
 
+function add_additional_money(reward_tbl)
+	reward_tbl.money = reward_tbl.money + reward_tbl.add_money
+end
+
+function add_additional_goodwill(reward_tbl)
+	if not reward_tbl.goodwill then return end
+	local to_add = reward_tbl.add_goodwill/size_table(reward_tbl.goodwill)
+	for k, val in pairs(reward_tbl.goodwill) do
+		reward_tbl.goodwill[k] = val + to_add
+	end
+end
+
+function multiply_money(reward_tbl)
+	reward_tbl.money = reward_tbl.money*reward_tbl.mult_money
+end
+
+function multiply_goodwill(reward_tbl)
+	if not reward_tbl.goodwill then return end
+	for k, val in pairs(reward_tbl.goodwill) do
+		reward_tbl.goodwill[k] = val*reward_tbl.mult_goodwill
+	end
+end
+
+multiply_modifiers = {
+	mult_money = multiply_money,
+	mult_goodwill = multiply_goodwill,
+}
+
+const_modifiers = {
+	add_money = add_additional_money,
+	add_goodwill = add_additional_goodwill,
+}
+
+local function apply_modifiers(reward_tbl)
+	for k, functor in pairs(multiply_modifiers) do
+		if reward_tbl[k] then functor(reward_tbl) end
+	end
+
+	for k,functor in pairs(const_modifiers) do
+		if reward_tbl[k] then functor(reward_tbl) end
+	end
+end
+
 local function add_subtask_reward(dest, subtask)
 	local reward_tbl = get_subtask_reward_tbl(subtask)
 	if not reward_tbl then return end
 
+	if reward_tbl.goodwill then
+		normalize_goodwill_table(reward_tbl.goodwill)
+	end
+
+	apply_modifiers(reward_tbl)
 	add_money_reward(dest, reward_tbl)
 	add_goodwill_reward(dest, reward_tbl)
 end
