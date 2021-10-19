@@ -1,4 +1,5 @@
 local trace_assert = igi_helper.trace_assert
+local extend_list = igi_utils.extend_list
 
 function on_game_start()
 	assert(ui_mcm, "Weird Tasks Framework: MCM not installed. Fuck you.")
@@ -28,13 +29,27 @@ local function task_table_value(task_name, prefix, path)
 	local cur_tbl = tbl
 	for i=1,#path-1 do
 		cur_tbl = cur_tbl[path[i]]
+		if not cur_tbl then return nil end
 	end
 
 	return cur_tbl[path[#path]]
 end
 
+local function task_table_value_safe(task_name, prefix, path)
+	local val = task_table_value(task_name, prefix, path)
+	if val == nil then return "" end
+	return val
+end
+
 local function set_config_value(task_name, prefix, path, value)
 	igi_taskdata.update_task_config_value(task_name, prefix, path, value)
+end
+
+local function set_config_value_typed(task_name, prefix, path, value)
+	if type(value) == "string" then
+		value = igi_db.parse_values(value)
+	end
+	set_config_value(task_name, prefix, path, value)
 end
 
 function reset_all_tasks(task, prefix)
@@ -46,24 +61,75 @@ function reset_all_tasks(task, prefix)
 	end
 end
 
-local function build_task_entry(task, prefix, path)
-	local entry = {
-		id=task, sh=true, text="igi_task_text_"..prefix.."_"..task.."_title", gr={
-			{id = "check_disabled", type = "check", hint="igi_tasks_disable_task", val = 1, 
+local function create_disable_widgets(task, prefix)
+	return {
+		{id = "check_disabled", type = "check", hint="igi_tasks_disable_task", val = 1, 
 			curr = {task_table_value, task, prefix, {"disabled"}},
 			functor = {set_config_value, task, prefix, {"disabled"}}
-			},
-
-			{id = "cancel_all", type = "check", hint = "igi_tasks_cancel_all", val=1,
-			curr = {function () return false end},
-			functor = {reset_all_tasks, task, prefix}
-			}
 		}
 	}
-	return entry
 end
 
-local function build_tasks_entries(prefix, path)
+local function create_cancel_widgets(task, prefix)
+	return {
+		{id = "cancel_all", type = "check", hint = "igi_tasks_cancel_all", val=1,
+			curr = {function () return false end},
+			functor = {reset_all_tasks, task, prefix}
+		}
+	}
+end
+
+local function create_rewards_modifiers_widgets(task, prefix)
+	return {
+		{id = "add_money", type = "input", val = 0, hint = "igi_tasks_add_money",
+			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "add_money"}},
+			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "add_money"}}
+		},
+		{id = "add_goodwill", type = "input", val = 0, hint = "igi_tasks_add_goodwill",
+			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "add_goodwill"}},
+			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "add_goodwill"}}
+		},
+		{id = "mult_money", type = "input", val = 0, hint = "igi_tasks_mult_money",
+			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "mult_money"}},
+			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "mult_money"}}
+		},
+		{id = "mult_goodwill", type = "input", val = 0, hint = "igi_tasks_mult_goodwill",
+			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "mult_goodwill"}},
+			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "mult_goodwill"}}
+		}
+	}
+end
+
+local function create_static_rewards_widgets(task, prefix)
+	return {
+		{id = "reward_money", type = "input", val = 0, hint = "igi_tasks_reward_money",
+			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "money"}},
+			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "money"}}
+		},
+		{id = "reward_goodwill", type = "input", val = 0, hint = "igi_tasks_reward_goodwill",
+			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "goodwill", "value"}},
+			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "goodwill", "value"}}
+		},
+	}
+end
+
+local function create_rewards_widgets(task, prefix)
+	local widgets = create_static_rewards_widgets(task, prefix)
+	extend_list(widgets, create_rewards_modifiers_widgets(task, prefix))
+	return widgets
+end
+
+local function build_task_entry(task, prefix)
+	local widgets = {}
+
+	extend_list(widgets, create_disable_widgets(task, prefix))
+	extend_list(widgets, create_cancel_widgets(task, prefix))
+	extend_list(widgets, create_rewards_widgets(task, prefix))
+
+	return {id=task, sh=true, text="igi_task_text_"..prefix.."_"..task.."_title", gr=widgets}
+end
+
+local function build_tasks_entries(prefix)
 	igi_taskdata.create_path(prefix)
 	local entries = {}
 	local files = getFS():file_list_open("$game_config$", 
@@ -71,7 +137,7 @@ local function build_tasks_entries(prefix, path)
 		1+4+8)
 
 	for i=0,files:Size()-1 do
-		entries[#entries+1] = build_task_entry(files:GetAt(i), prefix, path)
+		entries[#entries+1] = build_task_entry(files:GetAt(i), prefix)
 	end
 	return entries
 end
@@ -81,7 +147,7 @@ local function build_task_pack_entry(meta_section, path)
 		id=meta_section.name,
 		text=meta_section.name,
 		sh=false,
-		gr=build_tasks_entries(meta_section.prefix, path..meta_section.name.."/")
+		gr=build_tasks_entries(meta_section.prefix)
 	}
 	return tbl
 end
@@ -94,6 +160,14 @@ local function build_task_packs_entries()
 		entries[#entries+1] = build_task_pack_entry(meta_section, "")
 	end
 	return entries
+end
+
+local function get_basic_reward_widgets()
+	return {
+		{id = "money_reward_coeff", type = "track", val = 2, min = 0, max = 4, step = 0.1, def = 1},
+		{id = "reward_spread_min", type = "track", val = 2, min = 0, max = 4, step = 0.1, def = 0.8},
+		{id = "reward_spread_max", type = "track", val = 2, min = 0, max = 4, step = 0.1, def = 1.1},
+	}
 end
 
 local function build_option_entries()
@@ -113,6 +187,7 @@ local function build_option_entries()
 		curr = {function () return false end},
 		functor = {igi_taskdata.reset_all_custom_tables}
 	}
+	extend_list(entries, get_basic_reward_widgets())
 	return entries
 end
 
@@ -138,7 +213,7 @@ function on_mcm_load()
 					}}
 				}
 			}
-	igi_utils.extend_list(op.gr[1].gr, build_option_entries())
-    igi_utils.extend_list(op.gr, build_task_packs_entries())
+	extend_list(op.gr[1].gr, build_option_entries())
+    extend_list(op.gr, build_task_packs_entries())
 	return op
 end

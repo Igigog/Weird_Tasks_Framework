@@ -13,7 +13,7 @@ local database_folder = "igi_tasks\\"
 
 local trace_assert = igi_helper.trace_assert
 
-local function parse_values(str)
+function parse_values(str)
 	if not str then return nil end
 	local values = {}
 	for value in string.gmatch(str, "([^,]+)") do

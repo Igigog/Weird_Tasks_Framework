@@ -20,15 +20,19 @@ function add_entity_handler(handler)
     synsugar_entity_handlers[handler] = true
 end
 
+function desugarize_entity(entity)
+    for handler in pairs(synsugar_entity_handlers) do
+        handler(entity)
+    end
+end
+
 function desugarize(CACHE)
     for handler in pairs(synsugar_handlers) do
         handler(CACHE)
     end
 
     for _, entity in pairs(igi_setup.get_setup_entities(CACHE)) do
-        for handler in pairs(synsugar_entity_handlers) do
-            handler(entity)
-        end
+        desugarize_entity(entity)
     end
 end
 
@@ -68,6 +72,10 @@ local function set_default_status(entity)
 end
 add_entity_handler(set_default_status)
 
+function set_default_order(entity)
+    if not entity.order then entity.order = "$this.group_id$" end
+end
+add_entity_handler(set_default_order)
 
 local function finalize_value_dependencies(k, v, tbl)
     if type(v) ~= "string" then return end
@@ -95,8 +103,8 @@ function unfold_inline_location(CACHE)
             local location = {
                 entity_type = "location",
                 where = entity.where,
-                amount = 1
             }
+            desugarize_entity(location)
             new_locations[#new_locations+1] = location
             entity.where = "$location_"..tostring(CACHE.group_counter.location + #new_locations).."_1.id$"
         end
@@ -109,17 +117,6 @@ function unfold_inline_location(CACHE)
 end
 add_handler(unfold_inline_location)
 
-function set_order(CACHE)
-    local counter = 1
-    for _, entity in ipairs(igi_setup.get_setup_entities(CACHE)) do
-        if not entity.order then
-            entity.order = counter
-            counter = counter + 1
-        end
-    end
-end
-add_handler(set_order)
-
 function not_disabled_by_default(CACHE)
     if CACHE.disabled == nil then CACHE.disabled = false end
 end
@@ -127,11 +124,6 @@ add_handler(not_disabled_by_default)
 
 local function collect_immutable_rewards(tbl)
     local immutable = {}
-
-    if tbl.rewards and not tbl.rewards_completed then
-        tbl.rewards_completed = tbl.rewards
-        tbl.rewards = nil
-    end
 
     for _, status in pairs(igi_subtask.TASK_STATUSES) do
         if tbl["rewards_"..status] then
@@ -162,10 +154,6 @@ local function unfold_rewards_of_tbl(tbl)
 end
 
 function unfold_rewards(CACHE)
-    if CACHE.rewards then
-        CACHE.rewards_completed = CACHE.rewards
-        CACHE.rewards = nil
-    end
 
     unfold_rewards_of_tbl(CACHE)
     for _, subtask in pairs(igi_setup.get_setup_entities(CACHE)) do

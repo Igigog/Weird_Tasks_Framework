@@ -101,6 +101,12 @@ local function add_goodwill_reward(dest, reward_tbl)
 	end
 end
 
+local function add_other_rewards(dest, reward_tbl)
+	for k,v in pairs(reward_tbl) do
+		if not dest[k] then dest[k] = v end
+	end
+end
+
 local function set_immutable_rewards(reward_tbl, immutable_rewards)
 	if immutable_rewards.money then
 		reward_tbl.money = immutable_rewards.money
@@ -109,6 +115,12 @@ local function set_immutable_rewards(reward_tbl, immutable_rewards)
 	if immutable_rewards.goodwill then
 		rebalance_goodwill_table(reward_tbl.goodwill, immutable_rewards.goodwill)
 	end
+
+	for k, v in pairs(immutable_rewards) do
+		if k ~= "money" and k ~= "goodwill" then
+			reward_tbl[k] = v
+		end
+	end
 end
 
 local function get_subtask_reward_tbl(subtask)
@@ -116,7 +128,7 @@ local function get_subtask_reward_tbl(subtask)
 	local reward_tbl = subtask.reward and subtask.reward[status]
 	if not reward_tbl then return end
 
-	local immutable_rewards = subtask.immutable_reward and subtask.immutable_reward[status]
+	local immutable_rewards = subtask.immutable_rewards and subtask.immutable_rewards[status]
 	if not immutable_rewards then return reward_tbl end
 	set_immutable_rewards(reward_tbl, immutable_rewards)
 
@@ -159,10 +171,12 @@ const_modifiers = {
 local function apply_modifiers(reward_tbl)
 	for k, functor in pairs(multiply_modifiers) do
 		if reward_tbl[k] then functor(reward_tbl) end
+		reward_tbl[k] = nil
 	end
 
 	for k,functor in pairs(const_modifiers) do
 		if reward_tbl[k] then functor(reward_tbl) end
+		reward_tbl[k] = nil
 	end
 end
 
@@ -177,6 +191,7 @@ local function add_subtask_reward(dest, subtask)
 	apply_modifiers(reward_tbl)
 	add_money_reward(dest, reward_tbl)
 	add_goodwill_reward(dest, reward_tbl)
+	add_other_rewards(dest, reward_tbl)
 end
 
 local function add_rewards_from_subtasks(dest, subtasks, CACHE)
@@ -199,8 +214,8 @@ local function collect_rewards_from_subtasks(dest, CACHE)
 end
 
 local function set_global_immutable_rewards(dest, CACHE)
-	if not CACHE.immutable_reward then return end
-	local immutable_reward = CACHE.immutable_reward[CACHE.status]
+	if not CACHE.immutable_rewards then return end
+	local immutable_reward = CACHE.immutable_rewards[CACHE.status]
 	if not immutable_reward then return end
 
 	set_immutable_rewards(dest, immutable_reward)
@@ -211,13 +226,17 @@ local function collect_rewards(CACHE)
 	local reward_tbl = dup_table(rewards_table_pattern)
 	collect_rewards_from_subtasks(reward_tbl, CACHE)
 	set_global_immutable_rewards(reward_tbl, CACHE)
+	apply_modifiers(reward_tbl)
 	CACHE.reward = reward_tbl
 end
 
 local function give_money_reward(CACHE)
 	local money = CACHE.reward.money
+	money = money*igi_mcm.get_options_value("money_reward_coeff")
 	if money ~= 0 then
-		xr_effects.reward_random_money(nil, nil, {money*0.8, money*1.1})
+		local min = money*igi_mcm.get_options_value("reward_spread_min")
+		local max = money*igi_mcm.get_options_value("reward_spread_max")
+		xr_effects.reward_random_money(nil, nil, {min, max})
 	end
 end
 
