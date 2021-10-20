@@ -61,6 +61,25 @@ function reset_all_tasks(task, prefix)
 	end
 end
 
+local function add_line(widgets)
+	widgets[#widgets+1] = {id = "line", type = "line"}
+end
+
+local function add_title(widgets, name)
+	widgets[#widgets+1] = {id = "ui_mcm_"..name.."_title", type = "title",
+		text = "ui_mcm_igi_tasks_"..name.."_title", align = "c"}
+end
+
+local function add_description(widgets, name)
+	widgets[#widgets+1] = {id = "ui_mcm_"..name.."_desc", type = "desc",
+		text = "ui_mcm_igi_tasks_"..name.."_desc"}
+end
+
+local function add_title_and_description(widgets, name)
+	add_title(widgets, name)
+	add_description(widgets, name)
+end
+
 local function create_disable_widgets(task, prefix)
 	return {
 		{id = "check_disabled", type = "check", hint="igi_tasks_disable_task", val = 1, 
@@ -80,7 +99,9 @@ local function create_cancel_widgets(task, prefix)
 end
 
 local function create_rewards_modifiers_widgets(task, prefix)
-	return {
+	local widgets = {}
+	add_title_and_description(widgets, "rewards_modifiers")
+	extend_list(widgets, {
 		{id = "add_money", type = "input", val = 0, hint = "igi_tasks_add_money",
 			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "add_money"}},
 			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "add_money"}}
@@ -97,11 +118,14 @@ local function create_rewards_modifiers_widgets(task, prefix)
 			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "mult_goodwill"}},
 			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "mult_goodwill"}}
 		}
-	}
+	})
+	return widgets
 end
 
 local function create_static_rewards_widgets(task, prefix)
-	return {
+	local widgets = {}
+	add_title_and_description(widgets, "static_rewards")
+	extend_list(widgets, {
 		{id = "reward_money", type = "input", val = 0, hint = "igi_tasks_reward_money",
 			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "money"}},
 			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "money"}}
@@ -110,20 +134,24 @@ local function create_static_rewards_widgets(task, prefix)
 			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "goodwill", "value"}},
 			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "goodwill", "value"}}
 		},
-	}
+	})
+	return widgets
 end
 
 local function create_rewards_widgets(task, prefix)
-	local widgets = create_static_rewards_widgets(task, prefix)
+	local widgets = {}
+	extend_list(widgets, create_static_rewards_widgets(task, prefix))
+	add_line(widgets)
 	extend_list(widgets, create_rewards_modifiers_widgets(task, prefix))
 	return widgets
 end
 
 local function build_task_entry(task, prefix)
 	local widgets = {}
-
+	add_title(widgets, "task_pack_general")
 	extend_list(widgets, create_disable_widgets(task, prefix))
 	extend_list(widgets, create_cancel_widgets(task, prefix))
+	add_line(widgets)
 	extend_list(widgets, create_rewards_widgets(task, prefix))
 
 	return {id=task, sh=true, text="igi_task_text_"..prefix.."_"..task.."_title", gr=widgets}
