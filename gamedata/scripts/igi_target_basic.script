@@ -399,7 +399,7 @@ end
 -- TESTS
 -- Well... tests ._.
 ------------------------------------------------
-local add_test = igi_unit_tests.add_test_partial("igi_target_basic")
+add_test = igi_unit_tests.add_test_partial("igi_target_basic")
 local tables_are_same = igi_unit_tests.tables_are_same
 
 add_test("setup_location", function()

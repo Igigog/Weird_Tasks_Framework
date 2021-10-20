@@ -4,14 +4,14 @@
 --	Igigog
 -- =============================================================
 
+local trace_assert = igi_helper.trace_assert
+
 TEXT_HEADER = "igi_task_text_"
 local database_folder = "igi_tasks\\"
 
--- ini_tables is under LtxView and is defined as follows:
--- ini_tables = ini_tables = LtxView("tables\\base.ltx")
---------------------------------------------
-
-local trace_assert = igi_helper.trace_assert
+function on_game_start()
+	ini_tables = LtxView("tables\\base.ltx")
+end
 
 function parse_values(str)
 	if not str then return nil end
@@ -105,7 +105,7 @@ function LtxView:iter()
 	end
 	return iterator
 end
-ini_tables = LtxView("tables\\base.ltx")
+
 -- Looks like table, behaves like table, but takes keys and values from ini_file
 SectionView = {_cls = "SectionView"}
 local SectionView_mt = {}

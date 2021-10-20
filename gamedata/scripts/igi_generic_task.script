@@ -14,6 +14,14 @@ function on_game_start()
     RegisterScriptCallback("save_state",save_state)
     RegisterScriptCallback("load_state",load_state)
 	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+
+	xr_conditions.validate_generic_task = validate_generic_task
+	xr_effects.igi_task_generic_setup = igi_task_generic_setup
+	task_status_functor.igi_task_generic_status = igi_task_generic_status
+	task_functor.igi_task_generic_target = igi_task_generic_target
+	task_functor.igi_task_generic_text = igi_task_generic_text
+	xr_effects.igi_task_generic_finish = igi_task_generic_finish
+
 	printf("Weird Tasks Framework "..TASKS_VERSION.." initialised")
 end
 
@@ -59,10 +67,10 @@ local function get_cache(task_id)
 end
 
 local function get_setup_cache(task_id)
-	return trace_assert(TASK_SETUP[task_id], "WTF: task "..task_id.." : CACHE not initialised")
+	return trace_assert(TASK_SETUP[task_id], "task "..task_id.." : SETUP not initialised")
 end
 ---------------------------< Precondition >---------------------------
-xr_conditions.validate_generic_task = function(actor, npc, p)
+function validate_generic_task(actor, npc, p)
 	trace_dbg("validate "..p[1])
 	trace_assert(p and p[1], "No task id given")
 	local task_id = p[1]
@@ -83,7 +91,7 @@ xr_conditions.validate_generic_task = function(actor, npc, p)
 end
 
 --< Effect >--------------------------------------------------
-xr_effects.igi_task_generic_setup = function(actor,npc,p)
+function igi_task_generic_setup(actor,npc,p)
 	--This function will be called on_job_descr
 	if not p and p[1] then return false end
 	local task_id = p[1]
@@ -111,7 +119,7 @@ local function initialise_CACHE(CACHE, task_giver_id)
 	trace_dbg("after target creation", CACHE)
 end
 
-task_status_functor.igi_task_generic_status = function (tsk,task_id)
+function igi_task_generic_status(tsk,task_id)
 	if not (db.actor and tsk) then return end
 	local CACHE = get_cache(task_id)
 	---------------------------<INIT>-------------------------
@@ -149,7 +157,7 @@ task_status_functor.igi_task_generic_status = function (tsk,task_id)
 	igi_subtask.set_current_map_target(CACHE, is_last_stage)
 end
 --< Target >--------------------------------------------------
-task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
+function igi_task_generic_target(task_id,field,p,tsk)
 	--This function point to a task target in PDA
 	local CACHE = get_cache(task_id)
 	if not CACHE then return end
@@ -169,7 +177,7 @@ task_functor.igi_task_generic_target = function(task_id,field,p,tsk)
 	return target_id
 end
 --< Text >--------------------------------------------------
-task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
+function igi_task_generic_text(task_id,field,p,tsk)
 	--This function return a text for title_functor and descr_functor
 	local CACHE = get_cache(task_id)
 
@@ -183,7 +191,7 @@ task_functor.igi_task_generic_text = function(task_id,field,p,tsk)
 	return "[WTF] "..text..desc
 end
 --< Reward >--------------------------------------------------
-xr_effects.igi_task_generic_finish = function(actor,npc,p)
+function igi_task_generic_finish(actor,npc,p)
 	if not (p and p[1] and p[2]) then return end
 	local task_id = p[1]
 	local CACHE = get_cache(task_id)

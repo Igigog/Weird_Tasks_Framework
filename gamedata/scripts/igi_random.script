@@ -1,12 +1,12 @@
 local sin = math.sin
 local sbyte = string.byte
 local floor = math.floor
-local random_seed = device():time_global()
 local offset
 local trace_assert = igi_helper.trace_assert
 
 function on_game_start()
 	RegisterScriptCallback("on_game_load", on_game_load)
+	random_seed = device():time_global()
 end
 
 function on_game_load()

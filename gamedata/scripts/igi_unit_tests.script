@@ -1,6 +1,6 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
-local tests = {}
+tests = {}
 
 function on_game_start()
 	-- crash tf out of here

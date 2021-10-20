@@ -21,7 +21,7 @@ end
 	local bounds = igi_db.SectionView.new("daytime.ltx", "daytime_bounds")
 	return bounds[daytime]
 end
-
+]]
 -----------------<Task conditions>----------------------------
 -- Fuck CTime, better luck next time
 --[[local function setup_timer(arg)

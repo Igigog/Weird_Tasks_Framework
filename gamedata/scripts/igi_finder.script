@@ -4,10 +4,14 @@
 -- accelerated, but I don't want to work on this god forsaken thing.
 
 local alife_obj = igi_helper.alife_obj
-local ini_tables = igi_db.ini_tables
 
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
+
+function on_game_start()
+	blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
+	smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
+end
 
 local function object_in_world(se_obj)
 	return se_obj.parent_id == 65535
@@ -50,7 +54,6 @@ local function is_far(se_obj, sim, gg)
 	return not (is_online(se_obj, sim, gg) or is_nearby(se_obj, sim, gg))
 end
 
-blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
 local function is_not_on_blacklisted_map(se_obj, sim, gg)
 	local object_lvl = igi_helper.get_object_level(se_obj, sim, gg)
 	return not blacklist[object_lvl]
@@ -182,6 +185,7 @@ local Finder = {
 }
 
 function Finder._populate_item_names(self)
+	local ini_tables = igi_db.ini_tables
 	ini_tables._ini:section_for_each(
 		function(section) 
 			if section:find("^f_") then
@@ -198,7 +202,6 @@ local function clear_cache()
 	return true
 end
 
-smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
 function Finder._sort_smarts(self)
 	--// Utilities
 	local sim = alife()
