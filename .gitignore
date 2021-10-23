@@ -3,3 +3,4 @@
 taskmaker/task
 taskmaker/__pycache__
 .vscode
+out.txt

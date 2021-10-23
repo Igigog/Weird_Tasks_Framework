@@ -33,9 +33,12 @@ end
 
 -------------------------------------
 printf = print
+_IGI_DEBUG = true
 ui_mcm = {
     get = function (key)
+		if _IGI_DEBUG then
         return key == "igi_tasks/Options/debug"
+		end
     end
 }
 
@@ -163,4 +166,19 @@ utils_data.print_table = function (node, header, format_only)
 	printf(output_str)
 end
 
+function mockIndex(k)
+	return {__index = function (self, key)
+		print(k.."."..key)
+		return function () end
+	end}
+end
+
 print_table = utils_data.print_table
+alife_object = function () return {} end
+alife_release = function () end
+news_manager = {}; setmetatable(news_manager, mockIndex("news_manager"))
+db = {}; setmetatable(db, mockIndex("db"))
+
+if arg[1] then
+	dofile(arg[1])
+end
