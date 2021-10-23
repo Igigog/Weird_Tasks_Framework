@@ -1,114 +1,149 @@
 -- Object finder functions
--- This module is flawed. Item finding must be avoided at all costs,
--- as it takes eternity to work it out. There are ways how it can be
--- accelerated, but I don't want to work on this god forsaken thing.
 
 local alife_obj = igi_helper.alife_obj
 
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
+entities = {}
+levels_by_distance = {}
+distance_by_levels = {}
+smarts_by_level = {}
+
 function on_game_start()
 	blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
 	smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
+
+	RegisterScriptCallback("server_entity_on_register", server_entity_on_register)
+	RegisterScriptCallback("server_entity_on_unregister", server_entity_on_unregister)
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 end
+
+function actor_on_first_update()
+	sort_levels_by_distance()
+	sort_smarts_by_level()
+	CreateTimeEvent("igi_finder", "fill_entities", 0, fill_entities)
+end
+
+function server_entity_on_register(se_obj)
+	local section = se_obj:section_name()
+	if not entities[section] then entities[section] = {} end
+	entities[section][se_obj.id] = true
+end
+
+function server_entity_on_unregister(se_obj)
+	local section = se_obj:section_name()
+	if not entities[section] then
+		return trace_dbg("unregister not registered!", section)
+	end
+	entities[section][se_obj.id] = nil
+end
+
+function fill_entities()
+	local sim = alife()
+	for i=1,65534 do
+		local se_obj = sim:object(i)
+		if se_obj then server_entity_on_register(se_obj) end
+	end
+	ResetTimeEvent("igi_finder", "fill_entities", 60)
+end
+
+------------------------------
+
+function sort_levels_by_distance()
+	local actor_level = level.name()
+	levels_by_distance[0] = {[actor_level] = true}
+	distance_by_levels[actor_level] = 0
+	local visited = {[actor_level] = true}
+
+	local cur_distance = 0
+	local changes = true
+	while changes do
+		cur_distance = cur_distance + 1
+		changes = false
+
+		for start_level in pairs(levels_by_distance[cur_distance-1]) do
+			local connected_levels = simulation_objects.config:r_value(
+				start_level, "target_maps", 0, "")
+
+			for con_level in connected_levels:gmatch("[^ ,]+") do
+				if not visited[con_level] then
+					visited[con_level] = true
+					changes = true
+					if not levels_by_distance[cur_distance] then
+						levels_by_distance[cur_distance] = {}
+					end
+					levels_by_distance[cur_distance][con_level] = true
+					distance_by_levels[con_level] = cur_distance
+				end
+			end
+		end
+	end
+end
+
+local function is_smart_good(smart_name, smart_level, smart_id)
+	local in_blacklist = smart_blacklist[smart_name] or
+		(smart_level ~= level.name() and blacklist[smart_level])
+	local is_available = simulation_objects.available_by_id[smart_id]
+	local is_base = simulation_objects.base_smarts[smart_name]
+	return is_available and not (is_base or in_blacklist)
+end
+
+function sort_smarts_by_level()
+	local sim = alife()
+	local gg = game_graph()
+
+	for name, smart in pairs(SIMBOARD.smarts_by_names) do
+		local smart_level = sim:level_name(gg:vertex(smart.m_game_vertex_id):level_id())
+		if is_smart_good(name, smart_level, smart.id) then
+			if not smarts_by_level[smart_level] then smarts_by_level[smart_level] = {} end
+			smarts_by_level[smart_level][name] = true
+		end
+	end
+end
+------------
 
 local function object_in_world(se_obj)
 	return se_obj.parent_id == 65535
 end
 
 local function object_in_npc_inventory(se_obj)
-	local is_common = igi_helper.check_common_npc(se_obj.parent_id)
-	return is_common
-	
+	return igi_helper.check_common_npc(se_obj.parent_id)
 end
 
 local function get_object_level_id(se_obj, gg)
-	if not se_obj then return nil end
-	
 	local lvl_info_obj = se_obj
 	if not object_in_world(se_obj) then
 		lvl_info_obj = alife_obj(se_obj.parent_id)
 	end
-
-	local obj_level_id = gg:vertex(lvl_info_obj.m_game_vertex_id):level_id()
-	return obj_level_id
+	return gg:vertex(lvl_info_obj.m_game_vertex_id):level_id()
 end
 
 local function get_object_level(se_obj, sim, gg)
 	return sim:level_name(get_object_level_id(se_obj, gg))
 end
 
-local function is_online(se_obj, sim, gg)
-	local player_level_id = get_object_level_id(db.player, gg)
-	local object_level_id = get_object_level_id(se_obj, gg)
-	return player_level_id == object_level_id
+local function get_distance_bounds(str)
+	str:gsub("end", tostring(#levels_by_distance))
+	if not str:find(",") then str = str..","..str end
+	local lower, higher = str:match("(%d+),(%d+)")
+	return tonumber(lower), tonumber(higher)
 end
 
-local function is_nearby(se_obj, sim, gg)
+local function check_location(se_obj, args, sim, gg)
 	local obj_level = get_object_level(se_obj, sim, gg)
-	return string.find(simulation_objects.config:r_value(level.name(), "target_maps", 0, ""), obj_level)
-end
+	if blacklist[obj_level] then return false end
 
-local function is_far(se_obj, sim, gg)
-	return not (is_online(se_obj, sim, gg) or is_nearby(se_obj, sim, gg))
+	local dist = distance_by_levels[obj_level]
+	local lower_bound, higher_bound = get_distance_bounds(args.search_distance)
+	return dist >= lower_bound and dist <= higher_bound
 end
-
-local function is_not_on_blacklisted_map(se_obj, sim, gg)
-	local object_lvl = igi_helper.get_object_level(se_obj, sim, gg)
-	return not blacklist[object_lvl]
-end
-
-local parent_handlers = {
-	world = object_in_world,
-	npc_inv = object_in_npc_inventory,
-}
-local where_handlers = {
-	online = is_online,
-	nearby = is_nearby,
-	far = is_far,
-}
-local function parent_handler(se_obj, args, sim, gg)
-	if not parent_handlers[args.find_in[1]](se_obj, sim, gg) then
-		return false
-	end
-	if args.find_in[2] == "anywhere" then return true end
-	return where_handlers[args.find_in[2]](se_obj, sim, gg)
-end
-
-location_keys = {
-	online = true,
-	nearby = true,
-	far = true
-}
 
 local function enemy_to_handler(se_obj, args, sim)
-	if se_obj.parent_id ~= 65535 then
-		-- 65535 is world id
-		-- I don't check for common npc, but it will be checked anyway in check_object_by_args
-
-		local my_faction = args.enemy_to or get_object_community(db.actor)
-		local npc_faction = get_object_community(sim:object(se_obj.parent_id))
-
-		return game_relations.is_factions_enemies(my_faction, npc_faction)
-	end
-	return true
-end
-
-local function smart_is_online(smart)
-	return smart.online
-end
-
-local function smart_is_nearby(smart, smart_level, actor_level)
-	return not not string.find(
-				simulation_objects.config:r_value(
-					actor_level, "target_maps", 0, ""
-				), smart_level)
-end
-
-local function smart_is_far(smart, smart_level, actor_level)
-	return not (smart_is_online(smart) or 
-				smart_is_nearby(smart, smart_level, actor_level))
+	if se_obj.parent_id == 65535 then return end
+	local my_faction = args.enemy_to or get_object_community(db.actor)
+	local npc_faction = get_object_community(sim:object(se_obj.parent_id))
+	return game_relations.is_factions_enemies(my_faction, npc_faction)
 end
 
 local function is_rat(se_squad)
@@ -123,17 +158,17 @@ local function check_squad_by_args(se_squad, smart, args, factions)
 		return false
 	end
 	
-	if not (se_squad.current_target_id == smart.id) then
+	if se_squad.current_target_id ~= smart.id then
 		trace_dbg("target wrong")
 		return false
 	end
 	
-	if not (se_squad.current_action == 1 and se_squad.stay_time) then
+	if se_squad.current_action ~= 1 or not se_squad.stay_time then
 		trace_dbg("action or stay time")
 		return false
 	end
 	
-	if not (se_squad:npc_count() >= (args.min_num or 1)) then
+	if args.min_num and se_squad:npc_count() < args.min_num then
 		return false
 	end
 	
@@ -142,14 +177,17 @@ local function check_squad_by_args(se_squad, smart, args, factions)
 		return false
 	end
 	
-	if se_squad:get_script_target() and not args.scripted then
+	if (not args.include_scripted) and se_squad:get_script_target() then
 		return false
 	end
 	
 	return true
 end
 
-local function add_squads_of_smart(smart_data, args, factions, squads_tbl)
+local function add_squads_of_smart(smart_name, args, factions, squads_tbl)
+	local smart = SIMBOARD.smarts_by_names[smart_name]
+	local smart_data = SIMBOARD.smarts[smart.id]
+
 	for sq_id, _ in pairs(smart_data.squads) do
 		local se_squad = alife_obj(sq_id)
 		if check_squad_by_args(se_squad, smart_data.smrt, args, factions) then
@@ -159,178 +197,16 @@ local function add_squads_of_smart(smart_data, args, factions, squads_tbl)
 end
 
 function is_smart_location(val)
-	if type(val) == "string" then return location_keys[val]
-	elseif type(val) == "table" then
-		for _,v in pairs(val) do
-			if not location_keys[v] then return false end
-		end
-		return true
-	end
-	return false
-end
-
-function wrap_smart_location(val)
-	return type(val)=="table" and val or {val}
-end
-------------------------------
-local Finder = {
-	item_names = {},
-	pure_objects = {},
-	ending_objects = {},
-	smarts = {
-		online = {},
-		nearby = {},
-		far = {},
-	},
-}
-
-function Finder._populate_item_names(self)
-	local ini_tables = igi_db.ini_tables
-	ini_tables._ini:section_for_each(
-		function(section) 
-			if section:find("^f_") then
-				local name_set = ini_tables[section]:as_set()
-				self.item_names[section] = name_set
-			end
-		end
-	)
-end
-
-local function clear_cache()
-	Finder.pure_objects = {}
-	Finder.ending_objects = {}
-	return true
-end
-
-function Finder._sort_smarts(self)
-	--// Utilities
-	local sim = alife()
-	local gg = game_graph()
-	local actor_level = level.name()
-	local is_avail = simulation_objects.available_by_id
-	local smarts = self.smarts
-	local simboard = SIMBOARD
-	
-	local handler = {
-		online = smart_is_online,
-		nearby = smart_is_nearby,
-		far = smart_is_far
-	}
-	
-	for _, smart in pairs(simboard.smarts_by_names) do
-		local smart_level = sim:level_name(gg:vertex(smart.m_game_vertex_id):level_id())
-		local in_blacklist = smart_blacklist[smart] or (smart_level ~= actor_level and blacklist[smart_level])
-		
-		if is_avail[smart.id] and 
-				not simulation_objects.base_smarts[smart:name()]
-				and not in_blacklist
-				then
-			
-			for k, func in pairs(handler) do
-				if func(smart, smart_level, actor_level) then
-					local smart_group = smarts[k]
-					smart_group[#smart_group + 1] = simboard.smarts[smart.id]
-					break
-				end
-			end
-		end
-	end
-end
-
-function Finder._sort_objects(self)
-	-- Well, this slow shit func makes what it need to make the slowest way possible
-	
-	if not next(self.item_names) then self:_populate_item_names() end
-
-	-- you can't save se_objects as variables and it will lose relevancy anyway
-	-- so it's saved only until engine gets priority again (aka after precondition of all tasks)
-	CreateTimeEvent("igi_clear_cache", "clear_cache", 0, clear_cache)
-
-	-- bcs locals are faster (access to local may be 4 times faster than to global)
-	-- and we have A LOT of global function calls here (65534 for every function)
-	local sim = alife()
-	local gg = game_graph()
-
-	-- these are not globals, but I want to avoid hashing function on value access (especially 65534 times)
-	local find_sets_of_name = self._find_sets_of_name
-	local ending_objects = self.ending_objects
-	local pure_objects = self.pure_objects
-
-	for id=1, 65534 do
-		local se_obj = sim:object(id)
-		if se_obj then
-			if is_not_on_blacklisted_map(se_obj, sim, gg) then
-				local name_sets, has_ending = find_sets_of_name(self, se_obj:section_name())
-				local tbl = has_ending and ending_objects or pure_objects
-
-				for _, v in pairs(name_sets) do
-					if not tbl[v] then tbl[v] = {} end
-					local inner_tbl = tbl[v]
-					inner_tbl[#inner_tbl + 1] = se_obj
-				end
-			end
-		end
-	end
-end
-
-function Finder._find_sets_of_name(self, sec_name)
-	-- If sec_name has 4+ parts it thinks it has ending, deal with it
-	-- But as far as I seen there's only one item with 5 parts and no endings
-	
-	local actual_name, has_ending = sec_name:match("^([^_]+_[^_]+_?[^_]*_?[^_]*)(_[^_]+_[^_]+)$")
-	local name = actual_name or sec_name
-	local sets = {}
-
-	for section, name_set in pairs(self.item_names) do
-		sets[#sets + 1] = name_set[name] and section or nil
-	end
-	
-	return sets, has_ending
-end
-
-function Finder._filter_by_args(self, objects, args)
-	local sim = alife()
-	local gg = game_graph()
-
-	for k, se_obj in pairs(objects) do
-		if not self:_check_object_by_args(se_obj, args, sim, gg) then
-			objects[k] = nil
-		end
-	end
-
-	return objects
-end
-
-function Finder.get_objects_by_args(self, typ, args, with_ending, only_ending)
-	trace_assert(with_ending or not only_ending, "setup: only_ending but no ending")
-	-- printf(utils_data.print_table(args, "args", true))
-	
-	local items_pool = {}
-	igi_utils.extend_list(items_pool, self:get_items(typ, with_ending))
-	
-	if with_ending and not only_ending then
-		igi_utils.extend_list(items_pool, self:get_items(typ))
-	end
-
-	-- extend for new indexes
-	return igi_utils.extend_list({}, self:_filter_by_args(items_pool, args))
-end
-
-function Finder.get_items(self, typ, has_ending)
-	if not next(self.pure_objects) then self:_sort_objects() end
-	return has_ending and self.ending_objects[typ] or self.pure_objects[typ]
+	if type(val) ~= "string" then return false end
+	return tonumber(val) or val:find(",")
 end
 
 arg_handlers = {
 	only_enemies = enemy_to_handler,
 }
-function Finder._check_object_by_args(self, se_obj, args, sim, gg)
-	trace_assert((args.in_npc_inv and not args.in_world) or not args.enemy_to, 
-			"WTF: Check object: enemy but not in_npc_inv")
-
-	-- priority for parent bcs there's main filtering and it's cheap for world objects
-	if not parent_handler(se_obj, args, sim, gg) then
-		-- igi_helper.trace_dbg("parent sucked")
+local function check_object_by_args(se_obj, args, sim, gg)
+	if not check_location(se_obj, args, sim, gg) then
+		-- igi_helper.trace_dbg("location sucked")
 		return false
 	end
 
@@ -347,43 +223,78 @@ function Finder._check_object_by_args(self, se_obj, args, sim, gg)
 	return true
 end
 
-function Finder.get_smarts(self, where)
-	if not next(self.smarts.nearby) then self:_sort_smarts() end
-	if where then where = wrap_smart_location(where) end	-- TODO: remove
 
-	local smart_list = {}
-	local extend = igi_utils.extend_list
-	
-	if not where or where[1] == "anywhere" then
-		for _, smarts in pairs(self.smarts) do
-			extend(smart_list, smarts)
+local function get_objects_filtered_by_args(objects, args)
+	local sim = alife()
+	local gg = game_graph()
+	local filtered = {}
+
+	for _, group in pairs(objects) do
+		for id in pairs(group) do
+			local se_obj = sim:object(id)
+			if check_object_by_args(se_obj, args, sim, gg) then
+				filtered[#filtered+1] = se_obj
+			end
 		end
-	else
-		for _, where_k in pairs(where) do
-			extend(smart_list, self.smarts[where_k])
+	end
+
+	return filtered
+end
+
+function get_objects_by_args(typ, args)
+	local items_pool = get_items(typ, args.endings)
+	return get_objects_filtered_by_args(items_pool, args)
+end
+
+function get_items(sections, possible_endings)
+	possible_endings = possible_endings or {}
+	if type(sections) == "string" then
+		sections = igi_db.ini_tables[sections]:as_table()
+	end
+	items = {}
+
+	for _, section in pairs(sections) do
+		if entities[section] then items[#items+1] = entities[section] end
+
+		-- endings are important for artefacts (i.e. arti in box)
+		for _, ending in pairs(possible_endings) do
+			local with_ending = section..ending
+			if entities[with_ending] then
+				items[#items+1] = entities[with_ending]
+			end
+		end
+	end
+
+	return items
+end
+
+
+function get_smarts(where)
+	local smart_list = {}
+	local lower_bound, higher_bound = get_distance_bounds(where)
+	
+	for i=lower_bound, higher_bound do
+		for level in pairs(levels_by_distance[i]) do
+			for smart in pairs(smarts_by_level[level] or {}) do
+				smart_list[#smart_list+1] = smart
+			end
 		end
 	end
 
 	return smart_list
 end
 
-function Finder.get_squads_by_args(self, args, factions)
+function get_squads_by_args(args, factions)
 	local targets = {}
 	trace_dbg("finder: get squad by args", args, factions)
+
 	if args.smart then
-		local smart = SIMBOARD.smarts_by_names[args.smart]
-		local smart_data = SIMBOARD.smarts[smart.id]
-
-		if smart then add_squads_of_smart(smart_data, args, factions, targets) end
+		add_squads_of_smart(args.smart, args, factions, targets)
 	else
-		for name, smart_data in pairs(self:get_smarts(args.where)) do
-			add_squads_of_smart(smart_data, args, factions, targets)
-		end	
+		for _, smart_name in pairs(get_smarts(args.where)) do
+			add_squads_of_smart(smart_name, args, factions, targets)
+		end
 	end
-	
-	return targets
-end 
 
-function get_finder()
-	return Finder
+	return targets
 end

@@ -42,7 +42,7 @@ local function setup_entities(CACHE, description)
 		if not group_data then return nil end
 
 		description:add_entries(desc)
-		CACHE.setup[igi_linker.make_entity_link(group_preset)] = group_data
+		CACHE.setup[igi_linker.get_entity_link(group_preset)] = group_data
 	end
 	return true
 end

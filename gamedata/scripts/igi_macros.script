@@ -1,7 +1,5 @@
 local trace_assert = igi_helper.trace_assert
 
-local ini_tables = igi_db.ini_tables
-
 function has_macro(str)
 	return str:find("%b&&")
 end
@@ -9,8 +7,6 @@ end
 local Set = igi_utils.Set
 
 local _pattern = "%&(.*%(.*%))%&"
-local _pattern_pre_args = "%&.*%("
-local _pattern_post_args = "%)%&"
 
 function despace_args(args)
 	for k,v in pairs(args) do
@@ -46,7 +42,7 @@ end
 
 function Macro.TableValueRandom(args)
 	args = parse_args(args)
-	local tbl = ini_tables[args[1]]:as_table()
+	local tbl = igi_db.ini_tables[args[1]]:as_table()
 	return igi_utils.random_table_element(tbl)
 end
 
@@ -54,7 +50,7 @@ function Macro.TableValueByKey(args)
 	trace_assert(args and args[1] and args[2])
 	
 	args = parse_args(args)
-	local tbl = ini_tables[args[1]]
+	local tbl = igi_db.ini_tables[args[1]]
 	return tbl[args[2]]
 end
 

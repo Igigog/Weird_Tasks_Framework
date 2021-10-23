@@ -2,6 +2,7 @@ TARGET_NAME = "return"
 PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local trace_dbg = igi_helper.trace_dbg
 
 function is_failed(se_obj, section_name)
 	if not se_obj then return true end

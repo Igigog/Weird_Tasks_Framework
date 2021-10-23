@@ -92,14 +92,24 @@ function finalize_all_dependencies(CACHE)
 end
 add_handler(finalize_all_dependencies)
 
+local function rename_where(entity)
+    local names = {
+        online = "0,0",
+        nearby = "1,1",
+        anywhere = "0,end",
+    }
+    if names[entity.where] then entity.where = names[entity.where] end
+end
+
 function unfold_inline_location(CACHE)
     local setup = igi_setup.get_setup_entities(CACHE)
     local new_locations = {}
     for _, entity in ipairs(setup) do
+        rename_where(entity)
         if entity.entity_type ~= "location" and
                 entity.to_create ~= false and
                 entity.where and
-                igi_finder.location_keys[entity.where] then
+                igi_finder.is_smart_location(entity.where) then
             local location = {
                 entity_type = "location",
                 where = entity.where,

@@ -7,11 +7,13 @@ function get_entities(CACHE)
 	return CACHE.target
 end
 
-function create_target_entry(se_obj)
+function create_target_entry(se_obj, group_id, entity_id)
 	if not se_obj then return end
 	local entry = {
 		id = se_obj.id,
-		section_name = se_obj:section_name()
+		section_name = se_obj:section_name(),
+		group_id = group_id,
+		entity_id = entity_id
 	}
 	return entry
 end
@@ -28,7 +30,7 @@ function add_entry(tbl, typ, group_id, entity_id, se_obj, group_data)
 	trace_assert(tbl and typ and group_id and entity_id and se_obj,
 		"Something went wrong while adding entry")
 
-	local entry = create_target_entry(se_obj, group_data)
+	local entry = create_target_entry(se_obj, group_id, entity_id)
 	prepare_entry_table(entry, group_data)
 
 	local id = igi_linker.make_link(typ, group_id, entity_id)
@@ -39,6 +41,8 @@ function add_custom_entry(dest, typ, group_id, entity_id, obj_data, group_data)
 	trace_assert(dest and typ and group_id and entity_id and obj_data,
 		"Something went wrong while adding entry")
 
+	obj_data.group_id = group_id
+	obj_data.entity_id = entity_id
 	prepare_entry_table(obj_data, group_data)
 
 	local id = igi_linker.make_link(typ, group_id, entity_id)

@@ -121,7 +121,7 @@ function assign_group_id(entities)
 	trace_dbg("Before assigning group id", entities)
 	local keys = set_missing_group_ids(entities)
 	for _, entity in pairs(entities) do
-		entities[make_entity_link(entity)] = entity
+		entities[get_entity_link(entity)] = entity
 	end
 
 	for _, k in pairs(keys) do
@@ -140,8 +140,8 @@ function make_link(typ, group_id, obj_id)
 	return id
 end
 
-function make_entity_link(entity, obj_id)
-	return make_link(entity.entity_type, entity.group_id, obj_id)
+function get_entity_link(entity)
+	return make_link(entity.entity_type, entity.group_id, entity.entity_id)
 end
 
 function has_dependency(str)

@@ -22,7 +22,6 @@ end
 
 local function fetch_squad_data(squad_info)
 	-- important: ids, predefined name, description, target
-	local finder = igi_finder.get_finder()
 	local enemy_factions
 	if squad_info.type == "mutant" then
 		enemy_factions = ini_tables["monster_types"]:as_set()
@@ -30,7 +29,7 @@ local function fetch_squad_data(squad_info)
 		enemy_factions = igi_helper.get_faction_enemies(character_community(db.actor))
 	end
 	trace_assert(enemy_factions)
-	local squads = finder:get_squads_by_args(squad_info, enemy_factions)
+	local squads = igi_finder.get_squads_by_args(squad_info, enemy_factions)
 	local ids = igi_utils.get_random_items(squads, squad_info.amount)
 	if not ids then return end
 
@@ -66,8 +65,7 @@ local function fetch_item_description(objects, item_type)
 end
 
 local function find_objects(object_data)
-	local finder = igi_finder.get_finder()
-	objects = finder:get_objects_by_args(
+	objects = igi_finder.get_objects_by_args(
 		object_data.item_list,
 		object_data,
 		object_data.possible_endings,
@@ -121,11 +119,12 @@ local function get_smart_coordinates(smart)
 end
 
 local function find_smarts(where, amount)
-	local smarts = igi_finder.get_finder():get_smarts(where)
+	local smarts = igi_finder.get_smarts(where)
 	local smarts_list = igi_utils.get_random_items(smarts, amount)
 	if not smarts_list then return end
-	for k, smart in pairs(smarts_list) do
-		smarts_list[k] = smart.smrt.id
+	for k, smart_name in pairs(smarts_list) do
+		local smart = SIMBOARD.smarts_by_names[smart_name]
+		smarts_list[k] = smart.id
 	end
 	return smarts_list
 end
@@ -254,8 +253,7 @@ function setup_smart(smart_info)
 		smart_data = igi_models.create_SmartData({smart_info.smart_name})
 	else
 		local amount = smart_info.amount or 1
-		local finder = igi_finder.get_finder()
-		local possible_smarts = finder:get_smarts(smart_info.where)
+		local possible_smarts = igi_finder.get_smarts(smart_info.where)
 
 		if #possible_smarts < amount then return end
 		local smarts_list = igi_utils.get_random_items(possible_smarts, amount)
@@ -429,50 +427,4 @@ add_test("setup_location", function()
 	}
 	result = setup_location(location_link)
 	trace_assert(tables_are_same(result, expected))
-
-	local location_name = {
-		where = "mar_smart_terrain_6_10"
-	}
-	expected = {
-		id = SIMBOARD.smarts_by_names["mar_smart_terrain_6_10"].id
-	}
-	result = setup_location(location_name)
-	trace_assert(tables_are_same(result, expected))
-	--[[
-	local location_find = {
-		where = "nearby",
-		amount = 1
-	}
-	result = setup_location(location_find)
-	assert(#result.smarts == 1)
-
-	local location_find_arr = {
-		where = {"nearby", "online"},
-		amount = 1
-	}
-	result = setup_location(location_find_arr)
-	assert(#result.smarts == 1)
-	--]]
 end)
-
---[[add_test("setup_item", function()
-	local tbl, expected, result
-
-	tbl = {
-		section = "ammo_23_igi_eco",
-		where = "whatever",
-		item_list = "f_test_list", -- TODO: remove
-		amount = 1
-	}
-	expected = dup_table(tbl)
-	assert(tables_are_same(setup_item(tbl), expected))
-
-	tbl = {
-		look_in = "npc_inv",
-		where = "anywhere",
-		item_list = "f_test_list",
-		amount = 1
-	}
-	result = setup_item(tbl)
-	assert(result.ids and #result.ids == 1)
-end)]]

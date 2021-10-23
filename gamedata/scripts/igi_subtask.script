@@ -14,8 +14,10 @@ function get_subtasks(CACHE)
 	return CACHE.subtasks
 end
 
-function get_subtask_links_of_status(status, CACHE)
-	return get_subtasks(CACHE)[status].payloads
+function get_subtask_links_of_status(status, CACHE, safe)
+	local links = get_subtasks(CACHE)[status].payloads
+	if safe then return dup_table(links) end
+	return links
 end
 
 function get_subtasks_of_status(status, CACHE)
@@ -101,17 +103,19 @@ function update_subtask_status_by_link(link, new_status, CACHE)
 	-- call all callbacks; new status may be changed by callbacks
 	subtask.status = new_status
 	local target_tbl = igi_taskdata.get_target_table(subtask.target)
-	if target_tbl["on_"..new_status] then target_tbl["on_"..new_status](subtask, CACHE) end
 	igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, new_status)
 
 	if subtask.status ~= old_status then
 		igi_utils.heap_remove_element(subtasks[old_status], link)
 		igi_utils.heap_push(subtasks[subtask.status], link, subtask.order)
+		if target_tbl["on_"..new_status] then
+			target_tbl["on_"..new_status](subtask, CACHE)
+		end
 	end
 end
 
 function change_subtasks_status(CACHE, old_status, new_status)
-	local links = get_subtask_links_of_status(old_status, CACHE)
+	local links = get_subtask_links_of_status(old_status, CACHE, true)
 	for _, link in pairs(links) do
 		update_subtask_status_by_link(link, new_status, CACHE)
 	end
