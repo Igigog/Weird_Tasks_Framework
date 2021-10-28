@@ -4,3 +4,4 @@ taskmaker/task
 taskmaker/__pycache__
 .vscode
 out.txt
+run.lua

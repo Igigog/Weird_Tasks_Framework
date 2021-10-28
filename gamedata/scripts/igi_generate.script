@@ -26,6 +26,7 @@ function unfold_one_level(entity)
         local new_entity = dup_table(entity)
         new_entity[table_key] = value
         new_entity[counter_id] = counter
+        new_entity.group_id = nil
 
         new_entities[#new_entities+1] = new_entity
     end
@@ -61,7 +62,6 @@ function unfold_generation(setup)
     for _, entities in pairs(array_list) do
         for _, entity in pairs(entities) do
             setup[#setup+1] = entity
-            entity.group_id = nil   -- group id will be set once more
         end
     end
 end
