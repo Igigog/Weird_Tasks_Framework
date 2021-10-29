@@ -3,12 +3,36 @@ local igi_linker = igi_linker
 local igi_macros = igi_macros
 local escape_pattern = igi_utils.escape_pattern
 local sfind = string.find
-local smatch = string.match
-local sgmatch = string.gmatch
 local pairs, type = pairs, type
 
 function has_link_or_macro(str)
 	return igi_linker.has_dependency(str) or igi_macros.has_macro(str)
+end
+
+function split_string(str)
+	local list = {}
+	for element in str:gmatch("[^,]+") do
+		list[#list+1] = element:match("%s?(.*)%s?")
+	end
+	return list
+end
+
+function restore_list_macros(list, macros)
+	for k, mac in pairs(macros) do
+		for k2, str in pairs(list) do
+			list[k2] = str:gsub(k, mac)
+		end
+	end
+end
+
+function string_to_list_if_applicable(str)
+	local s, mac = igi_macros.hide_macros(str)
+	if not s:find(",") then return str end
+
+	local list = split_string(str)
+	restore_list_macros(list, mac)
+	convert_strings_type(list)
+	return list
 end
 
 function convert_strings_type(tbl)
@@ -20,6 +44,8 @@ function convert_strings_type(tbl)
 				tbl[k] = true
 			elseif v == "false" then
 				tbl[k] = false
+			elseif v:find(",") then
+				tbl[k] = string_to_list_if_applicable(v)
 			end
 		elseif type(v) == "table" then
 			convert_strings_type(v)

@@ -1,6 +1,7 @@
 -- DELETE etu huinyu nahui
 
 local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 
 LOCATION = "location"
 ITEM = "item"

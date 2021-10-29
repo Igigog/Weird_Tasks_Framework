@@ -101,6 +101,7 @@ local function rename_where(entity)
     if names[entity.where] then entity.where = names[entity.where] end
 end
 
+-- TODO: rework
 function unfold_inline_location(CACHE)
     local setup = igi_setup.get_setup_entities(CACHE)
     local new_locations = {}
@@ -109,7 +110,8 @@ function unfold_inline_location(CACHE)
         if entity.entity_type ~= "location" and
                 entity.to_create ~= false and
                 entity.where and
-                igi_finder.is_smart_location(entity.where) then
+                igi_finder.is_smart_location(
+                    igi_text_processor.string_to_list_if_applicable(entity.where)) then
             local location = {
                 entity_type = "location",
                 where = entity.where,
