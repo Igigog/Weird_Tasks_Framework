@@ -126,7 +126,8 @@ end
 local function get_distance_bounds(str)
 	str:gsub("end", tostring(#levels_by_distance))
 	if not str:find(",") then str = str..","..str end
-	local lower, higher = str:match("(%d+),(%d+)")
+	local lower, higher = str:match("(%d+),(.+)")
+	if higher == "end" then higher = #levels_by_distance end
 	return tonumber(lower), tonumber(higher)
 end
 
