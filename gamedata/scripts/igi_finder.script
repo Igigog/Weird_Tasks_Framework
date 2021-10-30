@@ -151,7 +151,7 @@ local function is_rat(se_squad)
 	return string.find(section,"tushkano") or string.find(section,"rat")
 end
 
-local function check_squad_by_args(se_squad, smart, args)
+local function check_squad_by_args(se_squad, smart, args, factions)
 	
 	if not simulation_objects.is_on_the_same_level(se_squad, smart) then
 		trace_dbg("not same lvl")
@@ -172,7 +172,7 @@ local function check_squad_by_args(se_squad, smart, args)
 		return false
 	end
 	
-	if is_rat(se_squad) or not args.factions[se_squad.player_id] then
+	if is_rat(se_squad) or not factions[se_squad.player_id] then
 		trace_dbg("factions sucked")
 		return false
 	end
@@ -184,21 +184,21 @@ local function check_squad_by_args(se_squad, smart, args)
 	return true
 end
 
-local function add_squads_of_smart(smart_name, args, squads_tbl)
+local function add_squads_of_smart(smart_name, args, factions, squads_tbl)
 	local smart = SIMBOARD.smarts_by_names[smart_name]
 	local smart_data = SIMBOARD.smarts[smart.id]
 
 	for sq_id, _ in pairs(smart_data.squads) do
 		local se_squad = alife_obj(sq_id)
-		if check_squad_by_args(se_squad, smart_data.smrt, args) then
+		if check_squad_by_args(se_squad, smart_data.smrt, args, factions) then
 			squads_tbl[#squads_tbl + 1] = sq_id
 		end
 	end
 end
 
 function is_smart_location(val)
-	if type(val) ~= "table" then return false end
-	return tonumber(val[1] or "") and tonumber(val[2] or "")
+	if type(val) ~= "string" then return false end
+	return tonumber(val) or val:find(",")
 end
 
 arg_handlers = {
@@ -271,7 +271,7 @@ end
 
 function get_smarts(where)
 	local smart_list = {}
-	local lower_bound, higher_bound = where[1], where[2]
+	local lower_bound, higher_bound = get_distance_bounds(where)
 	
 	for i=lower_bound, higher_bound do
 		for level in pairs(levels_by_distance[i]) do
@@ -284,21 +284,15 @@ function get_smarts(where)
 	return smart_list
 end
 
-function get_squads_by_args(args)
+function get_squads_by_args(args, factions)
 	local targets = {}
-	trace_dbg("finder: get squad by args", args)
-	if args.factions then
-		if type(args.factions) ~= "table" then
-			args.factions = {args.factions}
-		end
-		args.factions = igi_utils.Set.from_list(args.factions)
-	end
+	trace_dbg("finder: get squad by args", args, factions)
 
 	if args.smart then
-		add_squads_of_smart(args.smart, args, targets)
+		add_squads_of_smart(args.smart, args, factions, targets)
 	else
 		for _, smart_name in pairs(get_smarts(args.where)) do
-			add_squads_of_smart(smart_name, args, targets)
+			add_squads_of_smart(smart_name, args, factions, targets)
 		end
 	end
 

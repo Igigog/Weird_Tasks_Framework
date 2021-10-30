@@ -149,7 +149,7 @@ function has_dependency(str)
 end
 
 function is_dependency(str)
-	if type(str) ~= "string" then return end
+	if not type(str) == "string" then return end
 	return string.find(str, "^%$.*%$$")
 end
 

@@ -6,20 +6,7 @@ end
 
 local Set = igi_utils.Set
 
-local _pattern = "%&([^(]*%b())%&"
-local _full_pattern = "(%&[^(]*%b()%&)"
-
-function hide_macros(str)
-	local macros = {}
-	local counter = 0
-	str = str:gsub(_full_pattern, function (val)
-		local k = "[m"..tostring(counter).."]"
-		macros[k] = val
-		counter = counter + 1
-		return k
-	end)
-	return str, macros
-end
+local _pattern = "%&(.*%(.*%))%&"
 
 function despace_args(args)
 	for k,v in pairs(args) do
@@ -93,23 +80,25 @@ end
 
 local evaluate, tokenize
 function Macro.Faction(args)
-	local factions = Macro.FactionList(args)
-	return factions[math.random(#factions)]
-end
-
-function Macro.FactionList(args)
 	-- args checker needed
 	local args_str = args[1]
 	local tokens = tokenize(args_str)
 	local factions = evaluate(tokens, 1, #tokens)
-	if type(factions) ~= "table" then
-		return {get_faction(factions)}
+	local faction
+	if type(factions) == 'table' then
+		local _, faction = igi_utils.random_table_element(factions)
+		return faction
+	else
+		return get_faction(factions)
 	end
-	return Set.to_list(factions)
 end
 
 local function escape_pattern(text)
     return text:gsub("([^%w])", "%%%1")
+end
+
+local function has_macro(str)
+	return str:find("%b&&")
 end
 
 local function resolve_macro(macro)
@@ -140,7 +129,7 @@ local function stringify(shit)
 	return tostring(shit)
 end
 
-function resolve_all_macros(str)
+function resolve_all_macros(str, entities)
 	if not str then return nil end
     if not has_macro(str) then return str end
 
@@ -298,12 +287,12 @@ end
 
 -------------------------------------------------------
 
-function resolve_all(tbl)
+function resolve_all(tbl, entities)
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
-			tbl[k] = resolve_all(v)
+			tbl[k] = resolve_all(v, entities)
 		elseif type(v) == 'string' and has_macro(v) then
-			tbl[k] = resolve_all_macros(v)
+			tbl[k] = resolve_all_macros(v, entities)
 		end
 	end
 	return tbl

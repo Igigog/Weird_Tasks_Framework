@@ -15,22 +15,18 @@ function unfold_one_level(entity)
     local new_entities = {}
     local table_key = key_to_unfold:match("generate:(.*)")
     local list = entity[key_to_unfold]
+    trace_assert(not igi_text_processor.has_link_or_macro(list),
+        "Generation list not resolved before generation", entity)
     entity[key_to_unfold] = nil
-
-    if type(list) ~= "table" then
-        list = {list}
-    end
 
     local counter = 0
     local counter_id = table_key.."_gen_id"
-    for k, value in pairs(list) do
+    for value in list:gmatch("[^,]+") do
         counter = counter + 1
         local new_entity = dup_table(entity)
         new_entity[table_key] = value
         new_entity[counter_id] = counter
-        if k > 1 then
-            new_entity.group_id = nil
-        end
+        new_entity.group_id = nil
 
         new_entities[#new_entities+1] = new_entity
     end
