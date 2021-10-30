@@ -5,7 +5,7 @@ local alife_obj = igi_helper.alife_obj
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
-entities = {}
+objects = {}
 levels_by_distance = {}
 distance_by_levels = {}
 smarts_by_level = {}
@@ -22,30 +22,30 @@ end
 function actor_on_first_update()
 	sort_levels_by_distance()
 	sort_smarts_by_level()
-	CreateTimeEvent("igi_finder", "fill_entities", 0, fill_entities)
+	CreateTimeEvent("igi_finder", "fill_objects", 0, fill_objects)
 end
 
 function server_entity_on_register(se_obj)
 	local section = se_obj:section_name()
-	if not entities[section] then entities[section] = {} end
-	entities[section][se_obj.id] = true
+	if not objects[section] then objects[section] = {} end
+	objects[section][se_obj.id] = true
 end
 
 function server_entity_on_unregister(se_obj)
 	local section = se_obj:section_name()
-	if not entities[section] then
+	if not objects[section] then
 		return trace_dbg("unregister not registered!", section)
 	end
-	entities[section][se_obj.id] = nil
+	objects[section][se_obj.id] = nil
 end
 
-function fill_entities()
+function fill_objects()
 	local sim = alife()
 	for i=1,65534 do
 		local se_obj = sim:object(i)
 		if se_obj then server_entity_on_register(se_obj) end
 	end
-	ResetTimeEvent("igi_finder", "fill_entities", 60)
+	ResetTimeEvent("igi_finder", "fill_objects", 60)
 end
 
 ------------------------------
@@ -254,13 +254,13 @@ function get_items(sections, possible_endings)
 	items = {}
 
 	for _, section in pairs(sections) do
-		if entities[section] then items[#items+1] = entities[section] end
+		if objects[section] then items[#items+1] = objects[section] end
 
 		-- endings are important for artefacts (i.e. arti in box)
 		for _, ending in pairs(possible_endings) do
 			local with_ending = section..ending
-			if entities[with_ending] then
-				items[#items+1] = entities[with_ending]
+			if objects[with_ending] then
+				items[#items+1] = objects[with_ending]
 			end
 		end
 	end
