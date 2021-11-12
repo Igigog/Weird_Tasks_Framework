@@ -299,3 +299,24 @@ function get_squads_by_args(args, factions)
 
 	return targets
 end
+
+function is_stash_suitable(id, args)
+	local se_obj = igi_helper.alife_obj(id)
+	local sim, gg = alife(), game_graph()
+	if not check_location(se_obj, args, sim, gg) then
+		return false
+	end
+
+	return true
+end
+
+function get_stashes_by_args(args)
+	local stashes = treasure_manager.stashes
+	local returned_stashes = {}
+	for id, is_not_available in pairs(stashes) do
+		if not is_not_available then
+			returned_stashes[id] = is_stash_suitable(id, args) or nil
+		end
+	end
+	return returned_stashes
+end
