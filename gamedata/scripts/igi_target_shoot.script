@@ -18,6 +18,7 @@ optional_fields = {
 ------------- END Consistency -------------
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local WorldState = igi_world_state.WorldState
 
 is_shotted = {}
 local callback_is_set = {}
@@ -58,7 +59,7 @@ local function create_callback_function(squad_id, target_ids, weapon, ammo_type)
 end
 
 local function get_target_ids(squad_id, shoot_any)
-    local se_squad = igi_helper.alife_obj(squad_id)
+    local se_squad = WorldState.objects[squad_id]
     local ids = {}
     if shoot_any then
         for npc in se_squad:squad_members() do
@@ -83,7 +84,7 @@ function entity_on_after_target_creation(obj_data)
     local ids = get_target_ids(obj_data.id, obj_data.shoot_any)
     local targets = {}
     for id in pairs(ids) do
-        local se_obj = igi_helper.alife_obj(id)
+        local se_obj = WorldState.objects[id]
         local obj_entry = {
             id = se_obj.id,
             section_name = se_obj:section_name()
@@ -95,7 +96,7 @@ end
 
 function are_shoot_targets_alive(targets)
     for _,v in pairs(targets) do
-        local se_obj = igi_helper.alife_obj(v.id)
+        local se_obj = WorldState.objects[v.id]
         if not (se_obj and
             se_obj:section_name() == v.section_name and
             se_obj:alive()) then
@@ -109,7 +110,7 @@ function is_not_failed(obj_data)
         return true
     else
         for _,v in pairs(obj_data.shoot_targets) do
-            local se_obj = igi_helper.alife_obj(v.id)
+            local se_obj = WorldState.objects[v.id]
             if not (se_obj and
                 se_obj:section_name() == v.section_name and
                 se_obj:alive()) then

@@ -2,9 +2,10 @@ TARGET_NAME = "kill"
 PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local WorldState = igi_world_state.WorldState
 
 function is_completed(obj_data)
-	local se_obj = igi_helper.alife_obj(obj_data.id)
+	local se_obj = WorldState.objects[obj_data.id]
 	if not se_obj then return true end
 	if se_obj:section_name() ~= obj_data.section_name then return true end
 end
@@ -45,17 +46,17 @@ end
 
 function get_completed_money(entity)
 	local reward = 0
-	local se_squad = igi_helper.alife_obj(entity.id)
+	local se_squad = WorldState.objects[entity.id]
 	local faction = se_squad:get_squad_community()
 
 	if string.find(faction, "monster") then
 		for se_npc in se_squad:squad_members() do
-			se_npc = alife_object(se_npc.id)
+			se_npc = WorldState.objects[se_npc.id]
 			reward = reward + get_monster_value(se_npc)
 		end
 	else
 		for se_npc in se_squad:squad_members() do
-			se_npc = alife_object(se_npc.id)
+			se_npc = WorldState.objects[se_npc.id]
 			reward = reward + get_npc_value(se_npc)
 		end
 	end
@@ -65,7 +66,7 @@ end
 
 function get_completed_goodwill(entity)
 	local npc_count = 0
-	local se_squad = igi_helper.alife_obj(entity.id)
+	local se_squad = WorldState.objects[entity.id]
 	for _ in se_squad:squad_members() do
 		npc_count = npc_count + 1
 	end

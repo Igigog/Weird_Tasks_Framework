@@ -1,9 +1,10 @@
 local trace_assert = igi_helper.trace_assert
+local WorldState = igi_world_state.WorldState
 
 local function is_parent_dead(obj_data, se_obj)
 	if not se_obj then return end
 
-	local parent = igi_helper.alife_obj(se_obj.parent_id)
+	local parent = WorldState.objects[se_obj.parent_id]
 	return not parent:alive()
 end
 

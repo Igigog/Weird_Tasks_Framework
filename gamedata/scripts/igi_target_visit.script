@@ -1,6 +1,8 @@
 TARGET_NAME = "visit"
 PATTERN = "basic"
 
+local WorldState = igi_world_state.WorldState
+
 local function distance(position_1, position_2)
 	local x = position_1.x - position_2.x
     local z = position_1.z - position_2.z
@@ -9,7 +11,7 @@ end
 
 function is_complete(obj_data)
 	local MAX_DISTANCE = 2500
-	local position_of_target = igi_helper.alife_obj(obj_data.id).position
+	local position_of_target = WorldState.objects[obj_data.id].position
     local position_of_player = db.actor:position()
 	return distance(position_of_target, position_of_player) < MAX_DISTANCE
 end

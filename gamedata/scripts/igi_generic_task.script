@@ -9,6 +9,7 @@ TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
+local WorldState = igi_world_state.WorldState
 
 function on_game_start()
     RegisterScriptCallback("save_state",save_state)
@@ -166,7 +167,7 @@ function igi_task_generic_target(task_id,field,p,tsk)
 	-- trace target in debug mode
 	if igi_mcm.get_options_value("debug") then
 		if target_id and target_id > 0 then
-			local se_obj = igi_helper.alife_obj(target_id)
+			local se_obj = WorldState.objects[target_id]
 			if se_obj then
 				local sec = se_obj and se_obj:section_name() or "nil"
 				trace_dbg("target "..tostring(target_id).." is "..sec)

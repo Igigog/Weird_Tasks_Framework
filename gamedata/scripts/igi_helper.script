@@ -2,14 +2,7 @@
 -- I HAVE NO FUCKING IDEA WHY
 -- but sometimes(!) you can access global functions only through filename.functionname()
 
-function alife_obj(id)
-	id = tonumber(id)
-	if not id then
-		callstack()
-		trace_assert(nil, "Don't look at me, senpai >//////<\n")
-	end
-	return alife_object(id)
-end
+local WorldState = igi_world_state.WorldState
 
 function level_object(id)
 	id = tonumber(id)
@@ -25,7 +18,7 @@ function get_task_name(task_id)
 end
 
 function get_subtask_se_obj(entity)
-	local se_obj = igi_helper.alife_obj(entity.id)
+	local se_obj = WorldState.objects[entity.id]
 	if not se_obj then return end
 	return se_obj:section_name() == entity.section_name and se_obj or nil
 end
@@ -66,7 +59,7 @@ end
 
 function check_common_npc(id)
 	--Parameter is correct | not world map | not player |
-	local npc = id and (id ~= 65535) and (id ~= 0) and alife():object(id)
+	local npc = id and (id ~= 65535) and (id ~= 0) and WorldState.objects[id]
 	--Exist | is stalker | alive |
 	if not (npc and IsStalker(nil,npc:clsid()) and npc:alive()) then return false end
 	--section_name has "sim_default", not "zombied"
@@ -95,13 +88,13 @@ end
 
 function object_in_npc_inventory(obj_id)
 	if not obj_id then return end
-	local obj = igi_helper.alife_obj(obj_id)
+	local obj = WorldState.objects[obj_id]
 	if not obj then return end
 	return igi_helper.check_common_npc(obj.parent_id)
 end
 
 function object_in_player_inventory(obj_data)
-	local obj = igi_helper.alife_obj(obj_data.id)
+	local obj = WorldState.objects[obj_data.id]
 	if not obj then return end
 	return obj.parent_id == 0
 end
@@ -113,7 +106,7 @@ function get_object_level_id(se_obj)
 	if object_in_world(se_obj) then
 		lvl_info_obj = se_obj
 	elseif igi_helper.check_common_npc(se_obj.parent_id) then
-		lvl_info_obj = igi_helper.alife_obj(se_obj.parent_id)
+		lvl_info_obj = WorldState.objects[se_obj.parent_id]
 	end
 	
 	if not lvl_info_obj then return end
@@ -121,8 +114,8 @@ function get_object_level_id(se_obj)
 	return obj_level_id
 end
 
-function get_object_level(obj, sim, gg)
-	return alife():level_name(igi_helper.get_object_level_id(obj))
+function get_object_level(obj)
+	return WorldState.sim:level_name(igi_helper.get_object_level_id(obj))
 end
 
 function get_player_level()
@@ -166,7 +159,7 @@ function release_squad(squad_data)
 	if not (squad_data.id) then printf("GhenTuong: no squad_data.id") return end
 	if not (squad_data.section_name) then printf("GhenTuong: no squad_data.section_name") return end
 	
-	local squad = igi_helper.alife_obj(squad_data.id)
+	local squad = WorldState.objects[squad_data.id]
 
 	if not (squad) then return end
 	if not (squad:clsid() == clsid.online_offline_group_s) then return end
@@ -179,7 +172,7 @@ end
 function release_package(pkg_data)
 	if not pkg_data then return end
 	
-	local pkg = igi_helper.alife_obj(pkg_data.id)
+	local pkg = WorldState.objects[pkg_data.id]
 	if (pkg and (pkg:section_name() == pkg_data.section_name)) then
 		printf("GhenTuong: release %s| parent_id = %s", pkg:name(), pkg.parent_id)
 		safe_release_manager.release(pkg)
@@ -216,7 +209,7 @@ function is_squad_member_online(se_squad)
 end
 
 function object_exist(obj_data)
-	local obj = igi_helper.alife_obj(obj_data.id)
+	local obj = WorldState.objects[obj_data.id]
 	return obj and obj:section_name() == obj_data.section_name
 end
 
@@ -225,7 +218,7 @@ function object_not_exist(obj_data)
 end
 
 function object_in_player_inv(obj_data)
-	local se_obj = igi_helper.alife_obj(obj_data.id)
+	local se_obj = WorldState.objects[obj_data.id]
 	return se_obj and se_obj.parent_id == 0
 end
 
@@ -243,7 +236,7 @@ function get_object_smart(se_obj)
 end
 
 function object_hasnt_changed(id, section)
-	local se_obj = alife_obj(id)
+	local se_obj = WorldState.objects[id]
 	return se_obj and se_obj:section_name() == section
 end
 

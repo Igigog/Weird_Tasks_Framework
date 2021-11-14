@@ -1,4 +1,5 @@
 local trace_assert = igi_helper.trace_assert
+local WorldState = igi_world_state.WorldState
 
 condition_handlers = {}		-- These are filled in igi_handlers.script
 action_handlers = {}		-- So you can add your own handlers to it. Modularity, desu.
@@ -50,7 +51,7 @@ local function do_activities(obj_data, condition, se_obj, CACHE)
 end
 
 local function are_conditions_met(obj_data, condition, CACHE, se_obj)
-	se_obj = se_obj or igi_helper.alife_obj(obj_data.id)
+	se_obj = se_obj or WorldState.objects[obj_data.id]
 
 	if not is_object_online(se_obj) then return false end
 	return condition_handlers[condition](obj_data, se_obj, CACHE)
@@ -68,7 +69,7 @@ function do_online_activities(CACHE)
 	for condition, links in pairs(activities) do
 		for k, obj_link in pairs(links) do
 			local obj_data = igi_linker.get_entity_from_link(obj_link, CACHE)
-			local se_obj = igi_helper.alife_obj(obj_data.id)
+			local se_obj = WorldState.objects[obj_data.id]
 			if are_conditions_met(obj_data, condition, CACHE, se_obj) then
 				do_activities(obj_data, condition, se_obj, CACHE)
 					

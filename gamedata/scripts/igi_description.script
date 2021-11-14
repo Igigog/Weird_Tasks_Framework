@@ -1,6 +1,7 @@
 
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
+local WorldState = igi_world_state.WorldState
 
 -- TaskDescription class
 -- Takes care of all description preparations, get_description will return description string
@@ -101,7 +102,7 @@ function TaskDescription:_get_location_description(link, setup_entities)
 		local smart_name = SIMBOARD.smarts[smart_id].smrt:name()
 		return "st_"..smart_name.."_name"
 	elseif tonumber(location.where) then
-		local se_obj = igi_helper.alife_obj(location.where)
+		local se_obj = WorldState.objects[location.where]
 		return igi_helper.get_object_location_description(se_obj)
 	else
 		--[[

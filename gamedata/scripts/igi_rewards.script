@@ -1,5 +1,6 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
+local WorldState = igi_world_state.WorldState
 
 local rewards_table_pattern = {
 	money = 0,
@@ -10,7 +11,7 @@ local rewards_table_pattern = {
 
 local function get_tg_and_tg_squad(tg)
 	if tg:clsid() == clsid.online_offline_group_s then
-		return igi_helper.alife_obj(tg:commander_id()), tg
+		return WorldState.objects[tg:commander_id()], tg
 	else
 		return tg, get_object_squad(tg)
 	end
@@ -28,7 +29,7 @@ local function get_tg_community_setup(se_tg, se_tg_squad)
 end
 
 function get_community_setup(task_giver_id)
-	local se_tg = igi_helper.alife_obj(task_giver_id)
+	local se_tg = WorldState.objects[task_giver_id]
 	return get_tg_community_setup(get_tg_and_tg_squad(se_tg))
 end
 

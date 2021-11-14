@@ -2,7 +2,7 @@ TARGET_NAME = "assault"
 PATTERN = "basic"
 
 local do_for_every_target = igi_helper.do_for_every_target
-local alife_obj = igi_helper.alife_obj
+local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
@@ -39,7 +39,7 @@ function is_completed(obj_data)
 
 	local cleared = true
 	for _, sq_id in pairs(obj_data.squads) do
-		local squad = alife_obj(sq_id)
+		local squad = WorldState.objects[sq_id]
 		if squad then
 			cleared = false
 			if not (squad.first_update) then break end
@@ -52,11 +52,10 @@ function is_completed(obj_data)
 end
 
 local function mark_distant_squads(subtask_data)
-	local sim = alife()
-	local smart_position = sim:object(subtask_data.id).position
+	local smart_position = WorldState.objects[subtask_data.id].position
 
 	for _, sq_id in pairs(subtask_data.squads) do
-		local se_squad = sim:object(sq_id)
+		local se_squad = WorldState.objects[sq_id]
 		if se_squad then
 			local is_marked = level.map_has_object_spot(se_squad.id,"red_location") == 1
 			local is_nearby = smart_position:distance_to_sqr(se_squad.position) < 2500
@@ -91,7 +90,7 @@ local function redirect_to_smart(subtask_data, CACHE, subtask_key)
 		return
 	end
 
-	local smart_id = alife_obj(subtask_data.id).current_target_id
+	local smart_id = WorldState.objects[subtask_data.id].current_target_id
 	local smart_entity = {
 		id = smart_id,
 		target = "assault",
@@ -106,7 +105,7 @@ local function add_target_squads(subtask_data)
 	subtask_data.squads = {}
 	local smart = SIMBOARD.smarts[subtask_data.id]
 	for sq_id in pairs(smart.squads) do
-		local se_squad = alife_obj(sq_id)
+		local se_squad = WorldState.objects[sq_id]
 		local actor_faction = character_community(db.actor)
 		local sq_faction = se_squad:get_squad_community()
 		if is_squad_at_smart(se_squad, subtask_data.id) and
