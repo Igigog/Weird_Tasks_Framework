@@ -90,7 +90,7 @@ local function save_task_config(task_name, prefix, table)
 	local task_path = prefix.."\\"..task_name..".json"
 	local path = configured_tasks_path..task_path
 	local content = json.encode(table)
-	trace_dbg("save", path, content)
+	--trace_dbg("save", path, content)
 	save_file(path, content)
 end
 
