@@ -1,4 +1,3 @@
-local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
 WorldState = {}
@@ -20,7 +19,7 @@ setmetatable(WorldState.levels_by_distance, {__index = index_with_default_empty_
 setmetatable(WorldState.smarts_by_level, {__index = index_with_default_empty_table})
 setmetatable(WorldState.objects, {__index = function (self, key)
     id = tonumber(key)
-    trace_assert(id and id <= 65535, "Don't look at me, senpai >//////<\n")
+    igi_helper.trace_assert(id and id <= 65535, "Don't look at me, senpai >//////<\n")
 
     local se_obj = WorldState.sim:object(id)
     if not se_obj then return end
