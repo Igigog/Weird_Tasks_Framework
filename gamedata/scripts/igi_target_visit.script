@@ -2,6 +2,7 @@ TARGET_NAME = "visit"
 PATTERN = "basic"
 
 local WorldState = igi_world_state.WorldState
+MAX_DISTANCE_SQR = 2500
 
 local function distance(position_1, position_2)
 	local x = position_1.x - position_2.x
@@ -9,11 +10,16 @@ local function distance(position_1, position_2)
 	return x*x + z*z
 end
 
+local function get_level_id(se_obj)
+	return WorldState.gg:vertex(se_obj.m_game_vertex_id):level_id()
+end
+
 function is_complete(obj_data)
-	local MAX_DISTANCE = 2500
-	local position_of_target = WorldState.objects[obj_data.id].position
-    local position_of_player = db.actor:position()
-	return distance(position_of_target, position_of_player) < MAX_DISTANCE
+	local target = WorldState.objects[obj_data.id]
+	local actor = WorldState.objects[0]
+	if get_level_id(target) ~= get_level_id(actor) then
+		return false end
+	return distance(target.position, actor.position) < MAX_DISTANCE_SQR
 end
 
 function get_status(subtask)
