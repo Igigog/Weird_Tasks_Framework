@@ -42,9 +42,8 @@ local function get_object_level(se_obj)
 end
 
 local function get_distance_bounds(str)
-	str:gsub("end", tostring(#WorldState.levels_by_distance))
 	if not str:find(",") then str = str..","..str end
-	local lower, higher = str:match("(%d+),(.+)")
+	local lower, higher = str:match("(%d+),%s?(%S+)")
 	if higher == "end" then higher = #WorldState.levels_by_distance end
 	return tonumber(lower), tonumber(higher)
 end
@@ -53,7 +52,7 @@ local function check_location(se_obj, args)
 	local obj_level = get_object_level(se_obj)
 	if blacklist[obj_level] then return false end
 
-	local dist = WorldState.distance_by_levels[obj_level]
+	local dist = WorldState.distance_by_level[obj_level]
 	local lower_bound, higher_bound = get_distance_bounds(args.search_distance)
 	return dist >= lower_bound and dist <= higher_bound
 end
@@ -159,30 +158,56 @@ local function get_objects_filtered_by_args(objects, args)
 end
 
 function get_objects_by_args(typ, args)
-	local items_pool = get_items(typ, args.endings)
+	local items_pool = get_items(typ, args.search_type)
 	return get_objects_filtered_by_args(items_pool, args)
 end
 
-function get_items(sections, possible_endings)
-	possible_endings = possible_endings or {}
-	if type(sections) == "string" then
-		sections = igi_db.ini_tables[sections]:as_table()
-	end
-	items = {}
-
+local function get_items_equal(sections)
+	local items = {}
 	for _, section in pairs(sections) do
-		if objects[section] then items[#items+1] = objects[section] end
+		items[#items+1] = WorldState.objects_by_name[section]
+	end
+	return items
+end
 
-		-- endings are important for artefacts (i.e. arti in box)
-		for _, ending in pairs(possible_endings) do
-			local with_ending = section..ending
-			if objects[with_ending] then
-				items[#items+1] = objects[with_ending]
+local function get_items_match(sections)
+	local items = {}
+	for o_section, objects in pairs(WorldState.objects_by_name) do
+		for _, section in pairs(sections) do
+			if o_section:match(section) then
+				items[#items+1] = objects
+				break
 			end
 		end
 	end
-
 	return items
+end
+
+local function get_items_find(sections)
+	local items = {}
+	for o_section, objects in pairs(WorldState.objects_by_name) do
+		for _, section in pairs(sections) do
+			if o_section:find(section) then
+				items[#items+1] = objects
+				break
+			end
+		end
+	end
+	return items
+end
+
+function get_items(sections, search_type)
+	if type(sections) == "string" then
+		sections = igi_db.ini_tables[sections]:as_table()
+	end
+
+	if search_type == 'match' then
+		return get_items_match(sections)
+	elseif search_type == 'find' then
+		return get_items_find(sections)
+	else
+		return get_items_equal(sections)
+	end
 end
 
 

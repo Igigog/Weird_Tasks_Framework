@@ -66,10 +66,7 @@ end
 
 local function find_objects(object_data)
 	objects = igi_finder.get_objects_by_args(
-		object_data.item_list,
-		object_data,
-		object_data.possible_endings,
-		object_data.only_endings)
+		object_data.item_list, object_data)
 
 	if not next(objects) then
 		printf("WTF: no objects")
