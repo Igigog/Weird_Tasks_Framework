@@ -4,7 +4,6 @@
 ------------------------------------------------
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
-local ini_tables = igi_db.ini_tables
 local WorldState = igi_world_state.WorldState
 
 local function create_squad_data(squad_info)
@@ -25,7 +24,7 @@ local function fetch_squad_data(squad_info)
 	-- important: ids, predefined name, description, target
 	local enemy_factions
 	if squad_info.type == "mutant" then
-		enemy_factions = ini_tables["monster_types"]:as_set()
+		enemy_factions = igi_db.ini_tables["monster_types"]:as_set()
 	elseif squad_info.type == "enemy" then
 		enemy_factions = igi_helper.get_faction_enemies(character_community(db.actor))
 	end
