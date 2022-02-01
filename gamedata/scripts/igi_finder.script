@@ -70,35 +70,35 @@ local function is_rat(se_squad)
 end
 
 local function check_squad_by_args(se_squad, smart, args, factions)
-	
+
 	if not simulation_objects.is_on_the_same_level(se_squad, smart) then
 		trace_dbg("not same lvl")
 		return false
 	end
-	
+
 	if se_squad.current_target_id ~= smart.id then
 		trace_dbg("target wrong")
 		return false
 	end
-	
+
 	if se_squad.current_action ~= 1 or not se_squad.stay_time then
 		trace_dbg("action or stay time")
 		return false
 	end
-	
+
 	if args.min_num and se_squad:npc_count() < args.min_num then
 		return false
 	end
-	
+
 	if is_rat(se_squad) or not factions[se_squad.player_id] then
 		trace_dbg("factions sucked")
 		return false
 	end
-	
+
 	if (not args.include_scripted) and se_squad:get_script_target() then
 		return false
 	end
-	
+
 	return true
 end
 
@@ -119,25 +119,16 @@ function is_smart_location(val)
 	return tonumber(val) or val:find(",")
 end
 
-arg_handlers = {
-	only_enemies = enemy_to_handler,
-}
 local function check_object_by_args(se_obj, args)
 	if not check_location(se_obj, args) then
 		-- igi_helper.trace_dbg("location sucked")
 		return false
 	end
 
-	for k, v in pairs(arg_handlers) do
-		local handler = args[k] and v
-		if handler then
-			if not handler(se_obj, args) then
-				-- igi_helper.trace_dbg(k.." sucked")
-				return false
-			end
-		end
+	if args.only_enemies then
+		return enemy_to_handler(se_obj, args)
 	end
-	
+
 	return true
 end
 
