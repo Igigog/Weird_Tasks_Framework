@@ -17,6 +17,7 @@ function entity_on_after_target_creation(entity)
 			se_save_var(se_obj.id,se_obj:name(),"companion",true)
 			se_save_var(se_obj.id,se_obj:name(),"companion_cannot_dismiss",true)
 			se_save_var(se_obj.id,se_obj:name(),"companion_cannot_teleport",entity.cant_teleport == true)
+			SIMBOARD:setup_squad_and_group(se_obj)
 		end
 	end
 

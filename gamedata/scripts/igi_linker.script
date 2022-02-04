@@ -120,9 +120,12 @@ end
 function assign_group_id(entities)
 	trace_dbg("Before assigning group id", entities)
 	local keys = set_missing_group_ids(entities)
-	for k, entity in pairs(entities) do
-		entities[k] = nil
+	for _, entity in pairs(entities) do
 		entities[get_entity_link(entity)] = entity
+	end
+
+	for _, k in pairs(keys) do
+		entities[k] = nil
 	end
 
 	trace_dbg("After assigning group id", entities)
