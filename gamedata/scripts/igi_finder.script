@@ -243,12 +243,12 @@ function is_stash_suitable(id, args)
 	return true
 end
 
-function get_stashes_by_args(args)
-	local stashes = treasure_manager.stashes
+function get_stashes(args)
+	local stashes = treasure_manager.caches
 	local returned_stashes = {}
 	for id, is_not_available in pairs(stashes) do
-		if not is_not_available then
-			returned_stashes[id] = is_stash_suitable(id, args) or nil
+		if not is_not_available and is_stash_suitable(id, args) then
+			returned_stashes[#returned_stashes+1] = id
 		end
 	end
 	return returned_stashes

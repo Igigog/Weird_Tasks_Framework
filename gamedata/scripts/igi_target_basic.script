@@ -107,14 +107,6 @@ local function fetch_item_data(item_info)
 	return group_data, description
 end
 
-local function get_smart_coordinates(smart)
-	return table.concat({
-		smart.position.x,
-		smart.position.y + 1,
-		smart.position.z
-	}, ",")
-end
-
 local function find_smarts(where, amount)
 	local smarts = igi_finder.get_smarts(where)
 	local smarts_list = igi_utils.get_random_items(smarts, amount)
@@ -124,6 +116,11 @@ local function find_smarts(where, amount)
 		smarts_list[k] = smart.id
 	end
 	return smarts_list
+end
+
+local function find_stash(args)
+	local stashes = igi_finder.get_stashes(args)
+	return igi_utils.get_random_items(stashes, args.amount)
 end
 
 local function force_parent_online(se_obj)
@@ -201,28 +198,33 @@ end
 -- Prepares objects for task, rolls random dice, finds objects in world
 ------------------------------------------------
 
-function setup_location(loc_info)
-	trace_assert(loc_info.where or loc_info.coords, "location has no info")
-	if loc_info.coords then
-		return loc_info
+function setup_location(entity)
+	--trace_assert(entity.where or entity.coords, "location has no info")
+	if entity.coords then
+		return entity
 	end
 
-	local where = loc_info.where
+	local where = entity.where
 	if tonumber(where) or type(where)=="string" and igi_linker.has_dependency(where)  then
-		loc_info.id = where
-		loc_info.where = nil
-		return loc_info
+		entity.id = where
+		entity.where = nil
+		return entity
 	end
 
-	if igi_finder.is_smart_location(loc_info.where) then
-		loc_info.smarts = find_smarts(loc_info.where, loc_info.amount or 1)
-		return loc_info
+	if igi_finder.is_smart_location(entity.where) then
+		entity.smarts = find_smarts(entity.where, entity.amount or 1)
+		return entity
+	end
+
+	if entity.location_type == 'stash' then
+		entity.ids = find_stash(entity)
+		return entity
 	end
 
 	local smart = trace_assert(SIMBOARD.smarts_by_names[where], "Unknown name "..where)
-	loc_info.id = smart.id
-	loc_info.where = nil
-	return loc_info
+	entity.id = smart.id
+	entity.where = nil
+	return entity
 end
 
 function setup_squad(squad_info)
@@ -297,9 +299,10 @@ function create_location(group_data)
 	if group_data.smarts then
 		for i, id in pairs(group_data.smarts) do
 			local loc_data = {id = id}
-			igi_target.add_custom_entry(locations, "location", group_data.group_id, i, loc_data, group_data)
-			locations[igi_linker.make_link("location", group_data.group_id, i)] = loc_data
-		end
+			igi_target.add_custom_entry(locations, "location", group_data.group_id, i, loc_data, group_data)		end
+	elseif group_data.location_type == 'stash' then
+		for i, id in pairs(group_data.ids) do
+			igi_target.add_custom_entry(locations, "location", group_data.group_id, i, {id = id}, group_data)	end
 	else
 		igi_target.add_custom_entry(locations, "location", group_data.group_id, 1, group_data, group_data)
 	end
