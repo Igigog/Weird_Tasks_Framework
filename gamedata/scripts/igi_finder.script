@@ -49,7 +49,6 @@ local function get_distance_bounds(str)
 end
 
 local function check_location(se_obj, args)
-	trace_dbg('args', args)
 	local obj_level = get_object_level(se_obj)
 	if blacklist[obj_level] then return false end
 
@@ -180,7 +179,6 @@ end
 function get_objects_by_args(typ, args)
 	local objects_pool = get_objects_pool(typ, args.search_type)
 	local objects = filter_object_pool_by_args(objects_pool, args)
-	trace_dbg('objects', objects)
 	return objects
 end
 

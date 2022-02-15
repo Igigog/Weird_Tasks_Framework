@@ -95,39 +95,40 @@ function get_entity_from_link(link, CACHE)
 	return igi_target.get_entities(CACHE)[link]
 end
 
-function set_missing_group_ids(entities)
+local function fill_counters(entities)
 	local counters = {}
-	local unassigned_keys = {}
-	for k, entity in pairs(entities) do
-		if not entity.group_id then
-			unassigned_keys[#unassigned_keys+1] = k
-		else
-			counters[entity.entity_type] = (counters[entity.entity_type] or 0) + 1
+	for _, entity in pairs(entities) do
+		if not counters[entity.entity_type] then
+			counters[entity.entity_type] = 0
+		end
+		local counter = counters[entity.entity_type]
+		if entity.group_id and (entity.group_id > counter) then
+			counters[entity.entity_type] = entity.group_id
 		end
 	end
+	return counters
+end
 
-	for _, key in pairs(unassigned_keys) do
-		local entity = entities[key]
-		counters[entity.entity_type] = (counters[entity.entity_type] or 0) + 1
-		entity.group_id = counters[entity.entity_type]
+function set_missing_group_ids(entities)
+	local counters = fill_counters(entities)
+	for _, entity in pairs(entities) do
+		if not entity.group_id then
+			counters[entity.entity_type] = counters[entity.entity_type] + 1
+			entity.group_id = counters[entity.entity_type]
+		end
 	end
-
-	return unassigned_keys
 end
 
 
--- TODO: don't rework entity table here
 function assign_group_id(entities)
 	trace_dbg("Before assigning group id", entities)
-	local keys = set_missing_group_ids(entities)
+	set_missing_group_ids(entities)
+	local tmp = {}
 	for _, entity in pairs(entities) do
-		entities[get_entity_link(entity)] = entity
+		tmp[get_entity_link(entity)] = entity
 	end
-
-	for _, k in pairs(keys) do
-		entities[k] = nil
-	end
-
+	empty_table(entities)
+	copy_table(entities, tmp)
 	trace_dbg("After assigning group id", entities)
 end
 
