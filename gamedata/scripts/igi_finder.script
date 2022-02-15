@@ -49,6 +49,7 @@ local function get_distance_bounds(str)
 end
 
 local function check_location(se_obj, args)
+	trace_dbg('args', args)
 	local obj_level = get_object_level(se_obj)
 	if blacklist[obj_level] then return false end
 
@@ -63,6 +64,18 @@ local function enemy_to_handler(se_obj, args)
 	local npc_faction = get_object_community(WorldState.objects[se_obj.parent_id])
 	return game_relations.is_factions_enemies(my_faction, npc_faction)
 end
+
+local function search_in_handler(se_obj, args)
+	if args.search_in.world and object_in_world(se_obj) then
+		return true
+	end
+
+	if args.search_in.npc_inv and object_in_npc_inventory(se_obj) then
+		return true
+	end
+	return false
+end
+
 
 local function is_rat(se_squad)
 	local section = se_squad and se_squad:section_name()
@@ -119,24 +132,40 @@ function is_smart_location(val)
 	return tonumber(val) or val:find(",")
 end
 
+filters = {
+	only_enemies = enemy_to_handler,
+	search_in = search_in_handler,
+	search_distance = check_location,
+}
+
 local function check_object_by_args(se_obj, args)
-	if not check_location(se_obj, args) then
-		-- igi_helper.trace_dbg("location sucked")
-		return false
+	-- search distance first as the most effective
+	local tmp = args.search_distance
+	if args.search_distance then
+		if not check_location(se_obj, args) then
+			-- igi_helper.trace_dbg("location sucked")
+			return false
+		end
+	end
+	-- delete search distance to not check twice
+	args.search_distance = nil
+
+	for k, filter in pairs(filters) do
+		if args[k] and not filter(se_obj, args) then
+			return false
+		end
 	end
 
-	if args.only_enemies then
-		return enemy_to_handler(se_obj, args)
-	end
-
+	-- return search distance to not change args
+	args.search_distance = tmp
 	return true
 end
 
 
-local function get_objects_filtered_by_args(objects, args)
+function filter_object_pool_by_args(objects_pool, args)
 	local filtered = {}
 
-	for _, group in pairs(objects) do
+	for _, group in pairs(objects_pool) do
 		for id in pairs(group) do
 			local se_obj = WorldState.objects[id]
 			if check_object_by_args(se_obj, args) then
@@ -149,55 +178,45 @@ local function get_objects_filtered_by_args(objects, args)
 end
 
 function get_objects_by_args(typ, args)
-	local items_pool = get_items(typ, args.search_type)
-	return get_objects_filtered_by_args(items_pool, args)
+	local objects_pool = get_objects_pool(typ, args.search_type)
+	local objects = filter_object_pool_by_args(objects_pool, args)
+	trace_dbg('objects', objects)
+	return objects
 end
 
-local function get_items_equal(sections)
-	local items = {}
+local function get_objects_pool_equal(sections)
+	local pool = {}
 	for _, section in pairs(sections) do
-		items[#items+1] = WorldState.objects_by_name[section]
+		pool[#pool+1] = WorldState.objects_by_name[section]
 	end
-	return items
+	return pool
 end
 
-local function get_items_match(sections)
-	local items = {}
+local function get_objects_pool_by_func(sections, compare_func)
+	local pool = {}
 	for o_section, objects in pairs(WorldState.objects_by_name) do
 		for _, section in pairs(sections) do
-			if o_section:match(section) then
-				items[#items+1] = objects
+			if compare_func(o_section, section) then
+				pool[#pool+1] = objects
 				break
 			end
 		end
 	end
-	return items
+	return pool
 end
 
-local function get_items_find(sections)
-	local items = {}
-	for o_section, objects in pairs(WorldState.objects_by_name) do
-		for _, section in pairs(sections) do
-			if o_section:find(section) then
-				items[#items+1] = objects
-				break
-			end
-		end
-	end
-	return items
-end
 
-function get_items(sections, search_type)
+function get_objects_pool(sections, search_type)
 	if type(sections) == "string" then
 		sections = igi_db.ini_tables[sections]:as_table()
 	end
 
 	if search_type == 'match' then
-		return get_items_match(sections)
+		return get_objects_pool_by_func(sections, string.match)
 	elseif search_type == 'find' then
-		return get_items_find(sections)
+		return get_objects_pool_by_func(sections, string.find)
 	else
-		return get_items_equal(sections)
+		return get_objects_pool_equal(sections)
 	end
 end
 
