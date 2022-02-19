@@ -35,7 +35,11 @@ function quest_target(obj_data)
 end
 
 function get_item_cost(entity)
-	return tonumber(ini_sys:r_string_ex(entity.section_name, "cost"))
+	config_cost = tonumber(ini_sys:r_string_ex(entity.section_name, "cost"))
+	if config_cost == 0 then
+		return 500
+	end
+	return config_cost
 end
 
 function get_item_weight(entity)
