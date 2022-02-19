@@ -164,6 +164,7 @@ end
 function filter_object_pool_by_args(objects_pool, args)
 	local filtered = {}
 
+	trace_dbg('finder: filter pool', objects_pool, args)
 	for _, group in pairs(objects_pool) do
 		for id in pairs(group) do
 			local se_obj = WorldState.objects[id]
@@ -252,7 +253,9 @@ function get_squads_by_args(args, factions)
 end
 
 function is_stash_suitable(id, args)
+	trace_dbg('finder: suitable', id, args)
 	local se_obj = WorldState.objects[id]
+	if not se_obj then return false end
 	if not check_location(se_obj, args) then
 		return false
 	end

@@ -302,6 +302,7 @@ function create_location(group_data)
 			igi_target.add_custom_entry(locations, "location", group_data.group_id, i, loc_data, group_data)		end
 	elseif group_data.location_type == 'stash' then
 		for i, id in pairs(group_data.ids) do
+			treasure_manager.set_random_stash(nil, nil, nil, id)
 			igi_target.add_custom_entry(locations, "location", group_data.group_id, i, {id = id}, group_data)	end
 	else
 		igi_target.add_custom_entry(locations, "location", group_data.group_id, 1, group_data, group_data)
