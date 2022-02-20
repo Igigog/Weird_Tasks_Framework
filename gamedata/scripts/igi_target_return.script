@@ -47,13 +47,13 @@ function get_item_weight(entity)
 end
 
 function get_completed_money(entity)
-	return get_item_cost(entity)*get_item_weight(entity)/32
+	return 500 + get_item_cost(entity)*get_item_weight(entity)/32
 end
 
 function get_completed_goodwill(entity)
-	return get_item_weight(entity)*10
+	return 25 + get_item_weight(entity)*10
 end
 
 function get_failed_goodwill(entity)
-	return get_item_cost(entity)/(-400)
+	return -25 + (get_item_cost(entity)/(-400))
 end
