@@ -27,9 +27,15 @@ local function fetch_squad_data(squad_info)
 		enemy_factions = igi_db.ini_tables["monster_types"]:as_set()
 	elseif squad_info.type == "enemy" then
 		enemy_factions = igi_helper.get_faction_enemies(character_community(db.actor))
+	else
+		enemy_factions = squad_info.factions
 	end
 	trace_assert(enemy_factions)
 	local squads = igi_finder.get_squads_by_args(squad_info, enemy_factions)
+	trace_dbg('squads', squads)
+	if squad_info.amount == 'all' then
+		squad_info.amount = #squads
+	end
 	local ids = igi_utils.get_random_items(squads, squad_info.amount)
 	if not ids then return end
 
@@ -97,6 +103,10 @@ local function fetch_item_data(item_info)
 		ids[#ids + 1] = se_obj.id
 	end
 
+	if item_info.amount == 'all' then
+		item_info.amount = #ids
+	end
+
 	local item_data = igi_models.create_ItemData(ids)
 	local description = fetch_item_description(objects, item_info.item_type)
 	local group_data = igi_models.create_GroupData(
@@ -109,6 +119,9 @@ end
 
 local function find_smarts(where, amount)
 	local smarts = igi_finder.get_smarts(where)
+	if amount == 'all' then
+		amount = #smarts
+	end
 	local smarts_list = igi_utils.get_random_items(smarts, amount)
 	if not smarts_list then return end
 	for k, smart_name in pairs(smarts_list) do
