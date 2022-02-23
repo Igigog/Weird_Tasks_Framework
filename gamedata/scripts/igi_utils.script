@@ -48,7 +48,7 @@ function list_to_set(l)
 	
 	local set = {}
 	for _, v in pairs(l) do
-		trace_assert(type(v) ~= "table", "list_to_set values mustn't be tables")
+		igi_helper.trace_assert(type(v) ~= "table", "list_to_set values mustn't be tables")
 		set[v] = true
 	end
 	return set
@@ -218,7 +218,7 @@ function heap_swap(heap, index1, index2)
 end
 
 function heap_compare(heap, index1, index2)
-	trace_assert(heap.priorities[index1] and heap.priorities[index2], "No priorities?", heap)
+	igi_helper.trace_assert(heap.priorities[index1] and heap.priorities[index2], "No priorities?", heap)
 	return heap.priorities[index1] > heap.priorities[index2]
 end
 
@@ -258,7 +258,7 @@ function heap_sift_down(heap, index)
 end
 
 function heap_push(heap, payload, priority)
-	trace_assert(priority and payload, "No priority or payload")
+	igi_helper.trace_assert(priority and payload, "No priority or payload")
 	heap.priorities[#heap.priorities+1] = priority
 	heap.payloads[#heap.payloads+1] = payload
 	heap_sift_up(heap, #heap.priorities)
@@ -328,4 +328,24 @@ function combine_tables(tbl1, tbl2)
 			tbl1[k] = tbl2[k]
 		end
 	end
+end
+
+function defaultdict(factory)
+	local tbl = {}
+	local metatbl = {}
+	if type(factory) == "function" then
+		metatbl.__index = function (self, k)
+			local v = factory()
+			self[k] = v
+			return v
+		end
+	else
+		metatbl.__index = function (self, k)
+			local v = factory
+			self[k] = v
+			return v
+		end
+	end
+	setmetatable(tbl, metatbl)
+	return tbl
 end

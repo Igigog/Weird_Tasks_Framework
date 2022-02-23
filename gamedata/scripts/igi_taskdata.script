@@ -3,11 +3,7 @@ local trace_assert_no_crash = igi_helper.trace_assert_no_crash
 local trace_assert = igi_helper.trace_assert
 
 local function count_entities(task_setup)
-	local counter = {
-		location = 0,
-		squad = 0,
-		item = 0,
-	}
+	local counter = igi_utils.defaultdict(0)
 	for _, v in pairs(task_setup) do
 		counter[v.entity_type] = counter[v.entity_type] + 1
 	end
