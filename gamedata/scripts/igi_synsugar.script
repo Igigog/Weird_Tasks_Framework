@@ -1,6 +1,8 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
+-- TOO SOON FOR THIS ONE, REMOVE
+
 synsugar_handlers = {}
 synsugar_entity_handlers = {}
 
