@@ -93,7 +93,7 @@ local function check_squad_by_args(se_squad, smart, args, factions)
 		return false
 	end
 
-	if (not args.ignore_stay_action) and se_squad.current_action ~= 1 or not se_squad.stay_time then
+	if (not args.ignore_stay_action) and (se_squad.current_action ~= 1 or not se_squad.stay_time) then
 		trace_dbg("action or stay time")
 		return false
 	end
@@ -104,7 +104,7 @@ local function check_squad_by_args(se_squad, smart, args, factions)
 	end
 
 	if is_rat(se_squad) or not factions[se_squad.player_id] then
-		trace_dbg("factions sucked")
+		trace_dbg("factions sucked", se_squad.player_id)
 		return false
 	end
 
