@@ -59,6 +59,45 @@ function Macro.ChooseOne(args)
 	return igi_utils.random_table_element(args)
 end
 
+stateful_random_states = igi_utils.MemoizeCache.new('one-quest')
+function Macro.StatefulRandom(args)
+	args = parse_args(args)
+	local min, max = args[1], args[2]
+	local total = args[3]
+	local current = args[4]
+	local id = args[5] or ""
+
+	if not stateful_random_states[id] then
+		trace_assert(min <= total, 'StatefulRandom: min > total')
+		trace_assert(max <= total, 'StatefulRandom: max > total')
+		stateful_random_states[id] = {}
+		for i=1,total do
+			stateful_random_states[id][i] = false
+		end
+
+		for _=1,min do
+			local k
+			repeat
+				k = igi_random.rand(total)
+			until not stateful_random_states[id][k]
+			stateful_random_states[id][k] = true
+		end
+
+		for _=1,max-min do
+			local k = igi_random.rand(total)
+			stateful_random_states[id][k] = true
+		end
+	end
+
+	return stateful_random_states[id][current]
+end
+
+function Macro.If(args)
+	args = parse_args(args)
+	if args[1] then return args[2] end
+	return args[3]
+end
+
 local constant_functions = {
 	actor_level = igi_helper.get_player_level,
 	player_level = igi_helper.get_player_level,
