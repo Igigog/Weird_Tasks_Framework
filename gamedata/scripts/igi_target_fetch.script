@@ -33,20 +33,19 @@ function entity_on_get_taskdata(entity)
 	entity.not_on_map = true
 end
 
-function quest_target(obj_data)
+function quest_target(entity)
 	return -1
 end
 
-function setup_item(item_info)
-	local sec_name = item_info.section_name
+function setup_item(entity)
+	local sec_name = entity.section_name
 
-	trace_assert(ini_sys:section_exist(sec_name or "nil"))
+	trace_assert(ini_sys:section_exist(sec_name or "nil"), "Section does not exist")
 	local text_name = ini_sys:r_string_ex(sec_name, "inv_name")
-	local desc_target = game.translate_string(text_name)..", "..tostring(item_info.how_much)
+	local desc_target = game.translate_string(text_name)..", "..tostring(entity.how_much)
 
-	local item_data = igi_models.create_ItemData(nil, sec_name, nil, item_info.how_much)
 	local desc = igi_models.create_DescriptionData(nil, desc_target)
-	return item_data, desc
+	return true, desc
 end
 
 function create_item(group_data)

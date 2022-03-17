@@ -68,7 +68,7 @@ function do_online_activities(CACHE)
 
 	for condition, links in pairs(activities) do
 		for k, obj_link in pairs(links) do
-			local obj_data = igi_linker.get_entity_from_link(obj_link, CACHE)
+			local obj_data = CACHE:get_entities():get_by_link(obj_link)
 			local se_obj = WorldState.objects[obj_data.id]
 			if are_conditions_met(obj_data, condition, CACHE, se_obj) then
 				do_activities(obj_data, condition, se_obj, CACHE)
@@ -85,7 +85,7 @@ end
 function sort_online_activities(CACHE)
 	-- Adds all objects with online activities to CACHE
 	-- CACHE.online_activities = {*condition* = {*list of obj_data*}}
-	local targets = igi_target.get_entities(CACHE)
+	local targets = CACHE:get_entities()
 	local online_acts = {}
 	for k, entity in pairs(targets) do
 		if entity.online_activities then

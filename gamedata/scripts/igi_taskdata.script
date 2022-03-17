@@ -107,7 +107,7 @@ end
 function reset_all_custom_tables()
 	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
 	for prefix in meta_ltx:iter() do
-		local files = getFS():file_list_open("$game_config$", 
+		local files = getFS():file_list_open("$game_config$",
 		"igi_tasks\\tasks\\"..prefix.."\\",
 		1+4+8)
 
@@ -127,10 +127,13 @@ function get_task_data(task_id)
 	local task_tbl = get_task_table(task_name, prefix)
 	trace_assert(task_tbl, "No such task: "..tostring(task_id or "nil"))
 
+	task_tbl.__cls = 'Cache'
+	igi_models.restore_object_interface(task_tbl)
+
 	task_tbl.group_counter = count_entities(task_tbl.setup)
 	igi_synsugar.desugarize(task_tbl)
 	trace_dbg("after desugaring", task_tbl)
-	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, task_tbl.setup)
+	igi_callbacks.invoke_callbacks_custom("on_get_taskdata", task_tbl, task_tbl.setup)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
@@ -139,20 +142,30 @@ function get_task_setup(task_id)
 	return get_task_data(task_id).setup
 end
 
-function get_finalized_task_setup(task_id)
-	local tbl = get_task_data(task_id)
-	local task_setup = dup_table(tbl.setup)
+function add_classification_rule(rule)
+	classification_rules[rule] = true
+end
+
+classification_rules = {}
+function restore_classes(CACHE)
+	for rule in pairs(classification_rules) do
+		rule(CACHE)
+	end
+end
+
+function finalize_task_cache(CACHE)
+	restore_classes(CACHE)
+	trace_dbg('restored', CACHE)
+	local setup = CACHE:get_setup()
 	local resolve_and_link = igi_text_processor.resolve_unlinked_macros_and_link_virtual_variables
 
-	igi_linker.assign_group_id(task_setup)
-	resolve_and_link(task_setup)
+	setup:assign_group_id()
+	resolve_and_link(setup)
 
-	igi_generate.unfold_generation(task_setup)
+	igi_generate.unfold_generation(setup)
 
-	igi_linker.assign_group_id(task_setup)
-	resolve_and_link(task_setup)	-- once more to link gen ids
-
-	return task_setup
+	setup:assign_group_id()
+	resolve_and_link(setup)	-- once more to link gen ids
 end
 
 function get_target_table(target)

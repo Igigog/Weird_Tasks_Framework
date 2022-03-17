@@ -1,50 +1,65 @@
--- DELETE etu huinyu nahui
-
 local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 
-LOCATION = "location"
-ITEM = "item"
-SQUAD = "squad"
-
-function create_CACHE()
-	local tbl = {
-		setup = {},
-		task_name = "",
-		description = "",
-		objects = {},
-		subtasks = {},
-		activities = {},
-		group_counter = {},
-	}
-	return tbl
+function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 end
+
+function actor_on_first_update()
+	igi_models.add_interface_implementation('Entity', Entity)
+	igi_models.add_interface_implementation(Cache.__cls, Cache)
+end
+
+Cache = {
+	__cls = 'Cache',
+
+	new = function (task_id, task_giver_id)
+		local t = {
+			__cls = Cache.__cls,
+			task_id = task_id,
+			task_giver_id = task_giver_id,
+		}
+		igi_models.restore_object_interface(t)
+		return t
+	end,
+
+	from = function (tbl)
+		local t = {__cls = Cache.__cls,}
+		igi_models.restore_object_interface(t)
+		copy_table(t, tbl)
+		igi_taskdata.finalize_task_cache(t)
+		trace_dbg('finalized', t)
+		return t
+	end,
+
+	set_task_id = function (self, task_id)
+		self.task_id = task_id
+	end,
+
+	get_task_id = function (self)
+		return self.task_id
+	end,
+
+	set_task_giver_id = function (self, tg_id)
+		self.task_giver_id = tg_id
+	end,
+
+	get_task_giver_id = function (self)
+		return self.task_giver_id
+	end
+}
+
+Entity = {
+	get_target_table = function (self)
+		return igi_taskdata.get_target_table(self.target or 'basic')
+	end
+}
 
 function create_DescriptionData(faction, target, location)
 	local tbl = {
 		factions = faction,
 		targets = target,
 		locations = location,
-	}
-	return tbl
-end
-
-function create_SquadsData(ids, name, faction, location)
-	local tbl = {
-		typ = "squad",
-		ids = ids,
-		section_name = name,
-		faction = faction,
-		where = location,
-	}
-	if location and igi_linker.is_dependency(location) then
-		tbl.where_link = igi_linker.Dependency(location):get_link()
-	end
-	return tbl
-end
-
-function create_SmartData(smarts)
-	local tbl = {
-		smarts = smarts,
 	}
 	return tbl
 end
@@ -64,7 +79,7 @@ function create_ItemData(ids, sec_name, location, how_much)
 		how_much = how_much,
 	}
 	if location and igi_linker.is_dependency(location) then
-		tbl.where_link = igi_linker.Dependency(location):get_link()
+		tbl.where_link = igi_linker.Dependency.from(location):get_link()
 	end
 	return tbl
 end
@@ -77,4 +92,52 @@ function create_smart_setup(where)
 		where = where,
 	}
 	return smart
+end
+
+implementations = igi_utils.defaultdict(function () return {} end)
+
+function add_interface_implementation(name, impl)
+	-- You'd better know how Rust's impl blocks work
+	trace_assert(name and impl, 'No name or impl: '..name, impl)
+	local impl_t = implementations[name]
+	for k, v in pairs(impl) do
+		impl_t[k] = v
+	end
+end
+
+function set_class(tbl, cls)
+	trace_assert(implementations[cls], "Class unknown")
+	setmetatable(tbl, {__index = implementations[cls]})
+end
+
+function restore_object_interface(tbl)
+	if not tbl.__cls then return end
+	if not implementations[tbl.__cls] then return end
+	set_class(tbl, tbl.__cls)
+	tbl.__cls = nil
+end
+
+function restore_interfaces_recursively(tbl)
+	restore_object_interface(tbl)
+	for _, v in pairs(tbl) do
+		if type(v) == "table" then
+			restore_interfaces_recursively(v)
+		end
+	end
+end
+
+function save_interfaces_recursively(tbl)
+	tbl.__cls = tbl.__cls  -- from metatable to table
+	for _, v in pairs(tbl) do
+		if type(v) == "table" then
+			save_interfaces_recursively(v)
+		end
+	end
+end
+
+function deep_copy(dest, src)
+	save_interfaces_recursively(src)
+	copy_table(dest, src)
+	restore_interfaces_recursively(src)
+	restore_interfaces_recursively(dest)
 end

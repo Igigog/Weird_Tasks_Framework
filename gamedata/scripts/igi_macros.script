@@ -1,6 +1,7 @@
 local trace_assert = igi_helper.trace_assert
 
 function has_macro(str)
+	trace_assert(type(str) == "string", "Macro is not a string")
 	return str:find("%b&&")
 end
 
@@ -134,10 +135,6 @@ end
 
 local function escape_pattern(text)
     return text:gsub("([^%w])", "%%%1")
-end
-
-local function has_macro(str)
-	return str:find("%b&&")
 end
 
 local function resolve_macro(macro)
@@ -326,6 +323,10 @@ end
 
 -------------------------------------------------------
 
+function macro_iterator(str)
+	return str:gmatch("%&(.*%(.*%))%&")
+end
+
 function resolve_all(tbl, entities)
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
@@ -341,7 +342,7 @@ function resolve_unlinked(tbl)
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
 			tbl[k] = resolve_unlinked(v)
-		elseif type(v) == 'string' and has_macro(v) 
+		elseif type(v) == 'string' and has_macro(v)
 				and not igi_linker.has_dependency(v) then
 			tbl[k] = resolve_all_macros(v)
 		end

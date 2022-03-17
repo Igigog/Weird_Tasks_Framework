@@ -2,67 +2,200 @@
 
 local trace_assert = igi_helper.trace_assert
 
-Set = {}
-function Set.union(set1, set2)
-	local new_set = dup_table(set1)
-	for k in pairs(set2) do
-		new_set[k] = true
-	end
-	return new_set
+
+function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 end
 
-function Set.intersection(set1, set2)
-	local new_set = {}
-	for k in pairs(set2) do
-		new_set[k] = set1[k]
-	end
-	return new_set
+function actor_on_first_update()
+	igi_models.add_interface_implementation(Heap.__cls, Heap)
+	igi_models.add_interface_implementation(Set.__cls, Set)
 end
+Set = {
+	__cls = 'Set',
 
-function Set.difference(set1, set2)
-	local new_set = dup_table(set1)
-	for k in pairs(set2) do
-		new_set[k] = nil
-	end
-	return new_set
-end
+	new = function()
+		local t = {
+			__cls = Set.__cls,
+		}
+		igi_models.restore_object_interface(t)
+		return t
+	end,
 
-function Set.from_list(list)
-	local new_set = {}
-	for _, v in pairs(list) do
-		new_set[v] = true
-	end
-	return new_set
-end
+	union = function(self, set2)
+		local new_set = dup_table(self)
+		for k in pairs(set2) do
+			new_set[k] = true
+		end
+		return new_set
+	end,
 
-function Set.to_list(set)
-	local tbl = {}
-	for k in pairs(set) do
-		tbl[#tbl + 1] = k
-	end
-	return tbl
-end
-
-function list_to_set(l)
-	if(l == nil) then return nil end
+	intersection = function(self, set2)
+		local new_set = {}
+		for k in pairs(set2) do
+			new_set[k] = self[k]
+		end
+		return new_set
+	end,
 	
-	local set = {}
-	for _, v in pairs(l) do
-		igi_helper.trace_assert(type(v) ~= "table", "list_to_set values mustn't be tables")
-		set[v] = true
-	end
-	return set
-end
-
-function set_to_list(s)
-	if(s == nil) then return nil end
+	difference = function(self, set2)
+		local new_set = dup_table(self)
+		for k in pairs(set2) do
+			new_set[k] = nil
+		end
+		return new_set
+	end,
 	
-	local list = {}
-	for v, _ in pairs(s) do
-		list[#list + 1] = v
+	from_list = function(list)
+		local new_set = {}
+		for _, v in pairs(list) do
+			new_set[v] = true
+		end
+		return new_set
+	end,
+
+	to_list = function(self)
+		local tbl = {}
+		for k in pairs(self) do
+			tbl[#tbl + 1] = k
+		end
+		tbl.__cls = nil
+		return tbl
+	end,
+
+	insert = function (self, k)
+		self[k] = true
 	end
-	return list
-end
+}
+
+Heap = {
+	__cls = 'Heap',
+
+	new = function ()
+		local t = {
+			__cls = Heap.__cls,
+			priorities = {},
+			payloads = {},
+		}
+		igi_models.restore_object_interface(t)
+		return t
+	end,
+
+	swap = function(self, index1, index2)
+		self.priorities[index1], self.priorities[index2] =
+			self.priorities[index2], self.priorities[index1]
+
+		self.payloads[index1], self.payloads[index2] =
+			self.payloads[index2], self.payloads[index1]
+	end,
+
+	compare = function(self, index1, index2)
+		igi_helper.trace_assert(self.priorities[index1] and self.priorities[index2], "No priorities?", self)
+		return self.priorities[index1] > self.priorities[index2]
+	end,
+
+	sift_up = function(self, index)
+		if index == 1 then return end
+
+		local parent_index = math.floor(index/2)
+		if self:compare(parent_index, index) then
+			self:swap(index, parent_index)
+			self:sift_up(parent_index)
+		end
+	end,
+
+	sift_down = function(self, index)
+		local minIndex, leftChildIndex, rightChildIndex
+		leftChildIndex, rightChildIndex = index * 2, index * 2 + 1
+		local priorities = self.priorities
+
+		if rightChildIndex > #priorities then
+			if leftChildIndex > #priorities then
+				return
+			else
+				minIndex = leftChildIndex
+			end
+		else
+			if self:compare(leftChildIndex, rightChildIndex) then
+				minIndex = rightChildIndex
+			else
+				minIndex = leftChildIndex
+			end
+		end
+
+		if self:compare(index, minIndex) then
+			self:swap(index, minIndex)
+			self:sift_down(minIndex)
+		end
+	end,
+
+	push = function(self, payload, priority)
+		igi_helper.trace_assert(priority and payload, "No priority or payload")
+		self.priorities[#self.priorities+1] = priority
+		self.payloads[#self.payloads+1] = payload
+		self:sift_up(#self.priorities)
+	end,
+
+	pop = function(self)
+		if #self.payloads == 0 then return end
+		local to_return = self.payloads[1]
+
+		self.priorities[1] = self.priorities[#self.priorities]
+		self.payloads[1] = self.payloads[#self.payloads]
+
+		self.priorities[#self.priorities] = nil
+		self.payloads[#self.payloads] = nil
+		if #self.priorities > 0 then
+			self:sift_down(1)
+		end
+
+		return to_return
+	end,
+
+	peek = function(self)
+		return self.payloads[1]
+	end,
+
+	change_priority = function(self, payload, priority)
+		for i, payload2 in ipairs(self.payloads) do
+			if payload2 == payload then
+				local old_priority = self.priorities[i]
+				self.priorities[i] = priority
+
+				if priority < old_priority then
+					self:sift_up(i)
+				else
+					self:sift_down(i)
+				end
+			end
+		end
+	end,
+
+	remove_by_index = function(self, index)
+		self.priorities[index] = self.priorities[#self.priorities]
+		self.payloads[index] = self.payloads[#self.payloads]
+
+		self.payloads[#self.payloads] = nil
+		self.priorities[#self.priorities] = nil
+		self:sift_down(index)
+	end,
+
+	remove_element = function(self, payload)
+		for i=#self.payloads, 1, -1 do
+			if self.payloads[i] == payload then
+				self:remove_by_index(i)
+			end
+		end
+	end,
+
+	size = function (self)
+		return #self.payloads
+	end,
+
+	get = function(self, index)
+		return self.payloads[index]
+	end
+}
 
 function random_table_element(tbl)
 	-- It's preffered to use lists with igi_random.rand rather
@@ -202,120 +335,6 @@ function iterate_table(tbl, func)
 	end
 end
 
-function heap_new()
-	return {
-		priorities = {},
-		payloads = {},
-	}
-end
-
-function heap_swap(heap, index1, index2)
-	heap.priorities[index1], heap.priorities[index2] =
-		heap.priorities[index2], heap.priorities[index1]
-
-	heap.payloads[index1], heap.payloads[index2] =
-		heap.payloads[index2], heap.payloads[index1]
-end
-
-function heap_compare(heap, index1, index2)
-	igi_helper.trace_assert(heap.priorities[index1] and heap.priorities[index2], "No priorities?", heap)
-	return heap.priorities[index1] > heap.priorities[index2]
-end
-
-function heap_sift_up(heap, index)
-	if index == 1 then return end
-
-	local parent_index = math.floor(index/2)
-	if heap_compare(heap, parent_index, index) then
-		heap_swap(heap, index, parent_index)
-		heap_sift_up(heap, parent_index)
-	end
-end
-
-function heap_sift_down(heap, index)
-	local minIndex, leftChildIndex, rightChildIndex
-	leftChildIndex, rightChildIndex = index * 2, index * 2 + 1
-	local priorities = heap.priorities
-
-	if rightChildIndex > #priorities then
-		if leftChildIndex > #priorities then
-			return
-		else
-			minIndex = leftChildIndex
-		end
-	else
-		if heap_compare(heap, leftChildIndex, rightChildIndex) then
-			minIndex = rightChildIndex
-		else
-			minIndex = leftChildIndex
-		end
-	end
-
-	if heap_compare(heap, index, minIndex) then
-		heap_swap(heap, index, minIndex)
-		heap_sift_down(heap, minIndex)
-	end
-end
-
-function heap_push(heap, payload, priority)
-	igi_helper.trace_assert(priority and payload, "No priority or payload")
-	heap.priorities[#heap.priorities+1] = priority
-	heap.payloads[#heap.payloads+1] = payload
-	heap_sift_up(heap, #heap.priorities)
-end
-
-function heap_pop(heap)
-	if #heap.payloads == 0 then return end
-	local to_return = heap.payloads[1]
-
-	heap.priorities[1] = heap.priorities[#heap.priorities]
-	heap.payloads[1] = heap.payloads[#heap.payloads]
-
-	heap.priorities[#heap.priorities] = nil
-	heap.payloads[#heap.payloads] = nil
-	if #heap.priorities > 0 then
-		heap_sift_down(heap, 1)
-	end
-
-	return to_return
-end
-
-function heap_peek(heap)
-	return heap.payloads[1]
-end
-
-function heap_change_priority(heap, payload, priority)
-	for i, payload2 in ipairs(heap.payloads) do
-		if payload2 == payload then
-			local old_priority = heap.priorities[i]
-			heap.priorities[i] = priority
-
-			if priority < old_priority then
-				heap_sift_up(heap, i)
-			else
-				heap_sift_down(heap, i)
-			end
-		end
-	end
-end
-
-function heap_remove_by_index(heap, index)
-	heap.priorities[index] = heap.priorities[#heap.priorities]
-	heap.payloads[index] = heap.payloads[#heap.payloads]
-
-	heap.payloads[#heap.payloads] = nil
-	heap.priorities[#heap.priorities] = nil
-	heap_sift_down(heap, index)
-end
-
-function heap_remove_element(heap, payload)
-	for i=#heap.payloads, 1, -1 do
-		if heap.payloads[i] == payload then
-			heap_remove_by_index(heap, i)
-		end
-	end
-end
-
 function combine_tables(tbl1, tbl2)
 	for k in pairs(tbl2) do
 		igi_helper.trace_assert(
@@ -348,4 +367,10 @@ function defaultdict(factory)
 	end
 	setmetatable(tbl, metatbl)
 	return tbl
+end
+
+function shallow_copy(dest, src)
+	for k, v in pairs(src) do
+		dest[k] = v
+	end
 end

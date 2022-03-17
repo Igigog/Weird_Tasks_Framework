@@ -17,12 +17,6 @@ function get_task_name(task_id)
 	return task_id:match(".*task_([^_]*)_(.*)")
 end
 
-function get_subtask_se_obj(entity)
-	local se_obj = WorldState.objects[entity.id]
-	if not se_obj then return end
-	return se_obj:section_name() == entity.section_name and se_obj or nil
-end
-
 function raise(errname, ...)
 	-- Just a small wrapper for error(), meaning this error will
 	-- probably be handled by pcall()
@@ -155,45 +149,6 @@ function get_faction_enemies(faction)
 	return enemies_set
 end
 
-function release_squad(squad_data)
-	if not (squad_data.id) then printf("GhenTuong: no squad_data.id") return end
-	if not (squad_data.section_name) then printf("GhenTuong: no squad_data.section_name") return end
-	
-	local squad = WorldState.objects[squad_data.id]
-
-	if not (squad) then return end
-	if not (squad:clsid() == clsid.online_offline_group_s) then return end
-	if not (squad:section_name() == squad_data.section_name) then return end
-	
-	printf("GhenTuong: release %s", squad:name())
-	SIMBOARD:remove_squad(squad)
-end
-
-function release_package(pkg_data)
-	if not pkg_data then return end
-	
-	local pkg = WorldState.objects[pkg_data.id]
-	if (pkg and (pkg:section_name() == pkg_data.section_name)) then
-		printf("GhenTuong: release %s| parent_id = %s", pkg:name(), pkg.parent_id)
-		safe_release_manager.release(pkg)
-	end
-end
-
-function release_targets_in_world(target_cache)
-	local handlers = {
-		['package'] = release_package,
-		['squad'] = release_squad,
-	}
-	
-	for _, entity in pairs(target_cache) do
-		local handler = handlers[entity.entity_type]
-		if handler then
-			printf("WTF: Release from world: "..entity.section_name.." with id: "..entity.id)
-			handler(entity)
-		end
-	end
-end
-
 function is_npc_online(id)
     for i,v in ipairs(db.OnlineStalkers) do 
         if (v == id) then 
@@ -279,7 +234,7 @@ function is_in_actor_squad(id)
 end
 
 function do_for_every_target(CACHE, target_name, f, ...)
-	for k, v in pairs(igi_target.get_entities(CACHE)) do
+	for k, v in pairs(CACHE:get_entities()) do
 		if v.target == target_name then
 			if ... then
 				f(..., v, CACHE, k)
@@ -296,19 +251,21 @@ function trace_dbg(title, ...)
 		printf("WTF DBG: "..title)
 		for k, v in pairs({...}) do
 			if type(v) == "table" then
+				igi_models.save_interfaces_recursively(v)
 				printf(utils_data.print_table(v, k, true))
+				igi_models.restore_interfaces_recursively(v)
 			else
-				printf(v ~= nil and v or "nil")
+				printf(tostring(v))
 			end
 		end
 		printf("-------------------------")
 	end
 end
 
-function trace_assert_no_crash(val, err)
+function trace_assert_no_crash(val, ...)
 	if not val then
 		local func_name = debug.getinfo(2, "n").name
-		trace_dbg("ASSERTION FAILED: "..func_name, err)
+		trace_dbg("ASSERTION FAILED: "..func_name, ...)
 	end
 	return val
 end
@@ -319,4 +276,17 @@ function trace_assert(val, err)
 		assert(nil, "WTF: "..err)
 	end
 	return val
+end
+
+function get_community_by_id(id)
+	local se_obj = WorldState.objects[id]
+	if se_obj:clsid() == clsid.online_offline_group_s then
+		se_obj = WorldState.objects[se_obj:commander_id()]
+	end
+
+	local community = alife_character_community(se_obj)
+	if community:find("trader") then
+		return igi_db.get_value("misc.ltx", "trader_faction", se_obj:section_name())
+	end
+	return community
 end

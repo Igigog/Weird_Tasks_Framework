@@ -51,10 +51,10 @@ function is_completed(obj_data)
 	return cleared
 end
 
-local function mark_distant_squads(subtask_data)
-	local smart_position = WorldState.objects[subtask_data.id].position
+local function mark_distant_squads(entity)
+	local smart_position = WorldState.objects[entity.id].position
 
-	for _, sq_id in pairs(subtask_data.squads) do
+	for _, sq_id in pairs(entity.squads) do
 		local se_squad = WorldState.objects[sq_id]
 		if se_squad then
 			local is_marked = level.map_has_object_spot(se_squad.id,"red_location") == 1
@@ -75,42 +75,45 @@ function get_status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
-local function redirect_to_smart(subtask_data, CACHE, subtask_key)
+local function redirect_to_smart(entity, CACHE, subtask_key)
 	-- if find squad: add smart entity squad is on,
 	-- assault smart instead of squad
 	-- may produce copies of existing smarts, but that's okay
 	igi_helper.trace_dbg("ASSAULT: redirect to smart "..subtask_key, CACHE)
-	local location_key = igi_models.LOCATION
-	if string.find(subtask_key, location_key) then return end
-	subtask_data.target = nil
+	if string.find(subtask_key, "location") then return end
+	entity.target = nil
 
-	if subtask_data.where_link then
-		local loc = igi_linker.get_entity_from_link(subtask_data.where_link, CACHE)
+	if entity.where_link then
+		local loc = CACHE:get_entities():get_by_link(entity.where_link)
 		loc.target = "assault"
 		return
 	end
 
-	local smart_id = WorldState.objects[subtask_data.id].current_target_id
+	local entities = CACHE:get_entities()
+
+	local smart_id = WorldState.objects[entity.id].current_target_id
 	local smart_entity = {
 		id = smart_id,
 		target = "assault",
-		order = subtask_data.order,
+		order = entity.order,
 		status = igi_subtask.TASK_STATUSES.RUNNING,
-		entity_type = igi_models.LOCATION,
+		entity_type = "location",
+		group_id = entities:count_types().location + 1,
+		entity_id = 1,
 	}
-	igi_target.add_entity(CACHE, smart_entity)
+	entities:add(smart_entity.group_id, smart_entity.entity_id, smart_entity, smart_entity)
 end
 
-local function add_target_squads(subtask_data)
-	subtask_data.squads = {}
-	local smart = SIMBOARD.smarts[subtask_data.id]
+local function add_target_squads(entity)
+	entity.squads = {}
+	local smart = SIMBOARD.smarts[entity.id]
 	for sq_id in pairs(smart.squads) do
 		local se_squad = WorldState.objects[sq_id]
 		local actor_faction = character_community(db.actor)
 		local sq_faction = se_squad:get_squad_community()
-		if is_squad_at_smart(se_squad, subtask_data.id) and
+		if is_squad_at_smart(se_squad, entity.id) and
 				game_relations.is_factions_enemies(actor_faction, sq_faction) then
-			table.insert(subtask_data.squads, se_squad.id)
+			table.insert(entity.squads, se_squad.id)
 		end
 	end
 end

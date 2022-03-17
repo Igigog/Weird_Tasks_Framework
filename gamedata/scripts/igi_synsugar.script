@@ -33,7 +33,7 @@ function desugarize(CACHE)
         handler(CACHE)
     end
 
-    for _, entity in pairs(igi_setup.get_setup_entities(CACHE)) do
+    for _, entity in pairs(CACHE:get_setup()) do
         desugarize_entity(entity)
     end
 end
@@ -83,7 +83,7 @@ local function finalize_value_dependencies(k, v, tbl)
     if type(v) ~= "string" then return end
 
     if string.find(k, "link") then
-        tbl[k] = igi_linker.Dependency(v):get_link()
+        tbl[k] = igi_linker.Dependency.from(v):get_link()
     else
         tbl[k] = igi_linker.finalize_all_dependencies(v)
     end
@@ -104,7 +104,7 @@ local function rename_where(entity)
 end
 
 function unfold_inline_location(CACHE)
-    local setup = igi_setup.get_setup_entities(CACHE)
+    local setup = CACHE:get_setup()
     local new_locations = {}
     for _, entity in ipairs(setup) do
         rename_where(entity)
@@ -168,7 +168,7 @@ end
 function unfold_rewards(CACHE)
 
     unfold_rewards_of_tbl(CACHE)
-    for _, subtask in pairs(igi_setup.get_setup_entities(CACHE)) do
+    for _, subtask in pairs(CACHE:get_setup()) do
         unfold_rewards_of_tbl(subtask)
     end
 end

@@ -46,10 +46,8 @@ end
 
 function autocomplete(CACHE)
     if not enabled_in_mcm("autocomplete") then return end
-    if #igi_subtask.get_ready_to_finish_subtasks(CACHE) == 0 and
-        #igi_subtask.get_running_subtasks(CACHE) == 0 then
-            task_manager.get_task_manager():set_task_completed(CACHE.task_id)
-    end
+    if not CACHE:is_task_completed() then return end
+    task_manager.get_task_manager():set_task_completed(CACHE.task_id)
 end
 
 function autocomplete_on_game_start()

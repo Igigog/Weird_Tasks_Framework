@@ -1,182 +1,183 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
+function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+end
+
+function actor_on_first_update()
+	igi_models.add_interface_implementation("Entity", Entity)
+	igi_models.add_interface_implementation("EntitiesTable", EntitiesTable)
+	igi_models.add_interface_implementation("Cache", Cache)
+end
+
 TASK_STATUSES = {
-	RUNNING = "running",
-	COMPLETED = "completed",
-	FAILED = "failed",
-	READY_TO_FINISH = "ready_to_finish",
-	DISABLED = "disabled",
-	CANCELLED = "cancelled",
+	RUNNING = "RUNNING",
+	COMPLETED = "COMPLETED",
+	FAILED = "FAILED",
+	READY_TO_FINISH = "READY_TO_FINISH",
+	DISABLED = "DISABLED",
+	CANCELLED = "CANCELLED",
 }
 
-function get_subtasks(CACHE)
-	return CACHE.subtasks
-end
+Cache = {
+	update_current_map_target = function (self)
+		self.current_target_id = self:quest_target()
+	end,
 
-function get_subtask_links_of_status(status, CACHE, safe)
-	local links = get_subtasks(CACHE)[status].payloads
-	if safe then return dup_table(links) end
-	return links
-end
+	set_map_target_to_task_giver = function (self)
+		self.current_target_id = self.task_giver_id
+	end,
 
-function get_subtasks_of_status(status, CACHE)
-	local links = get_subtask_links_of_status(status, CACHE)
-	local subtasks = {}
-	for i, link in ipairs(links) do
-		subtasks[i] = igi_linker.get_entity_from_link(link, CACHE)
-	end
-	return subtasks
-end
+	get_current_target_id = function (self)
+		return self.current_target_id
+	end,
 
-function get_completed_subtasks(CACHE)
-	return get_subtasks_of_status(TASK_STATUSES.COMPLETED, CACHE)
-end
+	quest_target = function (self)
+		return self:get_entities():quest_target()
+	end,
 
-function get_running_subtasks(CACHE)
-	return get_subtasks_of_status(TASK_STATUSES.RUNNING, CACHE)
-end
+	_update_status = function (self)
+		self.status = self:get_entities():get_task_status()
+	end,
 
-function get_ready_to_finish_subtasks(CACHE)
-	return get_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE)
-end
+	process_subtasks = function (self)
+		local updated = self:get_entities():process_subtasks()
+		if updated then self:_update_status() end
+		return updated
+	end,
 
-function get_failed_subtasks(CACHE)
-	return get_subtasks_of_status(TASK_STATUSES.FAILED, CACHE)
-end
-
-function iterate_subtasks(CACHE, func, ...)
-	for _, subtask in pairs(igi_target.get_entities(CACHE)) do
-		if subtask.target then
-			func(subtask, ...)
+	finish_all_subtasks = function (self)
+		if self.status ~= TASK_STATUSES.FAILED then
+			self.status = TASK_STATUSES.COMPLETED
+		else
+			self.status = TASK_STATUSES.FAILED
 		end
-	end
-end
 
-local function get_status_by_link(link, CACHE)
-	local subtask = igi_linker.get_entity_from_link(link, CACHE)
-	local target_tbl = igi_taskdata.get_target_table(subtask.target)
-	return target_tbl.get_status(subtask)
-end
+		self:get_entities():change_subtasks_status(
+			TASK_STATUSES.READY_TO_FINISH,
+			self.status
+		)
+	end,
 
-local function update_subtasks_of_status(status, CACHE, new_statuses)
-	local subtasks_heap = get_subtasks(CACHE)[status]
-	for i=#subtasks_heap.payloads, 1, -1 do
-		local link = subtasks_heap.payloads[i]
-		local new_status = get_status_by_link(link, CACHE)
+	is_task_failed = function (self)
+		return self.status == TASK_STATUSES.FAILED
+	end,
 
-		if new_status and new_status ~= status then
-			new_statuses[new_status] = new_statuses[new_status] or {}
-			new_statuses[new_status][#new_statuses[new_status]+1] = link
-			igi_utils.heap_remove_by_index(subtasks_heap, i)
+	is_task_completed = function (self)
+		return self.status == TASK_STATUSES.COMPLETED
+	end,
+
+	is_time_to_return = function (self)
+		return self.status == TASK_STATUSES.READY_TO_FINISH
+	end,
+}
+
+EntitiesTable = {
+	_default_subtask_order = 0,
+
+	process_subtasks = function (self)
+		local updated = false
+		for _, entity in pairs(self) do
+			if entity.target and entity:update_status() then
+				updated = true
+			end
 		end
-	end
-end
+		return updated
+	end,
 
-function is_task_failed(CACHE)
-	for _, subtask in ipairs(get_failed_subtasks(CACHE)) do
-		if not subtask.optional then return true end
-	end
-	return false
-end
-
-local function has_no_running_subtasks(CACHE)
-	return #get_subtask_links_of_status(TASK_STATUSES.RUNNING, CACHE) == 0
-end
-
-local function has_ready_to_finish_subtasks(CACHE)
-	return #get_subtask_links_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE) == 0
-end
-
-function is_task_completed(CACHE)
-	return has_no_running_subtasks(CACHE)
-end
-
-function must_return_to_task_giver(CACHE)
-	return has_ready_to_finish_subtasks(CACHE)
-end
-
-function update_subtask_status_by_link(link, new_status, CACHE)
-	local subtasks = get_subtasks(CACHE)
-	local subtask = igi_linker.get_entity_from_link(link, CACHE)
-	local old_status = subtask.status
-	-- call all callbacks; new status may be changed by callbacks
-	subtask.status = new_status
-	local target_tbl = igi_taskdata.get_target_table(subtask.target)
-	igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, subtask, new_status)
-
-	if subtask.status ~= old_status then
-		igi_utils.heap_remove_element(subtasks[old_status], link)
-		igi_utils.heap_push(subtasks[subtask.status], link, subtask.order)
-		if target_tbl["on_"..new_status] then
-			target_tbl["on_"..new_status](subtask, CACHE)
+	change_subtasks_status = function (self, old_status, new_status)
+		trace_assert(TASK_STATUSES[old_status] and TASK_STATUSES[new_status], 'Unknown task status')
+		for _, entity in pairs(self) do
+			if entity:get_status() == old_status then
+				entity:set_status(new_status)
+			end
 		end
-	end
-end
+	end,
 
-function change_subtasks_status(CACHE, old_status, new_status)
-	local links = get_subtask_links_of_status(old_status, CACHE, true)
-	for _, link in pairs(links) do
-		update_subtask_status_by_link(link, new_status, CACHE)
-	end
-end
-
-function process_subtasks(CACHE)
-	local new_statuses = {}
-	update_subtasks_of_status(TASK_STATUSES.RUNNING, CACHE, new_statuses)
-	update_subtasks_of_status(TASK_STATUSES.READY_TO_FINISH, CACHE, new_statuses)
-
-	for status, links in pairs(new_statuses) do
-		for _, link in pairs(links) do
-			update_subtask_status_by_link(link, status, CACHE)
+	quest_target = function (self)
+		local min_order = 100000
+		local target_id
+		for _, entity in pairs(self) do
+			if entity.target and entity.order < min_order then
+				local target_tbl = entity:get_target_table()
+				local target = target_tbl.quest_target(entity)
+				if target then
+					min_order = entity.order
+					target_id = target
+				end
+			end
 		end
-	end
-end
 
----------------------------------------------------
-function quest_target(CACHE)
-	for _, subtask in ipairs(get_running_subtasks(CACHE)) do
-		local target_tbl = igi_taskdata.get_target_table(subtask.target)
-		local target = target_tbl.quest_target(subtask, CACHE)
-		if target then return target end
-	end
-end
+		return target_id
+	end,
 
-function set_current_map_target(CACHE, is_last_stage)
-	if is_last_stage then
-		CACHE.current_target_id = CACHE.task_giver_id
-	else
-		CACHE.current_target_id = quest_target(CACHE)
-	end
-end
+	get_task_status = function (self)
+		local ready_to_finish = false
+		local running = false
+		for _, entity in pairs(self) do
+			if entity.target and entity:is_subtask_failed() then
+				return TASK_STATUSES.FAILED
+			end
 
-function get_current_target_id(CACHE)
-	return CACHE.current_target_id
-end
----------------------------------------------------
-
-local function create_subtasks_table()
-	local subtasks = {}
-	for _, status in pairs(TASK_STATUSES) do
-		subtasks[status] = igi_utils.heap_new()
-	end
-	return subtasks
-end
-
-function setup_subtasks(CACHE)
-	local targets = igi_target.get_entities(CACHE)
-	trace_dbg("Setup subtasks: entities", targets)
-
-	local subtasks = create_subtasks_table()
-	for id, entity in pairs(targets) do
-		if entity.target then
-			igi_utils.heap_push(
-				subtasks[entity.status],
-				id,
-				entity.order
-			)
+			local status = entity.target and entity:get_status()
+			if status == TASK_STATUSES.RUNNING then
+				running = true
+			elseif status == TASK_STATUSES.READY_TO_FINISH then
+				ready_to_finish = true
+			end
 		end
-	end
 
-	CACHE.subtasks = subtasks
-end
+		if running then return TASK_STATUSES.RUNNING
+		elseif ready_to_finish then return TASK_STATUSES.READY_TO_FINISH
+		else return TASK_STATUSES.COMPLETED end
+	end,
+
+	must_return_to_task_giver = function (self)
+		for _, entity in pairs(self) do
+			if entity:get_status() == TASK_STATUSES.READY_TO_FINISH then
+				return false
+			end
+		end
+		return true
+	end,
+}
+
+Entity = {
+	is_subtask = function (self)
+		return self.target and true
+	end,
+
+	get_target = function (self)
+		return self.target
+	end,
+
+	get_status = function (self)
+		return self.status
+	end,
+
+	set_status = function (self, status)
+		trace_assert(TASK_STATUSES[status], 'Unknown task status')
+		self.status = status
+	end,
+
+	update_status = function (self)
+		local target_tbl = self:get_target_table()
+		local old_status = self:get_status()
+		trace_dbg('new status', self, target_tbl.get_status(self))
+		self:set_status(target_tbl.get_status(self))
+		if self:get_status() ~= old_status then
+			igi_callbacks.invoke_callbacks("on_subtask_status_change", self)
+		end
+		return self:get_status() ~= old_status
+	end,
+
+	is_optional = function (self)
+		return self.optional
+	end,
+
+	is_subtask_failed = function (self)
+		return self:get_status() == TASK_STATUSES.FAILED
+			and not self:is_optional()
+	end
+}
