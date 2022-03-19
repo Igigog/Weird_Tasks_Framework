@@ -17,10 +17,6 @@ Cache = {
 		return self.target
 	end,
 
-	get_group_counter = function (self)
-		return self.group_counter
-	end,
-
 	set_entities = function (self, entities)
 		self.target = entities
 	end
@@ -30,8 +26,8 @@ EntitiesTable = {
 	__cls = 'EntitiesTable',
 
 	new = function ()
-		local t = {__cls = EntitiesTable.__cls}
-		igi_models.restore_object_interface(t)
+		local t = {}
+		igi_models.set_class(t, EntitiesTable.__cls)
 		return t
 	end,
 
@@ -55,6 +51,12 @@ EntitiesTable = {
 		self[entity:get_link()] = entity
 	end,
 
+	add_entity = function (self, entity)
+		local link = entity:get_link()
+		trace_assert(not self[link], "Entity already exists")
+		self[link] = entity
+	end,
+
 	count_types = function (self)
 		local counter = igi_utils.defaultdict(0)
 		for _, v in pairs(self) do
@@ -69,12 +71,11 @@ Entity = {
 
 	new = function (typ, group_id, entity_id)
 		local t = {
-			__cls = Entity.__cls,
 			entity_type = typ,
 			group_id = group_id,
 			entity_id = entity_id
 		}
-		igi_models.restore_object_interface(t)
+		igi_models.set_class(t, Entity.__cls)
 		return t
 	end,
 
@@ -102,26 +103,25 @@ end
 
 
 function create_target(CACHE)
-	local setup = CACHE:get_setup()
+	local setup = CACHE:_get_setup()
     local targets = EntitiesTable.new()
     local created_keys = {}
 
 	-- if it's not ready after #entities_setup tries, it won't be ready
     for _ in pairs(setup) do
-        for k,entity_setup in pairs(setup) do
-            if not created_keys[k] and igi_linker.has_no_outer_links(entity_setup) then
-			    trace_dbg("entity_setup", entity_setup)
-				igi_text_processor.process_unlinked_entity(entity_setup)
-				trace_dbg("processed entity", entity_setup)
+        for k,entity in pairs(setup) do
+            if not created_keys[k] and igi_linker.has_no_outer_links(entity) then
+			    trace_dbg("entity_setup", entity)
+				entity:resolve_macros_and_self_references()
+				trace_dbg("processed entity", entity)
 
-                local group_data = create_group_by_setup(entity_setup)
+                local group_data = create_group_by_setup(entity)
 				created_keys[k] = true
 
-				for link, entity in pairs(group_data) do
-					targets[link] = entity
-
+				for _, entity in pairs(group_data) do
+					targets:add_entity(entity)
 					igi_linker.broadcast_entity(entity, setup)
-					trace_dbg("After broadcasting "..link, setup)
+					trace_dbg("After broadcasting "..entity:get_link(), setup)
 				end
             end
         end

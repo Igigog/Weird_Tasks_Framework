@@ -38,14 +38,17 @@ function quest_target(entity)
 end
 
 function setup_item(entity)
-	local sec_name = entity.section_name
+	trace_assert(ini_sys:section_exist(entity.section_name or "nil"),
+		"Section does not exist")
+	return true
+end
 
-	trace_assert(ini_sys:section_exist(sec_name or "nil"), "Section does not exist")
-	local text_name = ini_sys:r_string_ex(sec_name, "inv_name")
+function get_description(entity)
+	local desc = igi_description.TaskDescription.new()
+	local text_name = ini_sys:r_string_ex(entity.section_name, "inv_name")
 	local desc_target = game.translate_string(text_name)..", "..tostring(entity.how_much)
-
-	local desc = igi_models.create_DescriptionData(nil, desc_target)
-	return true, desc
+	desc.targets[#desc.targets+1] = desc_target
+	return desc
 end
 
 function create_item(group_data)

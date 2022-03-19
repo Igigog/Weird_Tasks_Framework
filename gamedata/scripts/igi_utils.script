@@ -15,10 +15,8 @@ Set = {
 	__cls = 'Set',
 
 	new = function()
-		local t = {
-			__cls = Set.__cls,
-		}
-		igi_models.restore_object_interface(t)
+		local t = {}
+		igi_models.set_class(t, Set.__cls)
 		return t
 	end,
 
@@ -73,11 +71,10 @@ Heap = {
 
 	new = function ()
 		local t = {
-			__cls = Heap.__cls,
 			priorities = {},
 			payloads = {},
 		}
-		igi_models.restore_object_interface(t)
+		igi_models.set_class(t, Heap.__cls)
 		return t
 	end,
 

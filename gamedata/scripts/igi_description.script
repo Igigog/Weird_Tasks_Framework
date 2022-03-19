@@ -3,168 +3,187 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
--- TaskDescription class
--- Takes care of all description preparations, get_description will return description string
+function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+end
 
-TaskDescription = {}
-TaskDescription.fields = {
-	"targets", 
-	"locations", 
-	"factions",
+function actor_on_first_update()
+	igi_models.add_interface_implementation("Cache", Cache)
+	igi_models.add_interface_implementation('TaskDescription', TaskDescription)
+	igi_models.add_interface_implementation("DescriptionItem", DescriptionItem)
+	igi_models.add_interface_implementation("LocationDescription", LocationDescription)
+	igi_models.add_interface_implementation("TargetDescription", TargetDescription)
+	igi_models.add_interface_implementation("FactionDescription", FactionDescription)
+end
+
+local function table_find(tbl, val)
+	for k, v in pairs(tbl) do
+		if v == val then return k end
+	end
+end
+Cache = {
+	get_description = function (self)
+		if not self.description then
+			self:_prepare_description()
+		end
+		return self.description:get_description()
+	end,
+
+	_prepare_description = function (self)
+		local desc = TaskDescription.new()
+		for _, entity in pairs(self.setup) do
+			desc:add_from_entity(entity, self.setup)
+		end
+		self.description = desc
+	end,
+
+	get_task_text_function = function (self)
+		local title = "[WTF] "..get_task_text(self.task_id, "title")
+		local text = self:get_description()
+		local icon = task_manager.task_ini:r_string_ex(self.task_id, "icon")
+		icon = icon or "ui_iconsTotal_mutant"
+
+		return function ()
+			db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
+			return true
+		end
+	end,
 }
 
-function TaskDescription.new()
-	local tbl = {
-		targets = {},
-		locations = {},
-		factions = {},
-	}
-	
-	setmetatable(tbl, {__index = TaskDescription})
-	return tbl
-end
+TaskDescription = {
+	__cls = "TaskDescription",
 
-function TaskDescription.add_entries(self, tbl)
-	if not tbl then return end
+	new = function ()
+		local t = {
+			targets = TargetDescription:new(),
+			locations = LocationDescription:new(),
+			factions = FactionDescription:new(),
+		}
+		igi_models.set_class(t, TaskDescription.__cls)
+		return t
+	end,
 
-	for _, field in pairs(self.fields) do
-		igi_utils.extend_list(self[field], tbl[field])
-	end
-end
-
-function TaskDescription._delete_duplicates_in_list(tbl)
-	if not tbl then return nil end
-	
-	local values_set = {}
-	local new_tbl = {}
-	for k, v in pairs(tbl) do
-		if not values_set[v] then
-			table.insert(new_tbl, v)
-			values_set[v] = true
+	add_from_entity = function (self, entity, entities)
+		local target_tbl = entity:get_target_table()
+		local desc = target_tbl.get_description(entity)
+		for k, tbl in pairs(desc) do
+			for _, v in pairs(tbl) do
+				self[k]:add(v, entities)
+			end
 		end
-	end
-	return new_tbl
-end
+	end,
 
-function TaskDescription._delete_duplicates(self)
-	for _, field in pairs(self.fields) do
-		self[field] = self._delete_duplicates_in_list(self[field])
-	end
-end
-
-function TaskDescription._delete_empty(self)
-	for _, field in pairs(self.fields) do
-		if not next(self[field]) then self[field] = nil end
-	end
-end
-
-function TaskDescription._text_line(name, detail)
-	-- return "%c[d_orange]"..name..": ".."%c[0,255,255,255]"]]..detail
-	return name..": "..detail
-end
-
-function TaskDescription._setup_description(self)
-	local content = ""
-
-	for k, v in pairs(self) do
-		local label = game.translate_string(igi_db.TEXT_HEADER..k)
-		local details = ""
-		
-		for key, value in pairs(v) do
-			if key > 1 then details = details .. ', ' end
-			details = details .. game.translate_string(value)
+	get_description = function (self)
+		local content = {}
+		for _, v in pairs(self) do
+			content[#content+1] = v:to_string()
 		end
 
-		local text = self._text_line(label, details)
-		content = content .. text .. "\\n "
-		self[k] = nil
-	end
+		return table.concat(content, "\\n")
+	end,
+}
 
-	return content
-end
+DescriptionItem = {
+	__cls = "DescriptionItem",
+	label = "",
 
-function TaskDescription.get_description(self, CACHE)
-	self:_link(CACHE:get_setup())
-	self:_delete_duplicates()
-	self:_delete_empty()
+	new = function (self)
+		local t = {}
+		igi_models.set_class(t, self.__cls)
+		return t
+	end,
 
-	return self:_setup_description()
-end
+	add = function (self, value)
+		if not table_find(self, value) then
+			self[#self+1] = value
+		end
+	end,
 
-function TaskDescription:_get_location_description(link, setup_entities)
-	if not igi_linker.is_dependency(link) then return link end
+	_get_item_string = function (item)
+		return game.translate_string(item)
+	end,
 
-	local dep = igi_linker.Dependency.from(link)
-	local location = dep:get_linked_entity(setup_entities)
-	if location.smarts then
-		local smart_id = location.smarts[1]
-		local smart_name = SIMBOARD.smarts[smart_id].smrt:name()
-		return "st_"..smart_name.."_name"
-	elseif tonumber(location.where) then
-		local se_obj = WorldState.objects[location.where]
-		return igi_helper.get_object_location_description(se_obj)
-	else
-		--[[
-		local mock_object = {}
-		mock_object.m_game_vertex_id = location.game_vertex_id
-		mock_object.position = vector():set(location.x, location.y, location.z)
-		return igi_helper.get_object_location_description(mock_object)
-	]]
-		return "null"
-	end
-end
+	to_string = function (self)
+		if not next(self) then return "" end
 
-function TaskDescription._link(self, setup_entities)
-	if not setup_entities then return end
+		local details = {}
+		for i, value in ipairs(self) do
+			details[i] = self._get_item_string(value)
+		end
 
-	for k, location in pairs(self.locations) do
-		self.locations[k] = self:_get_location_description(location, setup_entities)
-	end
-end
+		local label = game.translate_string(igi_db.TEXT_HEADER..self.label)
+		return label..": "..table.concat(details, ', ')
+	end,
+}
 
-------------------------------------------------------------
+LocationDescription = {
+	__cls = "LocationDescription",
+	label = "locations",
 
-function get_description(CACHE)
-	return CACHE.description
-end
+	new = DescriptionItem.new,
+
+	_get_location_description = function (link, entities)
+		if not igi_linker.is_dependency(link) then return link end
+
+		local dep = igi_linker.Dependency.from(link)
+		local location = dep:get_linked_entity(entities)
+		if location.smarts then
+			local smart_id = location.smarts[1]
+			local smart_name = SIMBOARD.smarts[smart_id].smrt:name()
+			return "st_"..smart_name.."_name"
+		end
+		return location.where
+	end,
+
+	add = function (self, value, entities)
+		if not table_find(self, value) then
+			self[#self+1] = self._get_location_description(value, entities)
+		end
+	end,
+
+	_get_item_string = function (item)
+		if type(item) == "number" then
+			local se_obj = WorldState.objects[item]
+			return dynamic_news_helper.GetPointDescription(se_obj)
+		end
+		return game.translate_string(item)
+	end,
+
+	to_string = DescriptionItem.to_string,
+}
+
+TargetDescription = {
+	__cls = "TargetDescription",
+	label = "targets",
+
+	new = DescriptionItem.new,
+	add = DescriptionItem.add,
+	_get_item_string = DescriptionItem._get_item_string,
+	to_string = DescriptionItem.to_string,
+}
+
+FactionDescription = {
+	__cls = "FactionDescription",
+	label = "factions",
+
+	new = DescriptionItem.new,
+	add = DescriptionItem.add,
+	_get_item_string = DescriptionItem._get_item_string,
+	to_string = DescriptionItem.to_string,
+}
 
 function get_task_text(task_id, field)
-	if not task_id then callstack() end
-	-- returns exclusive task text if exist; basic otherwise
+	-- returns exclusive task text if exists
 	local text_id = igi_db.TEXT_HEADER..task_id.."_"..field
 	local text = game.translate_string(text_id)
-	
+	if text ~= text_id then return text end
+
 	-- fallback to basic field for this task type
-	if text == text_id then
-		local prefix, task_name = igi_helper.get_task_name(task_id)
-		text_id = igi_db.TEXT_HEADER..prefix.."_"..task_name.."_"..field
-		text = game.translate_string(text_id)
+	local prefix, task_name = igi_helper.get_task_name(task_id)
+	text_id = igi_db.TEXT_HEADER..prefix.."_"..task_name.."_"..field
+	text = game.translate_string(text_id)
+	if text ~= text_id then return text end
 
-		-- fallback to basic field
-		if text == text_id then
-			text = game.translate_string(igi_db.TEXT_HEADER..field)
-		end
-	end
-	return text
-end
-
-function get_postpone_intel(CACHE)
-	local task_id = CACHE.task_id
-	local icon = task_manager.task_ini:r_string_ex(task_id, "icon")
-
-	local postpone_intel = {
-		caption = "[WTF] "..get_task_text(task_id, "title"),
-		text = get_description(CACHE),
-		icon = icon or "ui_iconsTotal_mutant"
-	}
-	return postpone_intel
-end
-
-function postpone_function(intel)
-	db.actor:give_talk_message2(intel.caption, intel.text, intel.icon, "iconed_answer_item")
-	return true
-end
-
-function decolorize(text)
-	return text:sub("(%%c%[.-%])", "")
+	-- fallback to basic field
+	return game.translate_string(igi_db.TEXT_HEADER..field)
 end

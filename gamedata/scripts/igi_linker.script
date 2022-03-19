@@ -81,7 +81,6 @@ Dependency = {
 		trace_assert(typ, "Dependency can't be resolved: "..str)
 
 		local t = {
-			__cls = Dependency.__cls,
 			type = typ,
 			group_id = group_id ~= "" and group_id or "1",
 			entity_id = entity_id ~= "" and entity_id or "1",
@@ -89,7 +88,7 @@ Dependency = {
 			original = str,
 			this = this_entity,
 		}
-		igi_models.restore_object_interface(t)
+		igi_models.set_class(t, Dependency.__cls)
 		return t
 	end,
 

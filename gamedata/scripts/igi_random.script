@@ -1,8 +1,6 @@
 local sin = math.sin
-local sbyte = string.byte
 local floor = math.floor
 local offset
-local trace_assert = igi_helper.trace_assert
 
 function on_game_start()
 	RegisterScriptCallback("on_game_load", on_game_load)
@@ -16,18 +14,18 @@ function on_game_load()
 	offset = load_var(db.actor, "igi_tasks_random") / 3709  -- unique for every game
 end
 
-function set_seed(seed)
+function _set_seed(seed)
 	local sd = 0
 	if type(seed) == "string" then
 		function a(h)
-			sd = sd + sbyte(h)
+			sd = sd + string.byte(h)
 		end
 		seed:gsub(".", a)
 		random_seed = sd * offset
 	elseif type(seed) == "number" then
 		random_seed = seed * offset
 	else
-		trace_assert(nil, "random: bad seed of type "..type(seed))
+		igi_helper.trace_assert(nil, "random: bad seed of type "..type(seed))
 	end
 end
 
@@ -42,6 +40,12 @@ function rand(b, a)
 	else
 		return rand_num
 	end
-	
+
 	return 0.5
+end
+
+function set_seed(task_id)
+	local game_time = game.get_game_time()
+	local game_date = game_time:dateToString(game.CTime.DateToDay)
+	_set_seed(task_id..game_date)
 end

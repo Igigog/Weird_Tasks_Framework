@@ -15,17 +15,16 @@ Cache = {
 
 	new = function (task_id, task_giver_id)
 		local t = {
-			__cls = Cache.__cls,
 			task_id = task_id,
 			task_giver_id = task_giver_id,
 		}
-		igi_models.restore_object_interface(t)
+		igi_models.set_class(t, Cache.__cls)
 		return t
 	end,
 
 	from = function (tbl)
-		local t = {__cls = Cache.__cls,}
-		igi_models.restore_object_interface(t)
+		local t = {}
+		igi_models.set_class(t, Cache.__cls)
 		copy_table(t, tbl)
 		igi_taskdata.finalize_task_cache(t)
 		trace_dbg('finalized', t)
@@ -94,25 +93,25 @@ function create_smart_setup(where)
 	return smart
 end
 
-implementations = igi_utils.defaultdict(function () return {} end)
+classes = igi_utils.defaultdict(function () return {} end)
 
 function add_interface_implementation(name, impl)
 	-- You'd better know how Rust's impl blocks work
 	trace_assert(name and impl, 'No name or impl: '..name, impl)
-	local impl_t = implementations[name]
+	local impl_t = classes[name]
 	for k, v in pairs(impl) do
 		impl_t[k] = v
 	end
 end
 
 function set_class(tbl, cls)
-	trace_assert(implementations[cls], "Class unknown")
-	setmetatable(tbl, {__index = implementations[cls]})
+	trace_assert(classes[cls], "Class unknown")
+	setmetatable(tbl, {__index = classes[cls]})
 end
 
 function restore_object_interface(tbl)
 	if not tbl.__cls then return end
-	if not implementations[tbl.__cls] then return end
+	if not classes[tbl.__cls] then return end
 	set_class(tbl, tbl.__cls)
 	tbl.__cls = nil
 end

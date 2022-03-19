@@ -15,7 +15,7 @@ function unfold_one_level(entity)
     local new_entities = {}
     local table_key = key_to_unfold:match("generate:(.*)")
     local list = entity[key_to_unfold]
-    trace_assert(not igi_text_processor.has_link_or_macro(list),
+    trace_assert(not (igi_linker.has_dependency(list) or igi_macros.has_macro(list)),
         "Generation list not resolved before generation", entity)
     entity[key_to_unfold] = nil
 

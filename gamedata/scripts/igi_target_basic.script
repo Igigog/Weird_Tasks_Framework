@@ -17,8 +17,7 @@ local function create_squad_data(entity)
 		entity.where_link = igi_linker.Dependency.from(entity.where):get_link()
 	end
 
-	local description = igi_models.create_DescriptionData(faction, nil, entity.where)
-	return true, description
+	return true
 end
 
 local function fetch_squad_data(entity)
@@ -49,76 +48,33 @@ local function fetch_squad_data(entity)
 		entity.where_link = igi_linker.Dependency.from(entity.where):get_link()
 	end
 
-	local location_desc = {}
-	local comm_desc = {}
-	for _, id in pairs(ids) do
-		local se_obj = WorldState.objects[id]
-		local community = game.translate_string(se_obj.player_id)
-		comm_desc[#comm_desc+1] = community
-		location_desc[#location_desc+1] = dynamic_news_helper.GetPointDescription(se_obj)
-	end
-
-	local description = igi_models.create_DescriptionData(nil, comm_desc, location_desc)
-	return true, description
-end
-
-local function fetch_item_description(objects)
-	local factions = {}
-	local targets = {}
-	local locations = {}
-
-	for _, se_obj in pairs(objects) do
-		local parent_id = se_obj.parent_id
-		local parent_npc = igi_helper.check_common_npc(parent_id) and WorldState.objects[parent_id]
-		-- local desc_target = igi_db.TEXT_HEADER..string.match(item_type, "^(%a+)")
-
-		factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
-		targets[#targets+1] = parent_npc and parent_npc:character_name() or nil
-		locations[#locations+1] = igi_helper.get_object_location_description(se_obj)
-	end
-	return igi_models.create_DescriptionData(factions, targets, locations)
-end
-
-local function find_objects(entity)
-	objects = igi_finder.get_objects_by_args(
-		entity.item_list, entity)
-
-	if not next(objects) then
-		printf("WTF: no objects")
-		return nil
-	end
-
-	return igi_utils.get_random_items(objects, entity.amount)
-end
-
-local function create_item_data(entity)
-	local section = entity.section_name
-	trace_assert(ini_sys:section_exist(section), "bad item section: "..(section or "nil"))
-
-	local desc = igi_models.create_DescriptionData(nil, igi_db.TEXT_HEADER..section)
-	
-	return ok, entity.to_description and desc or nil
+	return true
 end
 
 local function fetch_item_data(entity)
 	trace_assert(entity.item_list, "No item list given")
 
-	local objects = find_objects(entity)
+	local objects = igi_finder.get_objects_by_args(
+		entity.item_list, entity)
+
+	if not next(objects) then
+		trace_dbg("WTF: no objects", entity)
+		return
+	end
+
+	local objects = igi_utils.get_random_items(objects, entity.amount)
 	if not objects then return nil end
 
-	local ids = {}
+	entity.ids = {}
 	for _, se_obj in pairs(objects) do
-		ids[#ids + 1] = se_obj.id
+		entity.ids[#entity.ids + 1] = se_obj.id
 	end
 
 	if entity.amount == 'all' then
-		entity.amount = #ids
+		entity.amount = #entity.ids
 	end
 
-	entity.ids = ids
-
-	local description = fetch_item_description(objects)
-	return true, description
+	return true
 end
 
 local function find_smarts(where, amount)
@@ -210,6 +166,44 @@ local function setup_existing_items(entity)
 	end
 	return items
 end
+
+------------------------------------------------
+-- DESCRIPTION
+-- Prepares description
+------------------------------------------------
+
+function get_description(entity)
+	local desc = igi_description.TaskDescription.new()
+	local factions = desc.factions
+	local targets = desc.targets
+	local locations = desc.locations
+
+	if entity.entity_type == "squad" and entity.ids then
+		for _, id in pairs(entity.ids) do
+			local se_obj = WorldState.objects[id]
+			factions[#factions+1] = se_obj.player_id
+			locations[#locations+1] = id
+		end
+	elseif entity.entity_type == "squad" then
+		factions[#factions+1] = entity.faction
+		locations[#locations+1] = entity.where
+	elseif entity.entity_type == "item" and entity.ids then
+		for _, id in pairs(entity.ids) do
+			local se_obj = WorldState.objects[id]
+			local parent_id = se_obj.parent_id
+			local parent_npc = igi_helper.check_common_npc(parent_id) and WorldState.objects[parent_id]
+
+			factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
+			targets[#targets+1] = parent_npc and parent_npc:character_name() or nil
+			locations[#locations+1] = id
+		end
+		return igi_models.create_DescriptionData(factions, targets, locations)
+	elseif entity.entity_type == "item" then
+		targets[#targets+1] = igi_db.TEXT_HEADER..entity.section_name
+	end
+	return desc
+end
+
 ------------------------------------------------
 -- SETUP FUNCTIONS
 -- Prepares objects for task, rolls random dice, finds objects in world
@@ -245,15 +239,11 @@ function setup_location(entity)
 end
 
 function setup_squad(entity)
-	local description
 	if entity.to_create then
-		ok, description = create_squad_data(entity)
+		return create_squad_data(entity)
 	else
-		ok, description = fetch_squad_data(entity)
-		if not ok then return end
+		return fetch_squad_data(entity)
 	end
-
-	return true, description
 end
 
 function setup_smart(entity)
@@ -278,16 +268,15 @@ function setup_smart(entity)
 end
 
 function setup_item(entity)
-	local description
-
 	if entity.to_create then
-		ok, description = create_item_data(entity)
+		local section = trace_assert(entity.section_name, "Section does not exist")
+		if not ini_sys:section_exist(section) then
+			trace_assert(nil, "bad item section: "..(section or "nil"))
+		end
+		return true
 	else
-		ok, description = fetch_item_data(entity)
-		if not ok then return end
+		return fetch_item_data(entity)
 	end
-
-	return true, description
 end
 
 ------------------------------------------------

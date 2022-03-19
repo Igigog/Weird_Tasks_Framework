@@ -98,14 +98,9 @@ end
 --< Effect >--------------------------------------------------
 function igi_task_generic_setup(actor,npc,p)
 	--This function will be called on_job_descr
-	if not p and p[1] then return false end
-	local task_id = p[1]
-	--Setup
-	local CACHE = get_setup_cache(task_id)
-	--Give message
-	local description = igi_description.get_postpone_intel(CACHE)
+	local CACHE = get_setup_cache(p[1])
 	--Print the message
-	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0, igi_description.postpone_function, description)
+	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0, CACHE:get_task_text_function())
 end
 --< Status >--------------------------------------------------
 local function initialise_CACHE(CACHE, task_giver_id)
@@ -115,7 +110,7 @@ local function initialise_CACHE(CACHE, task_giver_id)
 	trace_dbg("before target creation", CACHE)
 
 	igi_target.create_target(CACHE)
-	CACHE:set_setup(nil)	-- you don't need setup after object creation
+	CACHE.setup = nil	-- you don't need setup after object creation
 	igi_activities.sort_online_activities(CACHE)
 	CACHE:initialise_rewards()
 
@@ -190,7 +185,7 @@ function igi_task_generic_text(task_id,field,p,tsk)
 	end
 
 	local text = igi_description.get_task_text(task_id, field)
-	local desc = field ~= "title" and ("\\n "..igi_description.get_description(CACHE)) or ""
+	local desc = field ~= "title" and ("\\n "..CACHE:get_description()) or ""
 
 	return "[WTF] "..text..desc
 end

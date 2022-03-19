@@ -12,23 +12,41 @@ function actor_on_first_update()
 
 	igi_taskdata.add_classification_rule(function (CACHE)
 		if not CACHE.setup then return end
-		CACHE.setup.__cls = igi_target.EntitiesTable.__cls
-		igi_models.restore_object_interface(CACHE.setup)
+		igi_models.set_class(CACHE.setup, igi_target.EntitiesTable.__cls)
 		for _, v in pairs(CACHE.setup) do
-			v.__cls = 'Entity'
-			igi_models.restore_object_interface(v)
+			igi_models.set_class(v, 'Entity')
 		end
 	end)
 end
 
 Cache = {
-	get_setup = function (self)
+	_get_setup = function (self)
 		return self.setup
 	end,
 
-	set_setup = function (self, v)
-		self.setup = v
-	end
+	relink_setup = function (self)
+		local tmp = {}
+		for _, entity in pairs(self.setup) do
+			tmp[#tmp+1] = entity
+		end
+
+		empty_table(self.setup)
+		for _, entity in pairs(tmp) do
+			self.setup[entity:get_link()] = entity
+		end
+	end,
+
+	setup_entities = function (self)
+		trace_dbg("finalized CACHE", self)
+
+		for _, entity in pairs(self.setup) do
+			trace_dbg('setup group '..tostring(_), entity)
+			if not entity:setup_group() then return end
+			trace_dbg('group_data', entity)
+		end
+		self:relink_setup()
+		return true
+	end,
 }
 
 Entity = {
@@ -37,42 +55,18 @@ Entity = {
 			self[k] = self[k] or v
 		end
 	end,
+
+	setup_group = function (self)
+		local target_tbl = self:get_target_table()
+		return target_tbl["setup_"..self.entity_type](self)
+	end
 }
 
 ------------------------------------------------
-local function setup_group(entity)
-	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
-	local setup_func = target_tbl["setup_"..entity.entity_type]
-	local ok, desc = setup_func(entity)
-	if not ok then return end
-
-	entity:add_preset_values(entity)
-	return true, desc
-end
-
-local function setup_entities(CACHE, description)
-	trace_dbg("finalized CACHE", CACHE)
-
-	local setup = {}
-	for _, group_entity in pairs(CACHE:get_setup()) do
-		trace_dbg('setup group '..tostring(_), group_entity)
-		local ok, desc = setup_group(group_entity)
-		trace_dbg('group_data, description', group_entity, desc)
-		if not ok then return nil end
-
-		description:add_entries(desc)
-		setup[group_entity:get_link()] = group_entity
-	end
-
-	CACHE:set_setup(setup)
-	return true
-end
 
 function setup_quest(task_id)
 	trace_dbg("setup "..task_id)
-	local game_time = game.get_game_time()
-	local game_date = game_time:dateToString(game.CTime.DateToDay)
-	igi_random.set_seed(task_id..game_date)
+	igi_random.set_seed(task_id)
 
 	local CACHE = igi_models.Cache.from(igi_taskdata.get_task_data(task_id))
 	CACHE:set_task_id(task_id)
@@ -80,10 +74,7 @@ function setup_quest(task_id)
 	CACHE.disabled = nil	-- not needed anymore
 	CACHE.preconditions = nil	-- not needed
 
-	local description = igi_description.TaskDescription.new()
-	if not setup_entities(CACHE, description) then return end
-	-- TODO: move
-	CACHE.description = description:get_description(CACHE)
+	if not CACHE:setup_entities() then return end
 	trace_dbg("CACHE after setup "..task_id, CACHE)
 	return CACHE
 end

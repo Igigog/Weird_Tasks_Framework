@@ -195,10 +195,6 @@ function object_hasnt_changed(id, section)
 	return se_obj and se_obj:section_name() == section
 end
 
-function get_object_location_description(se_obj)
-	return dynamic_news_helper.GetPointDescription(se_obj)
-end
-
 function objects_fetched(obj_data)
 	for k,v in pairs(obj_data) do
 		printf(tostring(k)..": "..tostring(v))
