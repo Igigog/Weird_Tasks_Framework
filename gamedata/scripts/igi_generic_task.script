@@ -119,7 +119,6 @@ local function initialise_CACHE(CACHE, task_giver_id)
 end
 
 function igi_task_generic_status(tsk,task_id)
-	if not (db.actor and tsk) then return end
 	local CACHE = get_cache(task_id)
 
 	-- Timer for less pressure (totally stolen from tasks_assault.script)

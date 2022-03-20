@@ -37,8 +37,6 @@ Cache = {
 	end,
 
 	setup_entities = function (self)
-		trace_dbg("finalized CACHE", self)
-
 		for _, entity in pairs(self.setup) do
 			trace_dbg('setup group '..tostring(_), entity)
 			if not entity:setup_group() then return end
@@ -70,6 +68,7 @@ function setup_quest(task_id)
 
 	local CACHE = igi_models.Cache.from(igi_taskdata.get_task_data(task_id))
 	CACHE:set_task_id(task_id)
+	trace_dbg("finalized CACHE", CACHE)
 
 	CACHE.disabled = nil	-- not needed anymore
 	CACHE.preconditions = nil	-- not needed
