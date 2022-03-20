@@ -10,11 +10,45 @@ function actor_on_first_update()
 	igi_models.add_interface_implementation(Entity.__cls, Entity)
 	igi_models.add_interface_implementation('Cache', Cache)
 	igi_models.add_interface_implementation(EntitiesTable.__cls, EntitiesTable)
+
+	igi_taskdata.add_classification_rule(function (CACHE)
+		local entities = CACHE:get_entities()
+		if not entities then return end
+		igi_models.set_class(entities, EntitiesTable.__cls)
+		for _, v in pairs(entities) do
+			igi_models.set_class(v, Entity.__cls)
+		end
+	end)
 end
+
+ENTITY_STATES = {
+	INITIALISED = "INITIALISED",
+	CREATED = "CREATED",
+}
 
 Cache = {
 	get_entities = function (self)
 		return self.entities
+	end,
+
+	initialise_quest = function (self, task_id)
+		trace_dbg("setup "..task_id)
+		igi_random.set_seed(task_id)
+
+		local CACHE = igi_models.Cache.from(self) -- clone and finalize
+		CACHE:set_task_id(task_id)
+		trace_dbg("finalized CACHE", CACHE)
+
+		CACHE.disabled = nil	-- not needed anymore
+		CACHE.preconditions = nil	-- not needed
+
+		if not CACHE:initialise_entities() then return end
+		trace_dbg("CACHE after setup "..task_id, CACHE)
+		return CACHE
+	end,
+
+	initialise_entities = function (self)
+		return self:get_entities():initialise_all()
 	end,
 
 	create_all_entities = function (self)
@@ -43,6 +77,21 @@ EntitiesTable = {
 			counter[v.entity_type] = counter[v.entity_type] + 1
 		end
 		return counter
+	end,
+
+	initialise_all = function (self)
+		for _, entity in pairs(self) do
+			trace_dbg('setup group '..tostring(_), entity)
+			local ok, new_entities = entity:initialise()
+			if not ok then return end
+			trace_dbg('group_data, new entities', entity, new_entities)
+
+			for _, entity in pairs(new_entities or {}) do
+				self:add(entity)
+			end
+		end
+		self:relink()
+		return true
 	end,
 
 	create_all = function (self)
@@ -87,23 +136,21 @@ Entity = {
 		self.section_name = se_obj:section_name()
 	end,
 
-	add_group_data = function (self, group_data)
-		if not group_data then return end
-		trace_assert(type(group_data) == "table", 'not table')
-		for k,v in pairs(group_data) do
-			self[k] = self[k] or v
-		end
-	end,
-
 	clone = function (self)
 		local t = dup_table(self)
 		igi_models.set_class(t, self.__cls)
 		return t
 	end,
 
+	initialise = function (self)
+		self._state = ENTITY_STATES.INITIALISED
+		local target_tbl = self:get_target_table()
+		return target_tbl["setup_"..self.entity_type](self)
+	end,
+
 	create = function (self)
 		trace_assert(self._state == "initialised", "Trying to create raw entity")
-		self:set_created()
+		self._state = ENTITY_STATES.CREATED
 
 		self:resolve_macros_and_self_references()
 		trace_dbg("processed entity", self)
@@ -115,10 +162,10 @@ Entity = {
 	end,
 
 	is_created = function (self)
-		return self._state == "created"
+		return self._state == ENTITY_STATES.CREATED
 	end,
 
-	set_created = function (self)
-		self._state = "created"
+	is_initialised = function (self)
+		return self._state == ENTITY_STATES.INITIALISED
 	end,
 }

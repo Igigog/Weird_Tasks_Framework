@@ -125,7 +125,7 @@ local function get_coords(str)
 end
 
 local function create_item_on_smart(entity)
-	local items = igi_target.EntitiesTable.new()
+	local items = igi_entities.EntitiesTable.new()
 	local smart = SIMBOARD.smarts[entity.where].smrt
 	local location = get_vector(
 		smart.position.x,
@@ -143,7 +143,7 @@ local function create_item_on_smart(entity)
 end
 
 local function create_item_in_inventory(entity)
-	local items = igi_target.EntitiesTable.new()
+	local items = igi_entities.EntitiesTable.new()
 	local parent = WorldState.objects[entity.where]
 	for i=1, entity.amount do
 		local se_obj = alife_create_item(entity.section_name, parent)
@@ -156,7 +156,7 @@ local function create_item_in_inventory(entity)
 end
 
 local function create_item_on_coords(entity)
-	local items = igi_target.EntitiesTable.new()
+	local items = igi_entities.EntitiesTable.new()
 	local lvl, x, y, z = get_coords(entity.where)
 	local se_obj = alife_create(entity.section_name, get_vector(x,y,z), 0, lvl)
 	local new_entity = entity:clone()
@@ -167,7 +167,7 @@ local function create_item_on_coords(entity)
 end
 
 local function setup_existing_items(entity)
-	local items = igi_target.EntitiesTable.new()
+	local items = igi_entities.EntitiesTable.new()
 	for i, id in pairs(entity.ids) do
 		local se_obj = WorldState.objects[id]
 		force_parent_online(se_obj)
@@ -296,7 +296,7 @@ end
 ------------------------------------------------
 
 function create_location(entity)
-	local locations = igi_target.EntitiesTable.new()
+	local locations = igi_entities.EntitiesTable.new()
 	if entity.smarts then
 		local smarts = entity.smarts
 		entity.smarts = nil
@@ -321,7 +321,7 @@ function create_location(entity)
 end
 
 function create_squad(entity)
-	local squads = igi_target.EntitiesTable.new()
+	local squads = igi_entities.EntitiesTable.new()
 
 	if entity.section_name == "predefined_squad" then
 		for i, id in ipairs(entity.ids) do

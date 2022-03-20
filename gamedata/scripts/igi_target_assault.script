@@ -92,7 +92,7 @@ local function redirect_to_smart(entity, CACHE, subtask_key)
 	local entities = CACHE:get_entities()
 
 	local smart_id = WorldState.objects[entity.id].current_target_id
-	local smart_entity = igi_target.Entity.new("location")
+	local smart_entity = igi_entities.Entity.new("location")
 	smart_entity:link_to_se_obj(smart_id)
 	smart_entity:set_target("assault")
 	smart_entity:set_order(entity.order)
