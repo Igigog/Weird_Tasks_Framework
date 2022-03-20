@@ -58,6 +58,7 @@ function get_task_table(task_name, prefix)
 	if task_config then
 		igi_utils.combine_tables(task_table, task_config)
 	end
+	restore_classes(task_table)
 
 	return task_table
 end

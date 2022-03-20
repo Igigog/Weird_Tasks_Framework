@@ -86,9 +86,7 @@ function validate_generic_task(actor, npc, p)
 
 	-- TASK LIMIT CHECK (not working)
 	if dialogs.has_tasks_by_npc(db.actor, npc) then return false end
-
-	if task_data.disabled then return false end
-	if not igi_precondition.check(task_data.preconditions) then return false end
+	if not task_data:are_preconditions_fulfilled() then return false end
 
 	TASK_SETUP[task_id] = task_data:initialise_quest(task_id)
 	trace_dbg("setup", TASK_SETUP[task_id])

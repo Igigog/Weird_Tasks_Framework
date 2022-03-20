@@ -1,64 +1,110 @@
 local trace_assert = igi_helper.trace_assert
 
-local function get_daytime_bounds(daytime)
-	local bounds = igi_db.SectionView("daytime.ltx", "daytime_bounds")
-	return bounds[daytime]
+function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 end
 
-local function rank_precondition(tier)
-	local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
-	trace_assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
-			"Invalid quest tier")
+function actor_on_first_update()
+	igi_models.add_interface_implementation('Cache', Cache)
+	igi_models.add_interface_implementation(PreconditionTable.__cls, PreconditionTable)
+	igi_models.add_interface_implementation(GoodwillPrecondition.__cls, GoodwillPrecondition)
+	igi_models.add_interface_implementation(RankPrecondition.__cls, RankPrecondition)
+	igi_models.add_interface_implementation(DaytimePrecondition.__cls, DaytimePrecondition)
 
-	if quest_tiers[tier] then
-		lower_bound = quest_tiers[tier][1]
-		higher_bound = quest_tiers[tier][2]
-	elseif ranks.stalker_rank_intervals[tier] then
-		lower_bound = ranks.stalker_rank_intervals[tier][1]
-		higher_bound = ranks.stalker_rank_intervals[tier][2]
+	igi_taskdata.add_classification_rule(function (CACHE)
+		if not CACHE.preconditions then return end
+		igi_models.set_class(CACHE.preconditions, PreconditionTable.__cls)
+		CACHE.preconditions:restore_classes()
+	end)
+end
+
+Cache = {
+	are_preconditions_fulfilled = function (self)
+		if self.disabled then return false end
+		if not self.preconditions then return true end
+		return self.preconditions:check()
+	end,
+}
+
+PreconditionTable = {
+	__cls = "PreconditionTable",
+	__precondition_types = {},
+
+	check = function (self)
+		if igi_mcm.get_options_value("debug") then return true end
+		for _, precondition in pairs(self) do
+			if not precondition:check() then
+				return false
+			end
+		end
+		return true
+	end,
+
+	restore_classes = function (self)
+		for _, tbl in pairs(self) do
+			igi_models.set_class(tbl, self.__precondition_types[tbl.type].__cls)
+		end
+	end,
+
+	add_type = function (self, precondition_class)
+		self.__precondition_types[precondition_class.type] = precondition_class
+	end,
+}
+
+GoodwillPrecondition = {
+	__cls = "GoodwillPrecondition",
+	type = "goodwill",
+
+	check = function (self)
+		local task_giver = mob_trade.GetTalkingNpc()
+		local community = igi_helper.get_community_by_id(task_giver:id())
+		return db.actor:community_goodwill(community) >= self.value
 	end
-	local player_rank = db.actor:character_rank()
-	return player_rank >= lower_bound and player_rank <= higher_bound
-end
+}
+PreconditionTable:add_type(GoodwillPrecondition)
+RankPrecondition = {
+	__cls = "RankPrecondition",
+	type = "rank",
 
-local function goodwill_precondition(arg)
-	local task_giver = mob_trade.GetTalkingNpc()
-	local community = character_community(task_giver)
-	return db.actor:community_goodwill(community) >= arg
-end
+	check = function (self)
+		local tier = self.tier
+		local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
+		trace_assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
+				"Invalid quest tier")
 
-local function daytime_precondition(arg)
-	lower_bound, higher_bound = unpack(get_daytime_bounds(arg))
+		if quest_tiers[tier] then
+			lower_bound = quest_tiers[tier][1]
+			higher_bound = quest_tiers[tier][2]
+		elseif ranks.stalker_rank_intervals[tier] then
+			lower_bound = ranks.stalker_rank_intervals[tier][1]
+			higher_bound = ranks.stalker_rank_intervals[tier][2]
+		end
+		local player_rank = db.actor:character_rank()
+		return player_rank >= lower_bound and player_rank <= higher_bound
+	end,
+}
+PreconditionTable:add_type(RankPrecondition)
 
-	local game_t = game.get_game_time()
-	local y, m, d, h = game_t:get()
-	local t = game.CTime()
+DaytimePrecondition = {
+	__cls = "DaytimePrecondition",
+	type = "daytime",
 
-	t:set(y, m, d, lower_bound, 0, 0, 0)
-	if not (game_t > t) then
-		return false
-	end
+	check = function (self)
+		local lower_bound, higher_bound = self.h[0], self.h[1]
+		local h_dt = (24+higher_bound-lower_bound)%24
 
-	local dt = game.CTime()			-- higher bound check
-	dt:setHMS((24-lower_bound+higher_bound)%24, 0, 0)	-- hassling with dt bcs higher bound can be at next day
-	return game_t < (t + dt)
-end
+		local game_t = game.get_game_time()
+		local y, m, d = game_t:get()
 
-function check(preconditions)
-	if not preconditions then return true end
-	if igi_mcm.get_options_value("debug") then return true end
-	local condition_handlers = {
-		["player_tier"] = rank_precondition,
-		["goodwill"] = goodwill_precondition,
-		["daytime"] = daytime_precondition,
-	}
-	-- printf(utils_data.print_table(preconditions, "precond", true))
-	for condition, handler in pairs(condition_handlers) do
-		-- not too good when there'll be more conditions but good enough now
-		if preconditions[condition] and not handler(preconditions[condition]) then
+		local t = game.CTime()
+		t:set(y, m, d, lower_bound, 0, 0, 0)
+		if not (game_t > t) then
 			return false
 		end
-	end
 
-	return true
-end
+		local dt = game.CTime()
+		dt:setHMS(h_dt, 0, 0)
+		return game_t < (t + dt)
+	end
+}
+PreconditionTable:add_type(DaytimePrecondition)
