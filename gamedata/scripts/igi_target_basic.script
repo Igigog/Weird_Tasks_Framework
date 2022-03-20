@@ -419,39 +419,3 @@ function initialise_rewards(entity, CACHE)
 			igi_subtask.TASK_STATUSES.FAILED, entity, task_giver_id)
 	)
 end
-
-------------------------------------------------
--- TESTS
--- Well... tests ._.
-------------------------------------------------
-add_test = igi_unit_tests.add_test_partial("igi_target_basic")
-local tables_are_same = igi_unit_tests.tables_are_same
-
-add_test("setup_location", function()
-	local result, expected
-
-	local location_coords = {
-		coords = "123,123,321"
-	}
-	expected = dup_table(location_coords)
-	result = setup_location(location_coords)
-	trace_assert(tables_are_same(result, expected))
-
-	local location_id = {
-		where = 0
-	}
-	expected = {
-		id = 0
-	}
-	result = setup_location(location_id)
-	trace_assert(tables_are_same(result, expected))
-
-	local location_link = {
-		where = "$link$"
-	}
-	expected = {
-		id = "$link$"
-	}
-	result = setup_location(location_link)
-	trace_assert(tables_are_same(result, expected))
-end)
