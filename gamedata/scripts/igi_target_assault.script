@@ -92,16 +92,13 @@ local function redirect_to_smart(entity, CACHE, subtask_key)
 	local entities = CACHE:get_entities()
 
 	local smart_id = WorldState.objects[entity.id].current_target_id
-	local smart_entity = {
-		id = smart_id,
-		target = "assault",
-		order = entity.order,
-		status = igi_subtask.TASK_STATUSES.RUNNING,
-		entity_type = "location",
-		group_id = entities:count_types().location + 1,
-		entity_id = 1,
-	}
-	entities:add(smart_entity.group_id, smart_entity.entity_id, smart_entity, smart_entity)
+	local smart_entity = igi_target.Entity.new("location")
+	smart_entity:link_to_se_obj(smart_id)
+	smart_entity:set_target("assault")
+	smart_entity:set_order(entity.order)
+	smart_entity.group_id = entities:count_types().location + 1
+	smart_entity:set_id(1)
+	entities:add(smart_entity)
 end
 
 local function add_target_squads(entity)

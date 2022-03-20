@@ -14,44 +14,24 @@ end
 
 Cache = {
 	get_entities = function (self)
-		return self.target
+		return self.entities
 	end,
 
-	set_entities = function (self, entities)
-		self.target = entities
-	end
+	create_all_entities = function (self)
+		self:get_entities():create_all()
+	end,
 }
 
 EntitiesTable = {
 	__cls = 'EntitiesTable',
 
-	new = function ()
-		local t = {}
+	new = function (entity_type)
+		local t = {entity_type = entity_type}
 		igi_models.set_class(t, EntitiesTable.__cls)
 		return t
 	end,
 
-	add_se_obj = function (self, typ, group_id, entity_id, se_obj, group_data)
-		trace_assert(typ and group_id and entity_id and se_obj,
-			"Something went wrong while adding entry")
-
-		local entity = Entity.new(typ, group_id, entity_id)
-		entity:link_to_se_obj(se_obj)
-		entity:add_group_data(group_data)
-		self[entity:get_link()] = entity
-	end,
-
-	add = function (self, group_id, entity_id, obj_data, group_data)
-		trace_assert(group_id and entity_id and obj_data,
-			"Something went wrong while adding entry")
-
-		local entity = Entity.new(group_data.entity_type, group_id, entity_id)
-		entity:add_group_data(obj_data)
-		entity:add_group_data(group_data)
-		self[entity:get_link()] = entity
-	end,
-
-	add_entity = function (self, entity)
+	add = function (self, entity)
 		local link = entity:get_link()
 		trace_assert(not self[link], "Entity already exists")
 		self[link] = entity
@@ -63,6 +43,27 @@ EntitiesTable = {
 			counter[v.entity_type] = counter[v.entity_type] + 1
 		end
 		return counter
+	end,
+
+	create_all = function (self)
+		-- if it's not ready after #entities_setup tries, it won't be ready
+		for _=1, size_table(self) do
+			for _,entity in pairs(self) do
+				if (not entity:is_created()) and entity:has_no_outer_links() then
+					trace_dbg("entity_setup", entity)
+					local group_data = entity:create()
+
+					for _, entity in pairs(group_data) do
+						self:broadcast_entity(entity)
+						entity:set_created()
+						self:add(entity)
+						trace_dbg("After broadcasting "..entity:get_link(), self)
+					end
+				end
+			end
+		end
+
+		igi_callbacks.invoke_callbacks("on_after_target_creation")
 	end,
 }
 
@@ -79,7 +80,9 @@ Entity = {
 		return t
 	end,
 
-	link_to_se_obj = function (self, se_obj)
+	link_to_se_obj = function (self, id)
+		local se_obj = igi_world_state.WorldState.objects[id]
+		trace_assert(se_obj, "Server object does not exist")
 		self.id = se_obj.id
 		self.section_name = se_obj:section_name()
 	end,
@@ -91,42 +94,31 @@ Entity = {
 			self[k] = self[k] or v
 		end
 	end,
+
+	clone = function (self)
+		local t = dup_table(self)
+		igi_models.set_class(t, self.__cls)
+		return t
+	end,
+
+	create = function (self)
+		trace_assert(self._state == "initialised", "Trying to create raw entity")
+		self:set_created()
+
+		self:resolve_macros_and_self_references()
+		trace_dbg("processed entity", self)
+
+		local target_tbl = self:get_target_table()
+    	local new_entities = target_tbl["create_"..self.entity_type](self)
+		trace_dbg("group_data, new entities", self, new_entities)
+		return new_entities
+	end,
+
+	is_created = function (self)
+		return self._state == "created"
+	end,
+
+	set_created = function (self)
+		self._state = "created"
+	end,
 }
-
-local function create_group_by_setup(entities_setup)
-	local target_tbl = igi_taskdata.get_target_table(entities_setup.target or "basic")
-	local handler = target_tbl["create_"..entities_setup.entity_type]
-    local group_data = handler(entities_setup)
-	trace_dbg("group_data", group_data)
-	return group_data
-end
-
-
-function create_target(CACHE)
-	local setup = CACHE:_get_setup()
-    local targets = EntitiesTable.new()
-    local created_keys = {}
-
-	-- if it's not ready after #entities_setup tries, it won't be ready
-    for _ in pairs(setup) do
-        for k,entity in pairs(setup) do
-            if not created_keys[k] and igi_linker.has_no_outer_links(entity) then
-			    trace_dbg("entity_setup", entity)
-				entity:resolve_macros_and_self_references()
-				trace_dbg("processed entity", entity)
-
-                local group_data = create_group_by_setup(entity)
-				created_keys[k] = true
-
-				for _, entity in pairs(group_data) do
-					targets:add_entity(entity)
-					igi_linker.broadcast_entity(entity, setup)
-					trace_dbg("After broadcasting "..entity:get_link(), setup)
-				end
-            end
-        end
-    end
-
-    CACHE:set_entities(targets)
-	igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
-end

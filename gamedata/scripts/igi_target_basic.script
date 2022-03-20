@@ -132,9 +132,12 @@ local function create_item_on_smart(entity)
 		smart.position.y,
 		smart.position.z)
 	for i=1, entity.amount do
-		local se_obj = alife_create(entity.section_name, location, 
+		local se_obj = alife_create(entity.section_name, location,
 		smart.m_level_vertex_id, smart.m_game_vertex_id)
-		items:add_se_obj(entity.entity_type, entity.group_id, i, se_obj, entity)
+		local new_entity = entity.clone()
+		new_entity:link_to_se_obj(se_obj.id)
+		new_entity.entity_id = i
+		items:add(new_entity)
 	end
 	return items
 end
@@ -144,7 +147,10 @@ local function create_item_in_inventory(entity)
 	local parent = WorldState.objects[entity.where]
 	for i=1, entity.amount do
 		local se_obj = alife_create_item(entity.section_name, parent)
-		items:add_se_obj(entity.entity_type, entity.group_id, i, se_obj, entity)
+		local new_entity = entity:clone()
+		new_entity:link_to_se_obj(se_obj.id)
+		new_entity:set_id(i)
+		items:add(new_entity)
 	end
 	return items
 end
@@ -153,7 +159,10 @@ local function create_item_on_coords(entity)
 	local items = igi_target.EntitiesTable.new()
 	local lvl, x, y, z = get_coords(entity.where)
 	local se_obj = alife_create(entity.section_name, get_vector(x,y,z), 0, lvl)
-	items:add_se_obj(entity.entity_type, entity.group_id, 1, se_obj, entity)
+	local new_entity = entity:clone()
+	new_entity:link_to_se_obj(se_obj.id)
+	new_entity:set_id(1)
+	items:add(new_entity)
 	return items
 end
 
@@ -162,7 +171,10 @@ local function setup_existing_items(entity)
 	for i, id in pairs(entity.ids) do
 		local se_obj = WorldState.objects[id]
 		force_parent_online(se_obj)
-		items:add_se_obj(entity.entity_type, entity.group_id, i, se_obj, entity)
+		local new_entity = entity:clone()
+		new_entity:link_to_se_obj(id)
+		new_entity:set_id(i)
+		items:add(new_entity)
 	end
 	return items
 end
@@ -197,7 +209,6 @@ function get_description(entity)
 			targets[#targets+1] = parent_npc and parent_npc:character_name() or nil
 			locations[#locations+1] = id
 		end
-		return igi_models.create_DescriptionData(factions, targets, locations)
 	elseif entity.entity_type == "item" then
 		targets[#targets+1] = igi_db.TEXT_HEADER..entity.section_name
 	end
@@ -287,17 +298,24 @@ end
 function create_location(entity)
 	local locations = igi_target.EntitiesTable.new()
 	if entity.smarts then
-		for i, id in pairs(entity.smarts) do
-			local loc_data = {id = id}
-			locations:add(entity.group_id, i, loc_data, entity)
+		local smarts = entity.smarts
+		entity.smarts = nil
+		for i, id in pairs(smarts) do
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(id)
+			new_entity:set_id(i)
+			locations:add(new_entity)
 		end
 	elseif entity.location_type == 'stash' then
 		for i, id in pairs(entity.ids) do
 			treasure_manager.set_random_stash(nil, nil, nil, id)
-			locations:add(entity.group_id, i, {id = id}, entity)
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(id)
+			new_entity:set_id(i)
+			locations:add(new_entity)
 		end
 	else
-		locations:add(entity.group_id, 1, entity)
+		entity:set_id(1)
 	end
 	return locations
 end
@@ -306,12 +324,15 @@ function create_squad(entity)
 	local squads = igi_target.EntitiesTable.new()
 
 	if entity.section_name == "predefined_squad" then
-		local ids = entity.ids
-		for i=1, #ids do
-			local squad = WorldState.objects[ids[i]]
+		for i, id in ipairs(entity.ids) do
+			local squad = WorldState.objects[id]
 			squad.stay_time = game.get_game_time()
 			squad.force_online = true
-			squads:add_se_obj(entity.entity_type, entity.group_id, i, squad, entity)
+
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(id)
+			new_entity:set_id(i)
+			squads:add(new_entity)
 		end
 		return squads
 	end
@@ -321,7 +342,10 @@ function create_squad(entity)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 
-		squads:add_se_obj(entity.entity_type, entity.group_id, i, squad, entity)
+		local new_entity = entity:clone()
+		new_entity:link_to_se_obj(squad.id)
+		new_entity:set_id(i)
+		squads:add(new_entity)
 	end
 
 	return squads

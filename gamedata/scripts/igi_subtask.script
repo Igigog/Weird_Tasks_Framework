@@ -152,6 +152,12 @@ Entity = {
 		return self.target
 	end,
 
+	set_target = function (self, target)
+		trace_assert(igi_taskdata.get_target_table(target), "Target unknown: "..target)
+		self.target = target
+		self.status = TASK_STATUSES.RUNNING
+	end,
+
 	get_status = function (self)
 		return self.status
 	end,
@@ -179,5 +185,10 @@ Entity = {
 	is_subtask_failed = function (self)
 		return self:get_status() == TASK_STATUSES.FAILED
 			and not self:is_optional()
-	end
+	end,
+
+	set_ordes = function (self, order)
+		trace_assert(type(order) == "number", "Order is not a number")
+		self.order = order
+	end,
 }

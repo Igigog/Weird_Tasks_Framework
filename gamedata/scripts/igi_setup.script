@@ -7,42 +7,55 @@ function on_game_start()
 end
 
 function actor_on_first_update()
-	igi_models.add_interface_implementation('Entity', Entity)
 	igi_models.add_interface_implementation("Cache", Cache)
+	igi_models.add_interface_implementation("EntitiesTable", EntitiesTable)
+	igi_models.add_interface_implementation('Entity', Entity)
 
 	igi_taskdata.add_classification_rule(function (CACHE)
-		if not CACHE.setup then return end
-		igi_models.set_class(CACHE.setup, igi_target.EntitiesTable.__cls)
-		for _, v in pairs(CACHE.setup) do
+		local entities = CACHE:get_entities()
+		if not entities then return end
+		igi_models.set_class(entities, igi_target.EntitiesTable.__cls)
+		for _, v in pairs(entities) do
 			igi_models.set_class(v, 'Entity')
 		end
 	end)
 end
 
 Cache = {
-	_get_setup = function (self)
-		return self.setup
+	initialise_entities = function (self)
+		return self:get_entities():initialise_all()
 	end,
 
-	relink_setup = function (self)
-		local tmp = {}
-		for _, entity in pairs(self.setup) do
-			tmp[#tmp+1] = entity
-		end
+	initialise_quest = function (self, task_id)
+		trace_dbg("setup "..task_id)
+		igi_random.set_seed(task_id)
 
-		empty_table(self.setup)
-		for _, entity in pairs(tmp) do
-			self.setup[entity:get_link()] = entity
-		end
-	end,
+		local CACHE = igi_models.Cache.from(self) -- clone and finalize
+		CACHE:set_task_id(task_id)
+		trace_dbg("finalized CACHE", CACHE)
 
-	setup_entities = function (self)
-		for _, entity in pairs(self.setup) do
+		CACHE.disabled = nil	-- not needed anymore
+		CACHE.preconditions = nil	-- not needed
+
+		if not CACHE:initialise_entities() then return end
+		trace_dbg("CACHE after setup "..task_id, CACHE)
+		return CACHE
+	end
+}
+
+EntitiesTable = {
+	initialise_all = function (self)
+		for _, entity in pairs(self) do
 			trace_dbg('setup group '..tostring(_), entity)
-			if not entity:setup_group() then return end
-			trace_dbg('group_data', entity)
+			local ok, new_entities = entity:initialise()
+			if not ok then return end
+			trace_dbg('group_data, new entities', entity, new_entities)
+
+			for _, entity in pairs(new_entities or {}) do
+				self:add(entity)
+			end
 		end
-		self:relink_setup()
+		self:relink()
 		return true
 	end,
 }
@@ -54,28 +67,17 @@ Entity = {
 		end
 	end,
 
-	setup_group = function (self)
+	initialise = function (self)
+		self:set_initialised()
 		local target_tbl = self:get_target_table()
 		return target_tbl["setup_"..self.entity_type](self)
+	end,
+
+	is_initialised = function (self)
+		return self._state == "initialised"
+	end,
+
+	set_initialised = function (self)
+		self._state = "initialised"
 	end
 }
-
-------------------------------------------------
-
-function setup_quest(task_id)
-	trace_dbg("setup "..task_id)
-	igi_random.set_seed(task_id)
-
-	local CACHE = igi_models.Cache.from(igi_taskdata.get_task_data(task_id))
-	CACHE:set_task_id(task_id)
-	trace_dbg("finalized CACHE", CACHE)
-
-	CACHE.disabled = nil	-- not needed anymore
-	CACHE.preconditions = nil	-- not needed
-
-	if not CACHE:setup_entities() then return end
-	trace_dbg("CACHE after setup "..task_id, CACHE)
-	return CACHE
-end
-
-

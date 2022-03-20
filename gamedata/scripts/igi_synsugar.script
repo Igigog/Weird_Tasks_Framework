@@ -33,7 +33,7 @@ function desugarize(CACHE)
         handler(CACHE)
     end
 
-    for _, entity in pairs(CACHE:_get_setup()) do
+    for _, entity in pairs(CACHE:get_entities()) do
         desugarize_entity(entity)
     end
 end
@@ -104,7 +104,7 @@ local function rename_where(entity)
 end
 
 function unfold_inline_location(CACHE)
-    local setup = CACHE:_get_setup()
+    local setup = CACHE:get_entities()
     local new_locations = {}
     trace_dbg('setup', setup)
     local num_locations = setup:count_types().location
@@ -167,9 +167,8 @@ local function unfold_rewards_of_tbl(tbl)
 end
 
 function unfold_rewards(CACHE)
-
     unfold_rewards_of_tbl(CACHE)
-    for _, subtask in pairs(CACHE:_get_setup()) do
+    for _, subtask in pairs(CACHE:get_entities()) do
         unfold_rewards_of_tbl(subtask)
     end
 end

@@ -45,7 +45,13 @@ Cache = {
 
 	get_task_giver_id = function (self)
 		return self.task_giver_id
-	end
+	end,
+
+	is_first_run = function (self)
+		if self._first_run then return false end
+		self._first_run = true
+		return true
+	end,
 }
 
 Entity = {
@@ -53,45 +59,6 @@ Entity = {
 		return igi_taskdata.get_target_table(self.target or 'basic')
 	end
 }
-
-function create_DescriptionData(faction, target, location)
-	local tbl = {
-		factions = faction,
-		targets = target,
-		locations = location,
-	}
-	return tbl
-end
-
-function create_GroupData(entity_data, target, amount)
-	entity_data.target = target
-	entity_data.amount = amount
-
-	return entity_data
-end
-
-function create_ItemData(ids, sec_name, location, how_much)
-	local tbl = {
-		ids = ids,
-		section_name = sec_name,
-		where = location,
-		how_much = how_much,
-	}
-	if location and igi_linker.is_dependency(location) then
-		tbl.where_link = igi_linker.Dependency.from(location):get_link()
-	end
-	return tbl
-end
-
-function create_smart_setup(where)
-	if type(where) == "string" then where = {where} end
-
-	local smart = {
-		entity_type = "location",
-		where = where,
-	}
-	return smart
-end
 
 classes = igi_utils.defaultdict(function () return {} end)
 

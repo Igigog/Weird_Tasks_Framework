@@ -7,10 +7,11 @@ function on_game_start()
 end
 
 function actor_on_first_update()
-	igi_models.add_interface_implementation("Entity", Entity)
 	igi_models.add_interface_implementation("Cache", Cache)
-	igi_models.add_interface_implementation("Dependency", Dependency)
 	igi_models.add_interface_implementation("EntitiesTable", EntitiesTable)
+	igi_models.add_interface_implementation("Entity", Entity)
+	igi_models.add_interface_implementation("Dependency", Dependency)
+	
 end
 
 
@@ -57,15 +58,62 @@ EntitiesTable = {
 	get_by_link = function (self, link)
 		return self[link]
 	end,
+
+	relink = function (self)
+		local tmp = {}
+		for _, entity in pairs(self) do
+			tmp[#tmp+1] = entity
+		end
+
+		empty_table(self)
+		for _, entity in pairs(tmp) do
+			self[entity:get_link()] = entity
+		end
+	end,
+
+	broadcast_entity = function (self, entity)
+		for k,v in pairs(self) do
+			if type(v) == 'string' and not string.find(k, "link") then
+				self[k] = resolve_dependencies(v, entity)
+			elseif type(v) == 'table' then
+				EntitiesTable.broadcast_entity(v, entity)
+			end
+		end
+	end
 }
 
 Entity = {
 	get_link = function (self)
-		return make_link(self.entity_type, self.group_id, self.entity_id)
+		trace_assert(self.entity_type and self.group_id,
+			"linker: entity has insufficient data", self)
+
+		local id = "$"..self.entity_type.."_"..tostring(self.group_id)
+		if self.entity_id then id = id.."_"..tostring(self.entity_id) end
+		id = id.."$"
+		return id
 	end,
 
 	resolve_field = function (self, field)
 		return self[field]
+	end,
+
+	set_id = function (self, id)
+		self.entity_id = id
+	end,
+
+	has_no_outer_links = function (tbl)
+		for k,v in pairs(tbl) do
+			if type(v) == 'string' and not string.find(k, "link") then
+				for k2 in dependency_iterator(v) do
+					if not Dependency.from(k2):has_self_reference() then
+						return false
+					end
+				end
+			elseif type(v) == 'table' and not Entity.has_no_outer_links(v) then
+				return false
+			end
+		end
+		return true
 	end
 }
 
@@ -204,15 +252,6 @@ Dependency = {
 	end,
 }
 
-function make_link(typ, group_id, obj_id)
-	trace_assert(typ and group_id, "linker: no typ  or id ", typ, group_id)
-
-	local id = "$"..typ.."_"..tostring(group_id)
-	if obj_id then id = id.."_"..tostring(obj_id) end
-	id = id.."$"
-	return id
-end
-
 function has_dependency(str)
     return string.find(str, "%b$$")
 end
@@ -256,29 +295,4 @@ function resolve_self_reference(str, entity)
 		end
     end
     return str
-end
-
-function has_no_outer_links(tbl)
-    for k,v in pairs(tbl) do
-        if type(v) == 'string' and not string.find(k, "link") then
-            for k2 in dependency_iterator(v) do
-                if not Dependency.from(k2):has_self_reference() then
-                    return false
-                end
-            end
-        elseif type(v) == 'table' and not has_no_outer_links(v) then
-            return false
-        end
-    end
-    return true
-end
-
-function broadcast_entity(entity, tbl)
-    for k,v in pairs(tbl) do
-        if type(v) == 'string' and not string.find(k, "link") then
-            tbl[k] = resolve_dependencies(v, entity)
-        elseif type(v) == 'table' then
-            broadcast_entity(entity, v)
-        end
-    end
 end

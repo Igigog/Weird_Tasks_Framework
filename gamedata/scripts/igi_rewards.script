@@ -20,8 +20,8 @@ function actor_on_first_update()
 			igi_models.set_class(CACHE.immutable_rewards, SubtaskRewards.__cls)
 			CACHE.immutable_rewards:repair_self()
 		end
-		if not CACHE:_get_setup() then return end
-		for _, entity in pairs(CACHE:_get_setup())do
+		if not CACHE:get_entities() then return end
+		for _, entity in pairs(CACHE:get_entities())do
 			if entity.reward then
 				igi_models.set_class(entity.reward, SubtaskRewards.__cls)
 				entity.reward:repair_self()
@@ -109,10 +109,12 @@ EntitiesTable = {
 
 Entity = {
 	get_reward_tbl = function (self)
+		if not self.reward then
+			self.reward = SubtaskRewards.new()
+		end
 		local status = self:get_status()
-		local reward_tbl = self.reward and self.reward[status]
+		local reward_tbl = self.reward:get_reward_of_status(status)
 		trace_dbg('reward table', self, reward_tbl)
-		if not reward_tbl then return end
 
 		local immutable_rewards = self.immutable_rewards and self.immutable_rewards[status]
 		if not immutable_rewards then return reward_tbl end

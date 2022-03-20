@@ -146,7 +146,7 @@ end
 function finalize_task_cache(CACHE)
 	restore_classes(CACHE)
 	trace_dbg('restored', CACHE)
-	local setup = CACHE:_get_setup()
+	local setup = CACHE:get_entities()
 
 	setup:assign_group_id()
 	setup:resolve_unlinked_macros_and_link_virtual_variables()

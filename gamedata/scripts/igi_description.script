@@ -31,8 +31,9 @@ Cache = {
 
 	_prepare_description = function (self)
 		local desc = TaskDescription.new()
-		for _, entity in pairs(self.setup) do
-			desc:add_from_entity(entity, self.setup)
+		local entities = self:get_entities()
+		for _, entity in pairs(entities) do
+			desc:add_from_entity(entity, entities)
 		end
 		self.description = desc
 	end,
