@@ -104,7 +104,6 @@ EntitiesTable = {
 
 					for _, entity in pairs(group_data) do
 						self:broadcast_entity(entity)
-						entity:set_created()
 						self:add(entity)
 						trace_dbg("After broadcasting "..entity:get_link(), self)
 					end
@@ -149,7 +148,7 @@ Entity = {
 	end,
 
 	create = function (self)
-		trace_assert(self._state == "initialised", "Trying to create raw entity")
+		trace_assert(self:is_initialised(), "Trying to create raw entity")
 		self._state = ENTITY_STATES.CREATED
 
 		self:resolve_macros_and_self_references()

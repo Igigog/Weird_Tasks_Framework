@@ -1,0 +1,188 @@
+local trace_assert = igi_helper.trace_assert
+local WorldState = igi_world_state.WorldState
+
+function on_game_start()
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+end
+
+function actor_on_first_update()
+	igi_models.add_interface_implementation('Cache', Cache)
+	igi_models.add_interface_implementation('ActionsTable', ActionsTable)
+	igi_models.add_interface_implementation('Action', Action)
+	igi_models.add_interface_implementation('RepairAction', RepairAction)
+	igi_models.add_interface_implementation('ChangeFactionAction', ChangeFactionAction)
+	igi_models.add_interface_implementation('ConditionsTable', ConditionsTable)
+	igi_models.add_interface_implementation('IsOnlineCondition', IsOnlineCondition)
+	igi_models.add_interface_implementation('IsParentDeadCondition', IsParentDeadCondition)
+	igi_models.add_interface_implementation('IsLowCondition', IsLowCondition)
+	
+
+	igi_taskdata.add_classification_rule(function (CACHE)
+		if not CACHE.actions then return end
+		igi_models.set_class(CACHE.actions, "ActionsTable")
+		CACHE.actions:restore_classes()
+	end)
+end
+
+Cache = {
+	initialise_actions = function (self)
+		if not self.actions then return end
+		self:get_entities():resolve_and_link_table(self.actions)
+	end,
+
+	update_actions = function (self)
+		self.actions:update_all()
+	end,
+}
+
+ActionsTable = {
+	__cls = "ActionsTable",
+	__types = {},
+
+	update_all = function (self)
+		for _, action in pairs(self) do
+			action:update()
+		end
+	end,
+
+	restore_classes = function (self)
+		for _, action in pairs(self) do
+			igi_models.set_class(action, self.__types[action.type])
+			action:restore_classes()
+		end
+	end,
+
+	add_type = function (self, type, cls)
+		self.__types[type] = cls
+	end,
+}
+
+Action = {
+	__cls = "Action",
+
+	update = function (self)
+		if self._state == "finished" then return end
+		if not self:_is_ready() then return end
+		local to_rerun = self:run()
+		if not to_rerun then self._state = "finished" end
+	end,
+
+	_is_ready = function (self)
+		return self.conditions:are_all_fulfilled()
+	end,
+
+	run = function (self)
+		trace_assert(nil, "Abstract method not implemented!")
+	end,
+
+	restore_classes = function (self)
+		if self.conditions then
+			igi_models.set_class(self.conditions, ConditionsTable.__cls)
+			self.conditions:restore_classes()
+		end
+	end,
+}
+
+
+RepairAction = {
+	__cls = "RepairAction",
+	type = 'repair',
+
+	run = function (self)
+		local item = igi_helper.level_object(self.id)
+		if not item then return end
+		item:set_condition(self.condition/100)
+	end,
+
+	update = Action.update,
+	_is_ready = Action._is_ready,
+	restore_classes = Action.restore_classes,
+}
+ActionsTable:add_type(RepairAction.type, RepairAction.__cls)
+
+ChangeFactionAction = {
+	__cls = "ChangeFactionAction",
+	type = 'change_faction',
+
+	run = function (self)
+		local se_squad = WorldState.objects[self.id]
+		if not se_squad or not se_squad.squad_members then return end
+		for npc in se_squad:squad_members() do
+			local member = igi_helper.level_object(npc.id)
+			if member then
+				member:set_character_community(self.faction, 0, 0)
+			end
+		end
+	end,
+
+	update = Action.update,
+	_is_ready = Action._is_ready,
+	restore_classes = Action.restore_classes,
+}
+ActionsTable:add_type(ChangeFactionAction.type, ChangeFactionAction.__cls)
+
+
+ConditionsTable = {
+	__cls = "ConditionsTable",
+	__types = {},
+
+	are_all_fulfilled = function (self)
+		for _, condition in ipairs(self) do
+			if not condition:fulfilled() then return false end
+		end
+		return true
+	end,
+
+	add_type = function (self, type, cls)
+		self.__types[type] = cls
+	end,
+
+	restore_classes = function (self)
+		for _, condition in pairs(self) do
+			igi_models.set_class(condition, self.__types[condition.type])
+		end
+	end,
+}
+
+
+IsOnlineCondition = {
+	__cls = "IsOnlineCondition",
+	type = 'is_online',
+
+	fulfilled = function (self)
+		local se_obj = WorldState.objects[self.id]
+		if not se_obj then return end
+
+		if se_obj.squad_members then
+			se_obj = se_obj:squad_members()()	-- stateful iterator, returns function
+		end
+		return se_obj.online
+	end,
+}
+ConditionsTable:add_type(IsOnlineCondition.type, IsOnlineCondition.__cls)
+
+IsParentDeadCondition = {
+	__cls = "IsParentDeadCondition",
+	type = 'is_parent_dead',
+
+	fulfilled = function (self)
+		local se_obj = WorldState.objects[self.id]
+		if not se_obj then return end
+
+		local parent = WorldState.objects[se_obj.parent_id]
+		return not parent:alive()
+	end,
+}
+ConditionsTable:add_type(IsParentDeadCondition.type, IsParentDeadCondition.__cls)
+
+IsLowCondition = {
+	__cls = "IsLowCondition",
+	type = 'is_low_condition',
+
+	fulfilled = function (self)
+		local item = igi_helper.level_object(self.id)
+		if not item then return false end
+		return item:condition() < (self.max_condition / 100)
+	end,
+}
+ConditionsTable:add_type(IsLowCondition.type, IsLowCondition.__cls)
