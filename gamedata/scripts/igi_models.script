@@ -78,7 +78,6 @@ end
 
 function restore_object_interface(tbl)
 	if not tbl.__cls then return end
-	if not classes[tbl.__cls] then return end
 	set_class(tbl, tbl.__cls)
 	tbl.__cls = nil
 end
@@ -99,11 +98,4 @@ function save_interfaces_recursively(tbl)
 			save_interfaces_recursively(v)
 		end
 	end
-end
-
-function deep_copy(dest, src)
-	save_interfaces_recursively(src)
-	copy_table(dest, src)
-	restore_interfaces_recursively(src)
-	restore_interfaces_recursively(dest)
 end
