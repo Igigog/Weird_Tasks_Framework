@@ -76,16 +76,13 @@ local function get_setup_cache(task_id)
 end
 ---------------------------< Precondition >---------------------------
 function validate_generic_task(actor, npc, p)
-	trace_dbg("validate "..p[1])
-	trace_assert(p and p[1], "No task id given")
 	local task_id = p[1]
+	trace_dbg("validate "..task_id)
 
-	local task_data = trace_assert(igi_taskdata.get_task_data(task_id),
-		"WTF: validate_task: task_id invalid")
+	local task_data = igi_taskdata.get_task_data(task_id)
+	trace_assert(task_data, "WTF: validate_task: task_id invalid")
 	trace_dbg("task_data", task_data)
 
-	-- TASK LIMIT CHECK (not working)
-	if dialogs.has_tasks_by_npc(db.actor, npc) then return false end
 	if not task_data:are_preconditions_fulfilled() then return false end
 
 	TASK_SETUP[task_id] = task_data:initialise_quest(task_id)
@@ -187,7 +184,6 @@ function igi_task_generic_text(task_id,field,p,tsk)
 end
 --< Reward >--------------------------------------------------
 function igi_task_generic_finish(actor,npc,p)
-	if not (p and p[1]) then return end
 	local task_id = p[1]
 	local CACHE = get_cache(task_id)
 
