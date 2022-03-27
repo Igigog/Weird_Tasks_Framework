@@ -48,6 +48,15 @@ EntitiesTable = {
 		end
 		return has_changes
 	end,
+
+	resolve_and_link_table = function (self, tbl)
+		local has_changed = true
+		while has_changed do
+			has_changed = resolve_unlinked_macros(tbl)
+			has_changed = self:resolve_free_dependencies(nil, tbl) or has_changed
+		end
+		convert_strings_type(tbl)
+	end,
 }
 
 Entity = {

@@ -83,7 +83,13 @@ function validate_generic_task(actor, npc, p)
 	trace_assert(task_data, "WTF: validate_task: task_id invalid")
 	trace_dbg("task_data", task_data)
 
-	if not task_data:are_preconditions_fulfilled() then return false end
+	if task_data:is_disabled() then return false end
+	if not igi_mcm.get_options_value("debug") then
+		if not task_data:are_preconditions_fulfilled() then
+			return false
+		end
+	end
+
 
 	TASK_SETUP[task_id] = task_data:initialise_quest(task_id)
 	trace_dbg("setup", TASK_SETUP[task_id])
@@ -105,7 +111,7 @@ local function initialise_CACHE(CACHE, task_giver_id)
 	trace_dbg("before target creation", CACHE)
 
 	CACHE:create_all_entities()
-	igi_activities.sort_online_activities(CACHE)
+	CACHE:initialise_actions()
 	CACHE:initialise_rewards()
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
@@ -129,7 +135,7 @@ function igi_task_generic_status(tsk,task_id)
 	end
 	---------------------------<ACTIONS>---------------------
 	CACHE:update_marks()
-	igi_activities.do_online_activities(CACHE)
+	CACHE:update_actions()
 	CACHE:process_subtasks()
 	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
 

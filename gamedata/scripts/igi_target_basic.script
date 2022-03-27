@@ -134,10 +134,15 @@ local function create_item_on_smart(entity)
 	for i=1, entity.amount do
 		local se_obj = alife_create(entity.section_name, location,
 		smart.m_level_vertex_id, smart.m_game_vertex_id)
-		local new_entity = entity.clone()
-		new_entity:link_to_se_obj(se_obj.id)
-		new_entity.entity_id = i
-		items:add(new_entity)
+		if i == 1 then
+			entity:link_to_se_obj(se_obj.id)
+			entity:set_id(i)
+		else
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(se_obj.id)
+			new_entity:set_id(i)
+			items:add(new_entity)
+		end
 	end
 	return items
 end
@@ -147,23 +152,24 @@ local function create_item_in_inventory(entity)
 	local parent = WorldState.objects[entity.where]
 	for i=1, entity.amount do
 		local se_obj = alife_create_item(entity.section_name, parent)
-		local new_entity = entity:clone()
-		new_entity:link_to_se_obj(se_obj.id)
-		new_entity:set_id(i)
-		items:add(new_entity)
+		if i == 1 then
+			entity:link_to_se_obj(se_obj.id)
+			entity:set_id(i)
+		else
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(se_obj.id)
+			new_entity:set_id(i)
+			items:add(new_entity)
+		end
 	end
 	return items
 end
 
 local function create_item_on_coords(entity)
-	local items = igi_entities.EntitiesTable.new()
 	local lvl, x, y, z = get_coords(entity.where)
 	local se_obj = alife_create(entity.section_name, get_vector(x,y,z), 0, lvl)
-	local new_entity = entity:clone()
-	new_entity:link_to_se_obj(se_obj.id)
-	new_entity:set_id(1)
-	items:add(new_entity)
-	return items
+	entity:link_to_se_obj(se_obj.id)
+	entity:set_id(1)
 end
 
 local function setup_existing_items(entity)
@@ -171,10 +177,15 @@ local function setup_existing_items(entity)
 	for i, id in pairs(entity.ids) do
 		local se_obj = WorldState.objects[id]
 		force_parent_online(se_obj)
-		local new_entity = entity:clone()
-		new_entity:link_to_se_obj(id)
-		new_entity:set_id(i)
-		items:add(new_entity)
+		if i == 1 then
+			entity:link_to_se_obj(id)
+			entity:set_id(i)
+		else
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(id)
+			new_entity:set_id(i)
+			items:add(new_entity)
+		end
 	end
 	return items
 end

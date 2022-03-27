@@ -20,9 +20,12 @@ end
 
 Cache = {
 	are_preconditions_fulfilled = function (self)
-		if self.disabled then return false end
 		if not self.preconditions then return true end
 		return self.preconditions:check()
+	end,
+
+	is_disabled = function (self)
+		return self.disabled
 	end,
 }
 
@@ -31,7 +34,6 @@ PreconditionTable = {
 	__precondition_types = {},
 
 	check = function (self)
-		if igi_mcm.get_options_value("debug") then return true end
 		for _, precondition in pairs(self) do
 			if not precondition:check() then
 				return false
