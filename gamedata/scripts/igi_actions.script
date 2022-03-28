@@ -31,6 +31,7 @@ Cache = {
 	end,
 
 	update_actions = function (self)
+		if not self.actions then return end
 		self.actions:update_all()
 	end,
 }
@@ -149,12 +150,22 @@ IsOnlineCondition = {
 	__cls = "IsOnlineCondition",
 	type = 'is_online',
 
+	_is_stalker_online = function (se_obj)
+		for _,v in ipairs(db.OnlineStalkers) do
+			if (v == se_obj.id) then
+				return true
+			end
+		end
+		return false
+	end,
+
 	fulfilled = function (self)
 		local se_obj = WorldState.objects[self.id]
 		if not se_obj then return end
 
 		if se_obj.squad_members then
 			se_obj = se_obj:squad_members()()	-- stateful iterator, returns function
+			return self._is_stalker_online(se_obj)
 		end
 		return se_obj.online
 	end,

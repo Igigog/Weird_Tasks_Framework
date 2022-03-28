@@ -312,18 +312,28 @@ function create_location(entity)
 		local smarts = entity.smarts
 		entity.smarts = nil
 		for i, id in pairs(smarts) do
-			local new_entity = entity:clone()
-			new_entity:link_to_se_obj(id)
-			new_entity:set_id(i)
-			locations:add(new_entity)
+			if i == 1 then
+				entity:link_to_se_obj(id)
+				entity:set_id(i)
+			else
+				local new_entity = entity:clone()
+				new_entity:link_to_se_obj(id)
+				new_entity:set_id(i)
+				locations:add(new_entity)
+			end
 		end
 	elseif entity.location_type == 'stash' then
 		for i, id in pairs(entity.ids) do
 			treasure_manager.set_random_stash(nil, nil, nil, id)
-			local new_entity = entity:clone()
-			new_entity:link_to_se_obj(id)
-			new_entity:set_id(i)
-			locations:add(new_entity)
+			if i == 1 then
+				entity:link_to_se_obj(id)
+				entity:set_id(i)
+			else
+				local new_entity = entity:clone()
+				new_entity:link_to_se_obj(id)
+				new_entity:set_id(i)
+				locations:add(new_entity)
+			end
 		end
 	else
 		entity:set_id(1)
@@ -340,10 +350,15 @@ function create_squad(entity)
 			squad.stay_time = game.get_game_time()
 			squad.force_online = true
 
-			local new_entity = entity:clone()
-			new_entity:link_to_se_obj(id)
-			new_entity:set_id(i)
-			squads:add(new_entity)
+			if i == 1 then
+				entity:link_to_se_obj(id)
+				entity:set_id(i)
+			else
+				local new_entity = entity:clone()
+				new_entity:link_to_se_obj(id)
+				new_entity:set_id(i)
+				squads:add(new_entity)
+			end
 		end
 		return squads
 	end
@@ -353,10 +368,15 @@ function create_squad(entity)
 		squad.stay_time = game.get_game_time()
 		squad.force_online = true
 
-		local new_entity = entity:clone()
-		new_entity:link_to_se_obj(squad.id)
-		new_entity:set_id(i)
-		squads:add(new_entity)
+		if i == 1 then
+			entity:link_to_se_obj(squad.id)
+			entity:set_id(i)
+		else
+			local new_entity = entity:clone()
+			new_entity:link_to_se_obj(squad.id)
+			new_entity:set_id(i)
+			squads:add(new_entity)
+		end
 	end
 
 	return squads

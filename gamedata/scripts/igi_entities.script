@@ -101,6 +101,7 @@ EntitiesTable = {
 				if (not entity:is_created()) and entity:has_no_outer_links() then
 					trace_dbg("entity_setup", entity)
 					local group_data = entity:create()
+					self:broadcast_entity(entity)
 
 					for _, entity in pairs(group_data) do
 						self:broadcast_entity(entity)
@@ -111,6 +112,14 @@ EntitiesTable = {
 			end
 		end
 
+		for _,entity in pairs(self) do
+			if not entity:is_created() then
+				trace_dbg("Creation failed", self)
+				trace_assert(nil, "Entity not created")
+			end
+		end
+
+		self:relink()
 		igi_callbacks.invoke_callbacks("on_after_target_creation")
 	end,
 }
