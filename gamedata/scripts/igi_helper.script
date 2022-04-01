@@ -46,10 +46,6 @@ function scale_to_player(a, b)
 	return b and a or 1
 end
 
-function scale_value(str)
-	local player_tier = igi_helper.get_player_tier()
-	return string.gsub(str, "scalable", player_tier)
-end
 
 function check_common_npc(id)
 	--Parameter is correct | not world map | not player |
@@ -76,28 +72,12 @@ function check_common_npc(id)
 	return true
 end
 
-function object_in_world(se_obj)
-	return se_obj and se_obj.parent_id == 65535
-end
-
-function object_in_npc_inventory(obj_id)
-	if not obj_id then return end
-	local obj = WorldState.objects[obj_id]
-	if not obj then return end
-	return igi_helper.check_common_npc(obj.parent_id)
-end
-
-function object_in_player_inventory(obj_data)
-	local obj = WorldState.objects[obj_data.id]
-	if not obj then return end
-	return obj.parent_id == 0
-end
 
 function get_object_level_id(se_obj)
 	if not se_obj then return nil end
 	
 	local lvl_info_obj
-	if object_in_world(se_obj) then
+	if se_obj.parent_id == 65535 then
 		lvl_info_obj = se_obj
 	elseif igi_helper.check_common_npc(se_obj.parent_id) then
 		lvl_info_obj = WorldState.objects[se_obj.parent_id]
@@ -110,23 +90,6 @@ end
 
 function get_object_level(obj)
 	return WorldState.sim:level_name(igi_helper.get_object_level_id(obj))
-end
-
-function get_player_level()
-	return level.name()
-end
-
-function change_goodwill(faction, task_id, task_successful)
-	if not faction then return nil, "gt_goodwill: no faction given" end
-	local task_info = igi_taskdata.get_task_data(task_id)
-	local value
-	if task_successful then 
-		value = task_info.reward and task_info.reward.goodwill or 50
-	else 
-		value = task_info.fail and task_info.fail.goodwill or -50
-	end
-
-	xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
 end
 
 function get_faction_enemies(faction)
@@ -147,98 +110,6 @@ function get_faction_enemies(faction)
 		end
 	end
 	return enemies_set
-end
-
-function is_npc_online(id)
-    for i,v in ipairs(db.OnlineStalkers) do 
-        if (v == id) then 
-            return true
-        end
-    end
-end
-
-function is_squad_member_online(se_squad)
-	for k in se_squad:squad_members() do
-		return is_npc_online(k.id)
-	end
-end
-
-function object_exist(obj_data)
-	local obj = WorldState.objects[obj_data.id]
-	return obj and obj:section_name() == obj_data.section_name
-end
-
-function object_not_exist(obj_data)
-	return not igi_helper.object_exist(obj_data)	-- Idk but it can't see object_exist or even gt_object_exist. Fuck lua.
-end
-
-function object_in_player_inv(obj_data)
-	local se_obj = WorldState.objects[obj_data.id]
-	return se_obj and se_obj.parent_id == 0
-end
-
-function get_object_smart(se_obj)
-	if se_obj.smart_id then
-		return SIMBOARD.smarts[se_obj.smart_id].smrt and SIMBOARD.smarts[se_obj.smart_id].smrt:name()
-	end
-
-	for smart_name, data in pairs(SIMBOARD.smarts_by_names) do
-		if se_obj.m_game_vertex_id == data.m_game_vertex_id and 
-				se_obj.m_level_vertex_id == data.m_level_vertex_id then
-			return smart_name
-		end
-	end
-end
-
-function object_hasnt_changed(id, section)
-	local se_obj = WorldState.objects[id]
-	return se_obj and se_obj:section_name() == section
-end
-
-function objects_fetched(obj_data)
-	for k,v in pairs(obj_data) do
-		printf(tostring(k)..": "..tostring(v))
-	end
-
-	local section = obj_data.section_name
-	local actor = db.actor
-	local item = section and actor:object(section)
-	if item then
-		return utils_item.get_amount(db.actor, section, 1) >= obj_data.how_much
-	elseif section and string.find(section, "af_") then
-		return actor:object(section .. "_af_aam")
-		or actor:object(section .. "_af_iam")
-		or actor:object(section .. "_af_aac")
-		or actor:object(section .. "_lead_box")
-	end
-	return false
-end
-
-function is_in_actor_squad(id)
-	if id == 0 then return true end
-	local actor_squad = axr_companions.list_actor_squad_by_id()
-
-	if actor_squad then
-		for i=1,#actor_squad do
-			if (id == actor_squad[i]) then
-				return true
-			end
-		end
-	end
-
-	return false
-end
-
-function do_for_every_target(CACHE, target_name, f, ...)
-	for k, v in pairs(CACHE:get_entities()) do
-		if v.target == target_name then
-			if ... then
-				f(..., v, CACHE, k)
-			else
-				f(v, CACHE, k)
-			end
-		end
-	end
 end
 
 

@@ -45,13 +45,26 @@ function add_squad_to_tables(squad_id, object_data)
 	end
 end
 
+local function is_in_actor_squad(id)
+	if id == 0 then return true end
+	local actor_squad = axr_companions.list_actor_squad_by_id()
+	if not actor_squad then return end
+
+	for _, o_id in ipairs(actor_squad) do
+		if id == o_id then
+			return true
+		end
+	end
+
+	return false
+end
 
 function npc_on_hit_callback(npc,amount,local_direction,who,bone_index)
 	if (not npc or not who) then return end
 	if (not npc.id or not who.id) then return end
 
 	if killed_by_player[npc.id] ~= nil then
-		if igi_helper.is_in_actor_squad(who.id) then
+		if is_in_actor_squad(who.id) then
 			killed_by_player[npc.id] = true
 		end
 	end
@@ -64,7 +77,7 @@ function squad_on_npc_death(squad,npc,killer)
 	
 	if killed_by_player[npc.id] ~= nil then
 		is_dead[npc.id] = true
-		if igi_helper.is_in_actor_squad(killer.id) then
+		if is_in_actor_squad(killer.id) then
 			killed_by_player[npc.id] = true
 		elseif alife_character_community(killer) == alife_character_community(npc) then
 			-- suicide or friendly fire case
