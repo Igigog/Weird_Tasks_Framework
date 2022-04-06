@@ -171,7 +171,7 @@ function filter_object_pool_by_args(objects_pool, args)
 		for id in pairs(group) do
 			local se_obj = WorldState.objects[id]
 			if check_object_by_args(se_obj, args) then
-				filtered[#filtered+1] = se_obj
+				filtered[#filtered+1] = id
 			end
 		end
 	end
@@ -230,7 +230,7 @@ function get_smarts(where)
 		for level in pairs(WorldState.levels_by_distance[i]) do
 			for smart_name in pairs(WorldState.smarts_by_level[level]) do
 				if is_smart_good(smart_name, level) then
-					smart_list[#smart_list+1] = smart_name
+					smart_list[#smart_list+1] = SIMBOARD.smarts_by_names[smart_name].id
 				end
 			end
 		end
@@ -248,7 +248,8 @@ function get_squads_by_args(args, factions)
 	else
 		local smarts = get_smarts(args.where)
 		trace_dbg('smarts', smarts)
-		for _, smart_name in pairs(smarts) do
+		for _, id in pairs(smarts) do
+			local smart_name = WorldState.objects[id]:name()
 			add_squads_of_smart(smart_name, args, factions, targets)
 		end
 	end
