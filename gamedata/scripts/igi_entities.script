@@ -80,34 +80,37 @@ EntitiesTable = {
 	end,
 
 	initialise_all = function (self)
+		local new = {}
 		for _, entity in pairs(self) do
-			trace_dbg('setup group '..tostring(_), entity)
-			local ok, new_entities = entity:initialise()
-			if not ok then return end
-			trace_dbg('group_data, new entities', entity, new_entities)
+			if not entity:is_initialised() then
+				trace_dbg('setup group '..tostring(_), entity)
+				local new_entities = entity:initialise()
+				if not new_entities then return end
+				trace_dbg('group_data, new entities', entity, new_entities)
 
-			for _, entity in pairs(new_entities or {}) do
-				self:add(entity)
+				for _, entity in pairs(new_entities) do
+					new[#new+1] = entity
+				end
 			end
 		end
+
+		for _, entity in pairs(new) do
+			self:add(entity)
+		end
+
 		self:relink()
 		return true
 	end,
 
 	create_all = function (self)
-		-- if it's not ready after #entities_setup tries, it won't be ready
+		-- if it's not ready after n^2 tries, it won't be ready
 		for _=1, size_table(self) do
 			for _,entity in pairs(self) do
 				if (not entity:is_created()) and entity:has_no_outer_links() then
 					trace_dbg("entity_setup", entity)
-					local group_data = entity:create()
+					entity:create()
 					self:broadcast_entity(entity)
-
-					for _, entity in pairs(group_data) do
-						self:broadcast_entity(entity)
-						self:add(entity)
-						trace_dbg("After broadcasting "..entity:get_link(), self)
-					end
+					trace_dbg("After broadcasting "..entity:get_link(), self)
 				end
 			end
 		end
@@ -137,21 +140,42 @@ Entity = {
 		return t
 	end,
 
-	link_to_se_obj = function (self, id)
+	binded_to = function (self, id)
+		self:bind_to_se_obj(id)
+		return self
+	end,
+
+	bind_to_se_obj = function (self, id)
 		local se_obj = igi_world_state.WorldState.objects[id]
 		trace_assert(se_obj, "Server object does not exist")
 		self.id = se_obj.id
 		self.section_name = se_obj:section_name()
 	end,
 
+	is_binded_to_se_obj = function (self)
+		return self.id and self.section_name
+	end,
+
+	get_binded_object = function (self)
+		local se_obj = WorldState.objects[self.id]
+		if not se_obj then return end
+		if se_obj:section_name() ~= self.section_name then return end
+		return se_obj
+	end,
+
 	clone = function (self)
+		trace_assert(self.entity_id == 1, "Please clone the original entity")
+
 		local t = dup_table(self)
 		igi_models.set_class(t, self.__cls)
+		self._clones = (self._clones or 0) + 1
+		t.entity_id = self.entity_id + self._clones
 		return t
 	end,
 
 	initialise = function (self)
 		self._state = ENTITY_STATES.INITIALISED
+		self.entity_id = 1
 		local target_tbl = self:get_target_table()
 		return target_tbl["setup_"..self.entity_type](self)
 	end,
