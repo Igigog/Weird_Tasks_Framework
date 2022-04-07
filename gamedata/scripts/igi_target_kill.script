@@ -15,6 +15,16 @@ function get_status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
+function entity_on_first_run(entity)
+	if not entity.reward then
+		entity.reward = igi_rewards.SubtaskRewards.new()
+	end
+
+	local reward_tbl = entity.reward:get_reward_of_status(igi_subtask.TASK_STATUSES.COMPLETED)
+	reward_tbl:get("goodwill"):set_value(get_goodwill_reward(entity))
+	reward_tbl:get("money"):set(get_money_reward(entity))
+end
+
 local function get_monster_value(se_npc)
 	local npc_section = se_npc:section_name()
 	local factor = 1
@@ -44,7 +54,7 @@ local function get_npc_value(se_npc)
 	return value*factors[tier]
 end
 
-function get_completed_money(entity)
+function get_money_reward(entity)
 	local reward = 0
 	local se_squad = WorldState.objects[entity.id]
 	local faction = se_squad:get_squad_community()
@@ -64,7 +74,7 @@ function get_completed_money(entity)
 	return reward
 end
 
-function get_completed_goodwill(entity)
+function get_goodwill_reward(entity)
 	local npc_count = 0
 	local se_squad = WorldState.objects[entity.id]
 	for _ in se_squad:squad_members() do

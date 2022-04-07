@@ -37,36 +37,16 @@ end
 
 
 Cache = {
-	_collect_rewards = function (self)
-		self.reward = RewardTable.new()
-		self:get_entities():collect_rewards_from_subtasks(
-			self:is_task_completed(),
-			self.reward
-		)
-
-		--reward_tbl:set_global_immutable_rewards(self) TODO
-		self.reward:apply_modifiers()
-	end,
-
 	collect_and_give_rewards = function (self)
-		self:_collect_rewards()
+		local reward = self.reward or RewardTable.new()
+		local t = self:get_entities():collect_rewards_from_subtasks(
+			self:is_task_completed(),
+			self:get_task_giver_id()
+		)
+		reward:combine_with(t)
+
 		igi_callbacks.invoke_callbacks("on_before_rewarding")
-		self:_give_rewards()
-	end,
-
-	_give_rewards = function (self)
-		for _, reward in pairs(self.reward) do
-			reward:give()
-		end
-	end,
-
-	initialise_rewards = function (self)
-		for _, entity in pairs(self:get_entities()) do
-			if entity.target then
-				local target_tbl = entity:get_target_table()
-				target_tbl.initialise_rewards(entity, self)
-			end
-		end
+		reward:give()
 	end,
 
 	has_material_rewards = function (self)
@@ -75,53 +55,42 @@ Cache = {
 }
 
 EntitiesTable = {
-	_add_rewards_with_status = function (self, reward_tbl, status)
+	_collect_rewards_with_status = function (self, status, tg_id)
+		local reward_tbl = RewardTable.new()
 		trace_dbg('Entities, status', self, status)
 		for _, entity in pairs(self) do
 			if entity:get_status() == status then
-				local entity_reward = entity:get_reward_tbl()
+				local entity_reward = entity:get_final_reward(tg_id)
 				reward_tbl:combine_with(entity_reward)
 				trace_dbg('combined', reward_tbl)
 			end
 		end
+		return reward_tbl
 	end,
 
-	collect_rewards_from_subtasks = function (self, is_successful, reward_tbl)
-		trace_assert(reward_tbl.__cls == RewardTable.__cls, 'Not a reward table')
+	collect_rewards_from_subtasks = function (self, is_successful, tg_id)
+		local reward_tbl = RewardTable.new()
 
 		-- Always add failed: if task is successful then these ones are failed optionals
-		self:_add_rewards_with_status(reward_tbl, igi_subtask.TASK_STATUSES.FAILED)
+		local t = self:_collect_rewards_with_status(igi_subtask.TASK_STATUSES.FAILED, tg_id)
+		reward_tbl:combine_with(t)
 		if is_successful then
-			self:_add_rewards_with_status(reward_tbl, igi_subtask.TASK_STATUSES.COMPLETED)
+			t = self:_add_rewards_with_status(igi_subtask.TASK_STATUSES.COMPLETED, tg_id)
+			reward_tbl:combine_with(t)
 		end
 		trace_dbg("Rewards from subtasks: ", reward_tbl)
+		return reward_tbl
 	end,
 
 	has_material_rewards = function (self)
-		for _, entity in pairs(self) do
-			if entity:get_reward_tbl():has_material_rewards() then
-				return true
-			end
-		end
-		return false
+		return true
 	end,
 }
 
 Entity = {
-	get_reward_tbl = function (self)
-		if not self.reward then
-			self.reward = SubtaskRewards.new()
-		end
-		local status = self:get_status()
-		local reward_tbl = self.reward:get_reward_of_status(status)
-		trace_dbg('reward table', self, reward_tbl)
-
-		local immutable_rewards = self.immutable_rewards and self.immutable_rewards[status]
-		if not immutable_rewards then return reward_tbl end
-		reward_tbl:set_immutable_rewards(reward_tbl, immutable_rewards)
-
-		return reward_tbl
-	end
+	get_final_reward = function (self, task_giver_id)
+		return self:get_target_table().get_reward(self, task_giver_id)
+	end,
 }
 
 SubtaskRewards = {
@@ -195,14 +164,14 @@ RewardTable = {
 
 	combine_with = function (self, other)
 		trace_assert(other.__cls == RewardTable.__cls, 'Tried to add wrong type')
-		other:apply_modifiers()
+		other:finalize()
 
 		for k, reward in pairs(other) do
 			self:get(k):combine_with(reward)
 		end
 	end,
 
-	apply_modifiers = function (self)
+	finalize = function (self)
 		for _, reward in pairs(self) do
 			reward:apply_multiplier()
 			reward:apply_additional_value()
@@ -228,6 +197,12 @@ RewardTable = {
 
 	add = function (self, reward)
 		self:get(reward.__key):combine_with(reward)
+	end,
+
+	give = function (self)
+		for _, reward in pairs(self) do
+			reward:give()
+		end
 	end,
 }
 
@@ -272,6 +247,11 @@ GoodwillReward = {
 	rebalance = function (self)
 		self:denormalize()
 		self:normalize()
+	end,
+
+	add = function (self, value)
+		trace_assert(type(value) == "number", "Trying to set a non-number goodwill value")
+		self.value = self.value + value
 	end,
 
 	add_faction = function (self, faction)

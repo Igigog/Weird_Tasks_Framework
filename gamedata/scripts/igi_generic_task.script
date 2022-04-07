@@ -112,7 +112,6 @@ local function initialise_CACHE(CACHE, task_giver_id)
 
 	CACHE:create_all_entities()
 	CACHE:initialise_actions()
-	CACHE:initialise_rewards()
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 	trace_dbg("after target creation", CACHE)
