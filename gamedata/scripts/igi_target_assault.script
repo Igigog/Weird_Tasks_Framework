@@ -91,14 +91,8 @@ function setup_squad(entity)
 	return new_entities
 end
 
-function setup_location(entity)
-	local new_entities = igi_target_basic.setup_location(entity)
-	if not new_entities then return end
+function entity_on_after_target_creation(entity)
 	add_target_squads(entity)
-	for _, new_entity in pairs(new_entities) do
-		add_target_squads(new_entity)
-	end
-	return new_entities
 end
 
 local function mark_distant_squads(entity)
