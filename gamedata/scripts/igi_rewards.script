@@ -209,15 +209,11 @@ RewardTable = {
 	end,
 
 	has_material_rewards = function (self)
-		-- I wish I had go's defer
-		local return_block = self:unblock()
-		for _, reward in pairs(self) do
-			if reward.is_material then
-				return_block(self)
+		for k, reward in pairs(self) do
+			if k ~= "blocked" and reward:is_material() then
 				return true
 			end
 		end
-		return_block(self)
 		return false
 	end,
 
@@ -248,6 +244,10 @@ AbstractReward = {
 
 	block = function (self)
 		self.blocked = true
+	end,
+
+	is_material = function (self)
+		return true
 	end,
 }
 
@@ -376,6 +376,10 @@ GoodwillReward = {
 		end
 	end,
 
+	is_material = function (self)
+		return false
+	end,
+
 	unblock = AbstractReward.unblock,
 	block = AbstractReward.block,
 }
@@ -384,7 +388,6 @@ RewardTable.add_class(GoodwillReward.__key, GoodwillReward)
 MoneyReward = {
 	__cls = "MoneyReward",
 	__key = 'money',
-	is_material = true,
 
 	new = function ()
 		local t = {value = 0,}
@@ -428,6 +431,10 @@ MoneyReward = {
 			local max = money*igi_mcm.get_options_value("reward_spread_max")
 			xr_effects.reward_random_money(nil, nil, {min, max})
 		end
+	end,
+
+	is_material = function (self)
+		return self.value > 0
 	end,
 
 	unblock = AbstractReward.unblock,
