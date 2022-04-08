@@ -1,6 +1,7 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function on_game_start()
 	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
@@ -16,20 +17,15 @@ function actor_on_first_update()
 	igi_models.add_interface_implementation(SubtaskRewards.__cls, SubtaskRewards)
 
 	igi_taskdata.add_classification_rule(function (CACHE)
-		if CACHE.immutable_rewards then
-			igi_models.set_class(CACHE.immutable_rewards, SubtaskRewards.__cls)
-			CACHE.immutable_rewards:repair_self()
+		if CACHE.rewards then
+			igi_models.set_class(CACHE.rewards, SubtaskRewards.__cls)
+			CACHE.rewards:repair_self()
 		end
 		if not CACHE:get_entities() then return end
 		for _, entity in pairs(CACHE:get_entities())do
-			if entity.reward then
-				igi_models.set_class(entity.reward, SubtaskRewards.__cls)
-				entity.reward:repair_self()
-			end
-
-			if entity.immutable_rewards then
-				igi_models.set_class(entity.immutable_rewards, SubtaskRewards.__cls)
-				entity.immutable_rewards:repair_self()
+			if entity.rewards then
+				igi_models.set_class(entity.rewards, SubtaskRewards.__cls)
+				entity.rewards:repair_self()
 			end
 		end
 	end)
@@ -38,7 +34,14 @@ end
 
 Cache = {
 	collect_and_give_rewards = function (self)
-		local reward = self.reward or RewardTable.new()
+		local rewards = self.rewards or SubtaskRewards.new()
+		local reward
+		if self:is_task_completed() then
+			reward = rewards:get_reward_of_status(TASK_STATUSES.COMPLETED)
+		else
+			reward = rewards:get_reward_of_status(TASK_STATUSES.FAILED)
+		end
+
 		local t = self:get_entities():collect_rewards_from_subtasks(
 			self:is_task_completed(),
 			self:get_task_giver_id()
@@ -75,7 +78,7 @@ EntitiesTable = {
 		local t = self:_collect_rewards_with_status(igi_subtask.TASK_STATUSES.FAILED, tg_id)
 		reward_tbl:combine_with(t)
 		if is_successful then
-			t = self:_add_rewards_with_status(igi_subtask.TASK_STATUSES.COMPLETED, tg_id)
+			t = self:_collect_rewards_with_status(igi_subtask.TASK_STATUSES.COMPLETED, tg_id)
 			reward_tbl:combine_with(t)
 		end
 		trace_dbg("Rewards from subtasks: ", reward_tbl)
@@ -90,6 +93,17 @@ EntitiesTable = {
 Entity = {
 	get_final_reward = function (self, task_giver_id)
 		return self:get_target_table().get_reward(self, task_giver_id)
+	end,
+
+	get_reward_table = function (self)
+		return self:get_all_rewards():get_reward_of_status(self:get_status())
+	end,
+
+	get_all_rewards = function (self)
+		if not self.rewards then
+			self.rewards = SubtaskRewards.new()
+		end
+		return self.rewards
 	end,
 }
 
@@ -129,11 +143,11 @@ SubtaskRewards = {
 RewardTable = {
 	__cls = 'RewardTable',
 
-	_factories = {},
+	_classes = {},
 
-	add_factory = function (key, factory)
-		trace_assert(type(factory) == "function", 'Factory is not a function')
-		RewardTable._factories[key] = factory
+	add_class = function (key, class)
+		trace_assert(class.__cls, 'Class is not a class')
+		RewardTable._classes[key] = class
 	end,
 
 	new = function ()
@@ -144,54 +158,66 @@ RewardTable = {
 
 	get = function (self, key)
 		if not self[key] then
-			trace_assert(self._factories[key], "Unknown reward type: "..key)
-			self[key] = self._factories[key]()
+			trace_assert(self._classes[key], "Unknown reward type: "..key)
+			self[key] = self._classes[key].new()
 		end
 		return self[key]
 	end,
 
 	repair_self = function (self)
-		if self.goodwill then
-			igi_models.set_class(self.goodwill, GoodwillReward)
-		end
-	end,
-
-	_set_immutable_rewards = function (self, immutable_rewards)
-		for k, reward in pairs(immutable_rewards) do
-			self:get_reward(k):set_immutable(reward)
+		for k, v in pairs(self) do
+			if k ~= "blocked" then
+				igi_models.set_class(v, self._classes[k].__cls)
+			end
 		end
 	end,
 
 	combine_with = function (self, other)
 		trace_assert(other.__cls == RewardTable.__cls, 'Tried to add wrong type')
 		other:finalize()
+		return_block = other:unblock()
+
+		trace_dbg("Combine: self, other", self, other)
 
 		for k, reward in pairs(other) do
-			self:get(k):combine_with(reward)
+			if (not self.blocked) or self[k] then
+				self:get(k):combine_with(reward)
+			end
 		end
+
+		return_block(other)
+	end,
+
+	unblock = function (self)
+		local was_blocked = self.blocked
+		self.blocked = nil
+		if was_blocked then return self.block end
+		return function () end
+	end,
+
+	block = function (self)
+		self.blocked = true
 	end,
 
 	finalize = function (self)
+		local return_block = self:unblock()
 		for _, reward in pairs(self) do
 			reward:apply_multiplier()
 			reward:apply_additional_value()
 		end
-	end,
-
-	set_global_immutable_rewards = function (self, CACHE)
-		if not CACHE.immutable_rewards then return end
-		local immutable_reward = CACHE.immutable_rewards[CACHE.status]
-		if not immutable_reward then return end
-		self:_set_immutable_rewards(immutable_reward)
-		trace_dbg("Rewards with immutables: ", self)
+		return_block(self)
 	end,
 
 	has_material_rewards = function (self)
+		-- I wish I had go's defer
+		local return_block = self:unblock()
 		for _, reward in pairs(self) do
 			if reward.is_material then
+				return_block(self)
 				return true
 			end
 		end
+		return_block(self)
 		return false
 	end,
 
@@ -200,9 +226,28 @@ RewardTable = {
 	end,
 
 	give = function (self)
+		local return_block = self:unblock()
 		for _, reward in pairs(self) do
 			reward:give()
 		end
+		return_block(self)
+	end,
+}
+
+AbstractReward = {
+	__cls = 'AbstractReward',
+
+	_empty_func = function () end,
+
+	unblock = function (self)
+		local was_blocked = self.blocked
+		self.blocked = nil
+		if was_blocked then return self.block end
+		return AbstractReward._empty_func
+	end,
+
+	block = function (self)
+		self.blocked = true
 	end,
 }
 
@@ -250,11 +295,13 @@ GoodwillReward = {
 	end,
 
 	add = function (self, value)
+		if self.blocked then return end
 		trace_assert(type(value) == "number", "Trying to set a non-number goodwill value")
 		self.value = self.value + value
 	end,
 
 	add_faction = function (self, faction)
+		if self.blocked then return end
 		self:_assert_faction_exists(faction)
 		for _, v in pairs(self) do
 			if v == faction then return	end
@@ -284,6 +331,7 @@ GoodwillReward = {
 	end,
 
 	add_for_faction = function (self, faction, value)
+		if self.blocked then return end
 		local new_val = self:get_for_faction(faction) + value
 		self:set_for_faction(faction, new_val)
 	end,
@@ -309,8 +357,10 @@ GoodwillReward = {
 	end,
 
 	combine_with = function (self, other)
-		trace_assert(other.__cls == GoodwillReward.__cls, 'Tried to add wrong type')
 		self:normalize()
+		if self.blocked then return end
+
+		trace_assert(other.__cls == GoodwillReward.__cls, 'Tried to add wrong type')
 		other:normalize()
 		for faction, goodwill in pairs(other:get_factions_goodwill()) do
 			self:add_for_faction(faction, goodwill)
@@ -326,13 +376,10 @@ GoodwillReward = {
 		end
 	end,
 
-	set_immutable = function (self, immutable)
-		immutable:normalize()
-		self.value = 0
-		self.factions_goodwill = immutable.factions_goodwill
-	end
+	unblock = AbstractReward.unblock,
+	block = AbstractReward.block,
 }
-RewardTable.add_factory(GoodwillReward.__key, GoodwillReward.new)
+RewardTable.add_class(GoodwillReward.__key, GoodwillReward)
 
 MoneyReward = {
 	__cls = "MoneyReward",
@@ -354,6 +401,7 @@ MoneyReward = {
 	end,
 
 	add = function (self, v)
+		if self.blocked then return end
 		self.value = self.value + v
 	end,
 
@@ -368,6 +416,7 @@ MoneyReward = {
 	end,
 
 	combine_with = function (self, other)
+		if self.blocked then return end
 		self:add(other:get())
 	end,
 
@@ -381,8 +430,7 @@ MoneyReward = {
 		end
 	end,
 
-	set_immutable = function (self, immutable)
-		self:set(immutable.value)
-	end
+	unblock = AbstractReward.unblock,
+	block = AbstractReward.block,
 }
-RewardTable.add_factory(MoneyReward.__key, MoneyReward.new)
+RewardTable.add_class(MoneyReward.__key, MoneyReward)

@@ -1,6 +1,7 @@
 
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
+local WorldState = igi_world_state.WorldState
 
 function on_game_start()
 	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)

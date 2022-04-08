@@ -16,13 +16,16 @@ function get_status(entity)
 end
 
 function entity_on_first_run(entity)
-	if not entity.reward then
-		entity.reward = igi_rewards.SubtaskRewards.new()
-	end
+	local reward = igi_rewards.RewardTable.new()
+	reward:get("goodwill"):add_value(get_goodwill_reward(entity))
+	reward:get("money"):add(get_money_reward(entity))
+	entity.raw_reward = reward
+end
 
-	local reward_tbl = entity.reward:get_reward_of_status(igi_subtask.TASK_STATUSES.COMPLETED)
-	reward_tbl:get("goodwill"):set_value(get_goodwill_reward(entity))
-	reward_tbl:get("money"):set(get_money_reward(entity))
+function get_raw_reward(entity, task_giver_id)
+	entity.raw_reward:get("goodwill")
+		:add_factions(igi_target_basic.get_factions(nil, task_giver_id))
+	return entity.raw_reward
 end
 
 local function get_monster_value(se_npc)
