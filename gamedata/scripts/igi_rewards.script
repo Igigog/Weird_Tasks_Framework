@@ -37,9 +37,9 @@ Cache = {
 		local rewards = self.rewards or SubtaskRewards.new()
 		local reward
 		if self:is_task_completed() then
-			reward = rewards:get_reward_of_status(TASK_STATUSES.COMPLETED)
+			reward = rewards:get(TASK_STATUSES.COMPLETED)
 		else
-			reward = rewards:get_reward_of_status(TASK_STATUSES.FAILED)
+			reward = rewards:get(TASK_STATUSES.FAILED)
 		end
 
 		local t = self:get_entities():collect_rewards_from_subtasks(
@@ -96,7 +96,7 @@ Entity = {
 	end,
 
 	get_reward_table = function (self)
-		return self:get_all_rewards():get_reward_of_status(self:get_status())
+		return self:get_all_rewards():get(self:get_status())
 	end,
 
 	get_all_rewards = function (self)
@@ -124,7 +124,7 @@ SubtaskRewards = {
 		end
 	end,
 
-	get_reward_of_status = function (self, status)
+	get = function (self, status)
 		trace_assert(igi_subtask.TASK_STATUSES[status], "Unknown task status")
 		if not self[status] then
 			self[status] = RewardTable.new()
