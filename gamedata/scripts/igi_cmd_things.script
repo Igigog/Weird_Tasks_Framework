@@ -13,29 +13,17 @@ function _cmd.check_igi_tasks()
 end
 
 function start_task(task_id)
-    local ok, ready = pcall(igi_generic_task.validate_generic_task(nil, nil, {task_id}))
-    if not ok then
-        trace_dbg("ERROR: ", ready)
-        return
-    end
+    local ready = igi_generic_task.validate_generic_task(nil, nil, {task_id})
     if not ready then
         trace_dbg("NOT READY: "..task_id)
         return
     end
 
-    ok, err = pcall(tm:give_task(task_id))
-    if not ok then
-        trace_dbg("ERROR: ", err)
-        return
-    end
+    task_manager.get_task_manager():give_task(task_id)
     return true
 end
 
 function finish_task(task_id)
-    local tm = task_manager.get_task_manager()
-    local ok, err = pcall(tm:set_task_completed(task_id))
-    if not ok then
-        trace_dbg("ERROR WHILE FINISH: "..task_id, err)
-    end
+    task_manager.get_task_manager():set_task_completed(task_id)
     return true
 end

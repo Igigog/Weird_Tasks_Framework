@@ -86,7 +86,9 @@ EntitiesTable = {
 			if not entity:is_initialised() then
 				trace_dbg('setup group '..tostring(_), entity)
 				local new_entities = entity:initialise()
-				if not new_entities then return end
+				if not new_entities then
+					return trace_dbg("entity failed", entity)
+				end
 				trace_dbg('group_data, new entities', entity, new_entities)
 
 				for _, entity in pairs(new_entities) do

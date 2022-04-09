@@ -24,6 +24,7 @@ function unfold_one_level(entity)
     for value in list:gmatch("[^,]+") do
         counter = counter + 1
         local new_entity = dup_table(entity)
+        igi_models.set_class(new_entity, entity.__cls)
         new_entity[table_key] = value
         new_entity[counter_id] = counter
         new_entity.group_id = nil

@@ -74,14 +74,13 @@ end
 
 
 local function send_custom_callbacks(callback_name, CACHE, ...)
-	local entity_table = CACHE:get_entities()
 	for callback in pairs(callbacks[callback_name]) do
-		callback(CACHE, entity_table, ...)
+		callback(CACHE, ...)
 	end
 
-	for _, entity in pairs(entity_table) do
+	for _, entity in pairs(CACHE:get_entities()) do
 		for callback in pairs(callbacks['entity_'..callback_name]) do
-			callback(entity, CACHE, entity_table, ...)
+			callback(entity, CACHE, ...)
 		end
 	end
 end

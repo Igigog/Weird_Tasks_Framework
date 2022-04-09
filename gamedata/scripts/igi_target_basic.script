@@ -120,7 +120,7 @@ function setup_location(entity)
 	if entity.search_for == 'smart' then
 		ids = igi_finder.get_smarts(entity.where)
 	elseif entity.search_for == 'stash' then
-		ids = igi_finder.get_stashes(args)
+		ids = igi_finder.get_stashes(entity)
 	else
 		trace_assert(nil, "Unknown location type")
 	end

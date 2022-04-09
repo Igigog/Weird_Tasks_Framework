@@ -17,13 +17,6 @@ function get_task_name(task_id)
 	return task_id:match(".*task_([^_]*)_(.*)")
 end
 
-function raise(errname, ...)
-	-- Just a small wrapper for error(), meaning this error will
-	-- probably be handled by pcall()
-	trace_dbg(errname, ...)
-	error(errname)
-end
-
 function scale_to_player(a, b)
 	-- will return integer from a to b (or from 1 to a) based
 	-- on player rank

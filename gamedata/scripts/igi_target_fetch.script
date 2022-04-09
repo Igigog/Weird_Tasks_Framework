@@ -40,7 +40,7 @@ end
 function setup_item(entity)
 	trace_assert(ini_sys:section_exist(entity.section_name or "nil"),
 		"Section does not exist")
-	return true
+	return {}
 end
 
 function get_description(entity)
@@ -51,11 +51,7 @@ function get_description(entity)
 	return desc
 end
 
-function create_item(group_data)
-	local items = {}
-	local link = igi_linker.make_link("item", group_data.group_id, 1)
-	items[link] = group_data
-	return items
+function create_item(entity)
 end
 
 local function get_item_base_cost(section)

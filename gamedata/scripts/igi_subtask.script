@@ -187,7 +187,7 @@ Entity = {
 			and not self:is_optional()
 	end,
 
-	set_ordes = function (self, order)
+	set_order = function (self, order)
 		trace_assert(type(order) == "number", "Order is not a number")
 		self.order = order
 	end,

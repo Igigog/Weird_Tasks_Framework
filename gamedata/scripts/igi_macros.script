@@ -1,4 +1,24 @@
 local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
+local WorldState = igi_world_state.WorldState
+
+function on_game_start()
+	igi_callbacks.add_callback("on_get_taskdata", set_task_giver)
+end
+
+current_tg_faction = nil
+function set_task_giver(CACHE, task_id)
+	local story_id = task_id:match("(.*)_task_.*")
+	trace_dbg(story_id)
+	local se_obj = get_story_se_object(story_id)
+	if se_obj then
+		current_tg_faction = igi_helper.get_community_by_id(se_obj.id)
+	else
+		trace_dbg("no story object")
+		-- warfare
+		current_tg_faction = story_id:match("sim_default_(.*)_.*") or "stalker"
+	end
+end
 
 function has_macro(str)
 	trace_assert(type(str) == "string", "Macro is not a string")
@@ -109,10 +129,11 @@ function Macro.Constant(args)
 end
 
 local function get_faction(keyword)
+	trace_dbg("faction", keyword)
 	if keyword == "actor" then
 		return db.actor:character_community()
 	elseif keyword == 'taskgiver' then
-		return mob_trade.GetTalkingNpc():character_community()
+		return current_tg_faction
 	else
 		return keyword
 	end
@@ -124,10 +145,9 @@ function Macro.Faction(args)
 	local args_str = args[1]
 	local tokens = tokenize(args_str)
 	local factions = evaluate(tokens, 1, #tokens)
-	local faction
 	if type(factions) == 'table' then
 		local _, faction = igi_utils.random_table_element(factions)
-		return faction
+		return faction or 'stalker'
 	else
 		return get_faction(factions)
 	end
@@ -177,7 +197,6 @@ function resolve_all_macros(str, entities)
 		end
 		local macro = parse_macro(macro_str)
 		local resolved = resolve_macro(macro)
-		if not resolved then igi_helper.raise("MacroUnresolvableException", before) end
 		new_str = string.gsub(new_str, '%&'..before..'%&', stringify(resolved))
 	end
 	return new_str
@@ -199,16 +218,6 @@ local function get_viable_factions()
 		end
 	end
 	return factions
-end
-
-local function get_faction(keyword)
-	if keyword == "actor" then
-		return db.actor:character_community()
-	elseif keyword == 'taskgiver' then
-		return mob_trade.GetTalkingNpc():character_community()
-	else
-		return keyword
-	end
 end
 
 local function convert_to_faction_set(faction)
