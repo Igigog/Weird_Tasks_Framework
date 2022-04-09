@@ -121,8 +121,6 @@ function get_task_data(task_id)
 	trace_assert(task_tbl, "No such task: "..tostring(task_id or "nil"))
 
 	restore_classes(task_tbl)
-	igi_synsugar.desugarize(task_tbl)
-	trace_dbg("after desugaring", task_tbl)
 	igi_callbacks.invoke_callbacks_custom("on_get_taskdata", task_tbl, task_tbl.setup)
 	return task_tbl
 end
