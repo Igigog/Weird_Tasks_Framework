@@ -2,15 +2,40 @@ local trace_dbg = igi_helper.trace_dbg
 
 _cmd = debug_cmd_list.command_get_list()
 function _cmd.check_igi_tasks()
-	local tm = task_manager.get_task_manager()
 	for task_id, task in pairs(axr_task_manager.CFG_CACHE) do
 		if string.find(task.job_descr or "", "igi_task_text") then
 			trace_dbg("CHECK: "..task_id)
-			local ready = igi_generic_task.validate_generic_task(nil, nil, {task_id})
-			if ready then
-				tm:give_task(task_id)
-				CreateTimeEvent("igi_finish", task_id, 1, tm.set_task_completed, tm, task_id)
-			end
+            if start_task(task_id) then
+                CreateTimeEvent("igi_finish", task_id, 1, finish_task, task_id)
+            end
 		end
 	end
+end
+
+function start_task(task_id)
+    local ok, ready = pcall(igi_generic_task.validate_generic_task(nil, nil, {task_id}))
+    if not ok then
+        trace_dbg("ERROR: ", ready)
+        return
+    end
+    if not ready then
+        trace_dbg("NOT READY: "..task_id)
+        return
+    end
+
+    ok, err = pcall(tm:give_task(task_id))
+    if not ok then
+        trace_dbg("ERROR: ", err)
+        return
+    end
+    return true
+end
+
+function finish_task(task_id)
+    local tm = task_manager.get_task_manager()
+    local ok, err = pcall(tm:set_task_completed(task_id))
+    if not ok then
+        trace_dbg("ERROR WHILE FINISH: "..task_id, err)
+    end
+    return true
 end
