@@ -1,0 +1,16 @@
+local trace_dbg = igi_helper.trace_dbg
+
+_cmd = debug_cmd_list.command_get_list()
+function _cmd.check_igi_tasks()
+	local tm = task_manager.get_task_manager()
+	for task_id, task in pairs(axr_task_manager.CFG_CACHE) do
+		if string.find(task.job_descr or "", "igi_task_text") then
+			trace_dbg("CHECK: "..task_id)
+			local ready = igi_generic_task.validate_generic_task(nil, nil, {task_id})
+			if ready then
+				tm:give_task(task_id)
+				CreateTimeEvent("igi_finish", task_id, 1, tm.set_task_completed, tm, task_id)
+			end
+		end
+	end
+end
