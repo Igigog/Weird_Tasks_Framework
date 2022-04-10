@@ -17,7 +17,7 @@ Entity = {
 			level.map_add_object_spot(
 				self.id,
 				self.mark,
-				game.translate_string(igi_db.TEXT_HEADER..self.mark)
+				game.translate_string(self.mark)
 			)
 
 		elseif (not object_in_world) and has_spot then

@@ -11,9 +11,6 @@ function actor_on_first_update()
 	igi_models.add_interface_implementation("Cache", Cache)
 	igi_models.add_interface_implementation('TaskDescription', TaskDescription)
 	igi_models.add_interface_implementation("DescriptionItem", DescriptionItem)
-	igi_models.add_interface_implementation("LocationDescription", LocationDescription)
-	igi_models.add_interface_implementation("TargetDescription", TargetDescription)
-	igi_models.add_interface_implementation("FactionDescription", FactionDescription)
 end
 
 local function table_find(tbl, val)
@@ -31,9 +28,14 @@ Cache = {
 
 	_prepare_description = function (self)
 		local desc = TaskDescription.new()
-		local entities = self:get_entities()
-		for _, entity in pairs(entities) do
-			desc:add_from_entity(entity, entities)
+		for _, entity in pairs(self:get_entities()) do
+			if entity.entity_type == "location" then
+				desc:setup_location(entity)
+			end
+		end
+
+		for _, entity in pairs(self:get_entities()) do
+			desc:add_from_entity(entity)
 		end
 		self.description = desc
 	end,
@@ -56,31 +58,48 @@ TaskDescription = {
 
 	new = function ()
 		local t = {
-			targets = TargetDescription:new(),
-			locations = LocationDescription:new(),
-			factions = FactionDescription:new(),
+			targets = DescriptionItem:new(),
+			locations = DescriptionItem:new(),
+			factions = DescriptionItem:new(),
+			_location_links = {}
 		}
 		igi_models.set_class(t, TaskDescription.__cls)
 		return t
 	end,
 
-	add_from_entity = function (self, entity, entities)
+	add_from_entity = function (self, entity)
+		if entity.no_description then return end
 		local target_tbl = entity:get_target_table()
 		local desc = target_tbl.get_description(entity)
 		for k, tbl in pairs(desc) do
+			self:link_locations(tbl)
 			for _, v in pairs(tbl) do
-				self[k]:add(v, entities)
+				self[k]:add(v)
 			end
 		end
 	end,
 
 	get_description = function (self)
+		self._location_links = nil
 		local content = {}
-		for _, v in pairs(self) do
-			content[#content+1] = v:to_string()
+		for label, v in pairs(self) do
+			content[#content+1] = v:to_string(label)
 		end
 
 		return table.concat(content, "\\n")
+	end,
+
+	link_locations = function (self, tbl)
+		for k, v in pairs(tbl) do
+			if igi_linker.is_dependency(v) then
+				local dep = igi_linker.Dependency.from(v)
+				tbl[k] = self._location_links[dep:get_link()]
+			end
+		end
+	end,
+
+	setup_location = function (self, entity)
+		self._location_links[entity:get_link()] = igi_target_basic.get_location_description(entity)
 	end,
 }
 
@@ -104,7 +123,7 @@ DescriptionItem = {
 		return game.translate_string(item)
 	end,
 
-	to_string = function (self)
+	to_string = function (self, label)
 		if not next(self) then return "" end
 
 		local details = {}
@@ -112,65 +131,9 @@ DescriptionItem = {
 			details[i] = self._get_item_string(value)
 		end
 
-		local label = game.translate_string(igi_db.TEXT_HEADER..self.label)
+		label = game.translate_string(igi_db.TEXT_HEADER..label)
 		return label..": "..table.concat(details, ', ')
 	end,
-}
-
-LocationDescription = {
-	__cls = "LocationDescription",
-	label = "locations",
-
-	new = DescriptionItem.new,
-
-	_get_location_description = function (link, entities)
-		if not igi_linker.is_dependency(link) then return link end
-
-		local dep = igi_linker.Dependency.from(link)
-		local location = dep:get_linked_entity(entities)
-		if location.smarts then
-			local smart_id = location.smarts[1]
-			local smart_name = SIMBOARD.smarts[smart_id].smrt:name()
-			return "st_"..smart_name.."_name"
-		end
-		return location.where
-	end,
-
-	add = function (self, value, entities)
-		if not table_find(self, value) then
-			self[#self+1] = self._get_location_description(value, entities)
-		end
-	end,
-
-	_get_item_string = function (item)
-		if type(item) == "number" then
-			local se_obj = WorldState.objects[item]
-			return dynamic_news_helper.GetPointDescription(se_obj)
-		end
-		return game.translate_string(item)
-	end,
-
-	to_string = DescriptionItem.to_string,
-}
-
-TargetDescription = {
-	__cls = "TargetDescription",
-	label = "targets",
-
-	new = DescriptionItem.new,
-	add = DescriptionItem.add,
-	_get_item_string = DescriptionItem._get_item_string,
-	to_string = DescriptionItem.to_string,
-}
-
-FactionDescription = {
-	__cls = "FactionDescription",
-	label = "factions",
-
-	new = DescriptionItem.new,
-	add = DescriptionItem.add,
-	_get_item_string = DescriptionItem._get_item_string,
-	to_string = DescriptionItem.to_string,
 }
 
 function get_task_text(task_id, field)

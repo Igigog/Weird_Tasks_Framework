@@ -40,7 +40,7 @@ function scale_to_player(a, b)
 end
 
 
-function check_common_npc(id)
+function is_common_npc(id)
 	--Parameter is correct | not world map | not player |
 	local npc = id and (id ~= 65535) and (id ~= 0) and WorldState.objects[id]
 	--Exist | is stalker | alive |
@@ -61,7 +61,6 @@ function check_common_npc(id)
 	if (smart_name and simulation_objects.base_smarts[smart_name] == true) then return false end
 	if (squad:get_script_target()) then return false end
 
-	-- printf("GhenTuong: check_common_npc: %s | %s | %s",npc:name(),squad:name(), smart_name)
 	return true
 end
 
@@ -72,7 +71,7 @@ function get_object_level_id(se_obj)
 	local lvl_info_obj
 	if se_obj.parent_id == 65535 then
 		lvl_info_obj = se_obj
-	elseif igi_helper.check_common_npc(se_obj.parent_id) then
+	elseif igi_helper.is_common_npc(se_obj.parent_id) then
 		lvl_info_obj = WorldState.objects[se_obj.parent_id]
 	end
 	

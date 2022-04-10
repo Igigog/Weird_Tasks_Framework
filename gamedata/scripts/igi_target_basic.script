@@ -64,29 +64,42 @@ end
 -- Prepares description
 ------------------------------------------------
 
-function get_description(entity)
+function get_location_description(entity)
+	if not entity.id then return end
+	local se_obj = WorldState.objects[entity.id]
+	if SIMBOARD.smarts[entity.id] then
+		return "st_"..se_obj:name().."_name"
+	end
+	return dynamic_news_helper.GetPointDescription(se_obj)
+end
+
+function get_se_entity_description(entity)
 	local desc = igi_description.TaskDescription.new()
-	local factions = desc.factions
-	local targets = desc.targets
-	local locations = desc.locations
+	local se_obj = WorldState.objects[entity.id]
+	desc.locations:add(get_location_description(entity))
 
-	if entity.entity_type == "squad" and entity.id then
-		local se_obj = WorldState.objects[entity.id]
-		factions[#factions+1] = se_obj.player_id
-		locations[#locations+1] = id
-	elseif entity.entity_type == "squad" then
-		factions[#factions+1] = entity.faction
-		locations[#locations+1] = entity.where
-	elseif entity.entity_type == "item" and entity.id then
-		local se_obj = WorldState.objects[entity.id]
-		local parent_id = se_obj.parent_id
-		local parent_npc = igi_helper.check_common_npc(parent_id) and WorldState.objects[parent_id]
+	if entity.entity_type == "squad" then
+		desc.factions:add(se_obj.player_id)
+	elseif igi_helper.is_common_npc(se_obj.parent_id) then
+		local parent_npc = WorldState.objects[se_obj.parent_id]
+		desc.factions:add(alife_character_community(parent_npc))
+		desc.targets:add(parent_npc:character_name())
+	end
 
-		factions[#factions+1] = parent_npc and alife_character_community(parent_npc) or nil
-		targets[#targets+1] = parent_npc and parent_npc:character_name() or nil
-		locations[#locations+1] = entity.id
+	return desc
+end
+
+function get_description(entity)
+	if not entity.to_create then
+		return get_se_entity_description(entity)
+	end
+
+	local desc = igi_description.TaskDescription.new()
+	if entity.entity_type == "squad" then
+		desc.factions:add(entity.faction)
+		desc.locations:add(entity.where)
 	elseif entity.entity_type == "item" then
-		targets[#targets+1] = igi_db.TEXT_HEADER..entity.section_name
+		desc.targets:add(ini_sys:r_string_ex(entity.section_name, "inv_name_short"))
 	end
 	return desc
 end
