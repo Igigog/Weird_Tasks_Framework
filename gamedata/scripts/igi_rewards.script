@@ -356,12 +356,36 @@ GoodwillReward = {
 		self.multiplier = nil
 	end,
 
-	combine_with = function (self, other)
-		self:normalize()
-		if self.blocked then return end
+	_factions_defined = function (self)
+		if not self.factions then self.factions = {} end
+		if not self.factions_goodwill then self.factions_goodwill = {} end
+		return next(self.factions) or next(self.factions_goodwill)
+	end,
 
-		trace_assert(other.__cls == GoodwillReward.__cls, 'Tried to add wrong type')
+	_get_denormalized_factions = function (self)
+		self:normalize()
+		local factions_goodwill = self:get_factions_goodwill()
+		sorted = {}
+
+		for k in pairs(factions_goodwill) do
+			sorted[#sorted+1] = k
+		end
+
+		table.sort(sorted, function(a,b)
+			return factions_goodwill[a] > factions_goodwill[b]
+		end)
+		return sorted
+	end,
+
+	combine_with = function (self, other)
 		other:normalize()
+		if self.blocked and not self:_factions_defined() then
+			self:set_factions(other:_get_denormalized_factions())
+			self:normalize()
+			return
+		end
+
+		self:normalize()
 		for faction, goodwill in pairs(other:get_factions_goodwill()) do
 			self:add_for_faction(faction, goodwill)
 		end
