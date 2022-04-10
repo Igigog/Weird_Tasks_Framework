@@ -132,15 +132,6 @@ EntitiesTable = {
 		elseif ready_to_finish then return TASK_STATUSES.READY_TO_FINISH
 		else return TASK_STATUSES.COMPLETED end
 	end,
-
-	must_return_to_task_giver = function (self)
-		for _, entity in pairs(self) do
-			if entity:get_status() == TASK_STATUSES.READY_TO_FINISH then
-				return false
-			end
-		end
-		return true
-	end,
 }
 
 Entity = {
