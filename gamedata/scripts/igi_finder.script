@@ -208,10 +208,6 @@ end
 
 
 function get_objects_pool(sections, search_type)
-	if type(sections) == "string" then
-		sections = igi_db.ini_tables[sections]:as_table()
-	end
-
 	if search_type == 'match' then
 		return get_objects_pool_by_func(sections, string.match)
 	elseif search_type == 'find' then

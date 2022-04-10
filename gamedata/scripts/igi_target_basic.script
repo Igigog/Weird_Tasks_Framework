@@ -166,8 +166,8 @@ function setup_item(entity)
 	end
 
 	trace_assert(entity.item_list, "No item list given")
-	local ids = igi_finder.get_objects_by_args(
-		entity.item_list, entity)
+	local sections = igi_db.ini_tables[entity.item_list]:as_table()
+	local ids = igi_finder.get_objects_by_args(sections, entity)
 	return ids_to_entities(entity, ids)
 end
 
