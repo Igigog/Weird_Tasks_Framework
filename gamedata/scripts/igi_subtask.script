@@ -69,7 +69,7 @@ Cache = {
 	end,
 
 	is_time_to_return = function (self)
-		return self.status == TASK_STATUSES.READY_TO_FINISH
+		return self.status ~= TASK_STATUSES.RUNNING
 	end,
 }
 
