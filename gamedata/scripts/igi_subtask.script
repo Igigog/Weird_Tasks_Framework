@@ -103,7 +103,7 @@ EntitiesTable = {
 				local target_tbl = entity:get_target_table()
 				local target = target_tbl.quest_target(entity)
 				if target then
-					min_order = entity.order
+					min_order = entity.order or 1
 					target_id = target
 				end
 			end
