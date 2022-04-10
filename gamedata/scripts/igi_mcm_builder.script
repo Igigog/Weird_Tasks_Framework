@@ -1,0 +1,263 @@
+
+AbstractOption = {
+    input_type = function (self, typ)
+        if typ == "string" then
+            self.val = 0
+        elseif typ == "boolean" then
+            self.val = 1
+        elseif typ == "float" then
+            self.val = 2
+        else
+            assert(nil, "MCM Builder: unknown type: "..tostring(typ))
+        end
+    end,
+
+    cmd = function (self, cmd)
+        self.cmd = cmd
+    end,
+
+    default = function (self, def)
+        if type(def) == "table" then
+            assert(type(def[1]) == "function", "MCM Builder: default table without a function")
+        end
+        self.def = def
+        return self
+    end,
+
+    current_value = function (self, curr)
+        assert(type(curr[1]) == "function", "MCM Builder: current value without a function")
+        self.curr = curr
+        return self
+    end,
+
+    callback = function (self, func)
+        assert(type(func[1]) == "function", "MCM Builder: callback without a function")
+        self.functor = func
+        return self
+    end,
+
+    text = function (self, text)
+        self.text = text
+        return self
+    end,
+
+    hint = function (self, hint)
+        self.hint = hint
+        return self
+    end,
+
+    color = function (self, color)
+        a, r, g, b = unpack(color)
+        assert(type(a + r + g + b) == "number", "MCM: invalid color representation")
+        self.clr = color
+        return self
+    end,
+
+    align = function (self, str)
+        if str == "center" then
+            self.align = 'c'
+        elseif str == "right" then
+            self.align = 'r'
+        elseif str == "left" then
+            self.align = 'l'
+        else
+            assert(nil, "MCM Builder: unknown alignment: "..str)
+        end
+
+        return self
+    end,
+}
+
+Tree = {
+    _cls = "Tree",
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, sh = false, gr = {}, _level = 1}
+        setmetatable(t, {__index = Tree})
+        return t
+    end,
+
+    add_subtree = function (self, subtree)
+        assert(subtree._cls == "Tree", "MCM Builder: not a Tree")
+        assert(subtree._level < 2, "MCM Builder: Tree too deep")
+        if self._level <= subtree._level then
+            self._level = subtree._level + 1
+        end
+
+        self.gr[#self.gr+1] = subtree
+        return self
+    end,
+
+    add_page = function (self, page)
+        assert(page._cls, "MCM Builder: not a Page")
+        self.gr[#self.gr+1] = page
+        return self
+    end,
+
+    build = function (self)
+        setmetatable(self, nil)
+        self._level = nil
+        for _, v in pairs(self) do
+            if type(v) == "table" then
+                Tree.build(v)
+            end
+        end
+        return self
+    end,
+
+    text = AbstractOption.text,
+}
+
+Page = {
+    _cls = "Page",
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, sh=true, gr={}}
+        setmetatable(t, {__index = Page})
+        return t
+    end,
+
+    add = function (self, widget)
+        assert(widget._widget, "MCM Builder: Trying to add not a widget")
+        self.gr[#self.gr+1] = widget
+        return self
+    end,
+
+    merge = function (self, page)
+        assert(page._cls == "Page", "MCM Builder: not a Page")
+        for _, widget in pairs(page.gr) do
+            self:add(widget)
+        end
+        return self
+    end,
+
+    text = AbstractOption.text,
+}
+
+Line = {
+    _cls = "Line",
+    _widget = true,
+
+    new = function ()
+        local t = {id = "line", type = "line"}
+        setmetatable(t, {__index = Line})
+        return t
+    end,
+}
+
+Title = {
+    _cls = "Title",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, type = "title", align = "c"}
+        setmetatable(t, {__index = Title})
+        return t
+    end,
+
+    align = AbstractOption.align,
+    color = AbstractOption.color,
+    text = AbstractOption.text,
+}
+
+Description = {
+    _cls = "Description",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, type = "desc"}
+        setmetatable(t, {__index = Description})
+        return t
+    end,
+
+    text = AbstractOption.text,
+}
+
+ImageWithText = {
+    _cls = "ImageWithText",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type="slide", size={512,50}}
+        setmetatable(t, {__index = ImageWithText})
+        return t
+    end,
+
+    image = function (self, link)
+        self.link = link
+        return self
+    end,
+
+    size = function (self, size)
+        assert(#size == 2, "MCM Builder: unknown size type")
+        self.size = size
+        return self
+    end,
+
+    text = AbstractOption.text,
+}
+
+Checkbox = {
+    _cls = "Checkbox",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type = "check", val = 1}
+        setmetatable(t, {__index = Checkbox})
+        return t
+    end,
+
+    current_value = AbstractOption.current_value,
+    callback = AbstractOption.callback,
+    default = AbstractOption.default,
+    hint = AbstractOption.hint,
+}
+
+Trackbar = {
+    _cls = "Trackbar",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type = "track", val = 2, min = 0, max = 2, step = 0.1, def = 1}
+        setmetatable(t, {__index = Trackbar})
+        return t
+    end,
+
+    minmax = function (self, min, max)
+        assert(min + max, "MCM Builder: bad minmax values")
+        self.min = min
+        self.max = max
+        return self
+    end,
+
+    current_value = AbstractOption.current_value,
+    callback = AbstractOption.callback,
+    default = AbstractOption.default,
+}
+
+InputField = {
+    _cls = "InputField",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, type = "input", val = 0}
+        setmetatable(t, {__index = InputField})
+        return t
+    end,
+
+    current_value = AbstractOption.current_value,
+    callback = AbstractOption.callback,
+    hint = AbstractOption.hint,
+    input_type = AbstractOption.input_type,
+}
+
+
+

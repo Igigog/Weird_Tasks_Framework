@@ -1,6 +1,16 @@
 local trace_assert = igi_helper.trace_assert
 local extend_list = igi_utils.extend_list
 
+Tree = igi_mcm_builder.Tree
+Page = igi_mcm_builder.Page
+ImageWithText = igi_mcm_builder.ImageWithText
+Checkbox = igi_mcm_builder.Checkbox
+Trackbar = igi_mcm_builder.Trackbar
+Title = igi_mcm_builder.Title
+Line = igi_mcm_builder.Line
+InputField = igi_mcm_builder.InputField
+Description = igi_mcm_builder.Description
+
 function on_game_start()
 	assert(ui_mcm, "Weird Tasks Framework: MCM not installed. Fuck you.")
 end
@@ -69,162 +79,141 @@ function reset_all_tasks(task, prefix)
 	end
 end
 
-local function add_line(widgets)
-	widgets[#widgets+1] = {id = "line", type = "line"}
+local function get_title(name)
+	return Title.new("ui_mcm_"..name.."_title")
+		:text("ui_mcm_igi_tasks_"..name.."_title")
 end
 
-local function add_title(widgets, name)
-	widgets[#widgets+1] = {id = "ui_mcm_"..name.."_title", type = "title",
-		text = "ui_mcm_igi_tasks_"..name.."_title", align = "c"}
-end
-
-local function add_description(widgets, name)
-	widgets[#widgets+1] = {id = "ui_mcm_"..name.."_desc", type = "desc",
-		text = "ui_mcm_igi_tasks_"..name.."_desc"}
-end
-
-local function add_title_and_description(widgets, name)
-	add_title(widgets, name)
-	add_description(widgets, name)
+local function get_description(name)
+	return Description.new("ui_mcm_"..name.."_desc")
+		:text("ui_mcm_igi_tasks_"..name.."_desc")
 end
 
 local function create_disable_widgets(task, prefix)
-	return {
-		{id = "check_disabled", type = "check", hint="igi_tasks_disable_task", val = 1, 
-			curr = {task_table_value, task, prefix, {"disabled"}},
-			functor = {set_config_value, task, prefix, {"disabled"}}
-		}
-	}
+	local check = Checkbox.new("check_disabled")
+		:hint("igi_tasks_disable_task")
+		:current_value({task_table_value, task, prefix, {"disabled"}})
+		:callback({set_config_value, task, prefix, {"disabled"}})
+	return Page.new(''):add(check)
 end
 
 local function create_cancel_widgets(task, prefix)
-	return {
-		{id = "cancel_all", type = "check", hint = "igi_tasks_cancel_all", val=1,
-			curr = {function () return false end},
-			functor = {reset_all_tasks, task, prefix}
-		}
-	}
+	local check = Checkbox.new("cancel_all")
+		:hint("igi_tasks_cancel_all")
+		:current_value({task_table_value, task, prefix, {"disabled"}})
+		:callback({set_config_value, task, prefix, {"disabled"}})
+	return Page.new(''):add(check)
 end
 
 local function create_rewards_modifiers_widgets(task, prefix)
-	local widgets = {}
-	add_title_and_description(widgets, "rewards_modifiers")
-	extend_list(widgets, {
-		{id = "add_money", type = "input", val = 0, hint = "igi_tasks_add_money",
-			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "additional"}},
-			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "additional"}}
-		},
-		{id = "add_goodwill", type = "input", val = 0, hint = "igi_tasks_add_goodwill",
-			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}},
-			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}}
-		},
-		{id = "mult_money", type = "input", val = 0, hint = "igi_tasks_mult_money",
-			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}},
-			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}}
-		},
-		{id = "mult_goodwill", type = "input", val = 0, hint = "igi_tasks_mult_goodwill",
-			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}},
-			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}}
-		}
-	})
-	return widgets
+	local page = Page.new('')
+	page:add(get_title("rewards_modifiers"))
+	page:add(get_description("rewards_modifiers"))
+	local additional_money = InputField.new("add_money")
+		:hint("igi_tasks_add_money")
+		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "additional"}})
+		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "additional"}})
+
+	local additional_goodwill = InputField.new("add_goodwill")
+		:hint("igi_tasks_add_goodwill")
+		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}})
+		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}})
+
+	local money_multiplier = InputField.new("mult_money")
+		:hint("igi_tasks_mult_money")
+		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}})
+		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}})
+
+	local goodwill_multiplier = InputField.new("mult_goodwill")
+		:hint("igi_tasks_mult_goodwill")
+		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}})
+		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}})
+
+	page:add(additional_money)
+			:add(additional_goodwill)
+			:add(money_multiplier)
+			:add(goodwill_multiplier)
+
+	return page
 end
 
 local function create_static_rewards_widgets(task, prefix)
-	local widgets = {}
-	add_title_and_description(widgets, "static_rewards")
-	extend_list(widgets, {
-		{id = "reward_money", type = "input", val = 0, hint = "igi_tasks_reward_money",
-			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "value"}},
-			functor = {set_static_reward, task, prefix, {"rewards", "COMPLETED", "money", "value"}}
-		},
-		{id = "reward_goodwill", type = "input", val = 0, hint = "igi_tasks_reward_goodwill",
-			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}},
-			functor = {set_static_reward, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}}
-		},
-	})
-	return widgets
+	local page = Page.new('')
+	page:add(get_title("static_rewards"))
+	page:add(get_description("static_rewards"))
+	local money = InputField.new("reward_money")
+		:hint("igi_tasks_reward_money")
+		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "value"}})
+		:callback({set_static_reward, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}})
+
+	local goodwill = InputField.new("reward_goodwill")
+		:hint("igi_tasks_reward_goodwill")
+		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}})
+		:callback({set_static_reward, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}})
+
+	return page:add(money):add(goodwill)
 end
 
 local function create_rewards_widgets(task, prefix)
-	local widgets = {}
-	extend_list(widgets, create_static_rewards_widgets(task, prefix))
-	add_line(widgets)
-	extend_list(widgets, create_rewards_modifiers_widgets(task, prefix))
-	return widgets
+	local page = Page.new('')
+	page:merge(create_static_rewards_widgets(task, prefix))
+	page:add(Line.new())
+	page:merge(create_rewards_modifiers_widgets(task, prefix))
+	return page
 end
 
-local function build_task_entry(task, prefix)
-	local widgets = {}
-	add_title(widgets, "task_pack_general")
-	extend_list(widgets, create_disable_widgets(task, prefix))
-	extend_list(widgets, create_cancel_widgets(task, prefix))
-	add_line(widgets)
-	extend_list(widgets, create_rewards_widgets(task, prefix))
-
-	return {id=task, sh=true, text="igi_task_text_"..prefix.."_"..task.."_title", gr=widgets}
+local function build_task_page(task, prefix)
+	local page = Page.new(task):text("igi_task_text_"..prefix.."_"..task.."_title")
+	page:add(Title.new("ui_mcm_task_pack_general_title"))
+	page:merge(create_disable_widgets(task, prefix))
+	page:merge(create_cancel_widgets(task, prefix))
+	page:add(Line.new())
+	page:merge(create_rewards_widgets(task, prefix))
+	return page
 end
 
-local function build_tasks_entries(prefix)
-	igi_taskdata.create_path(prefix)
-	local entries = {}
-	local files = getFS():file_list_open("$game_config$", 
-		"igi_tasks\\tasks\\"..prefix.."\\",
+local function build_task_pack_tree(meta_section)
+	igi_taskdata.create_path(meta_section.prefix)
+	local files = getFS():file_list_open("$game_config$",
+		"igi_tasks\\tasks\\"..meta_section.prefix.."\\",
 		1+4+8)
 
+	local tree = Tree.new(meta_section.name):text(meta_section.name)
 	for i=0,files:Size()-1 do
-		entries[#entries+1] = build_task_entry(files:GetAt(i), prefix)
+		local task = files:GetAt(i)
+		tree:add_page(build_task_page(task, meta_section.prefix))
 	end
-	return entries
+	return tree
 end
 
-local function build_task_pack_entry(meta_section, path)
-	local tbl = {
-		id=meta_section.name,
-		text=meta_section.name,
-		sh=false,
-		gr=build_tasks_entries(meta_section.prefix)
-	}
-	return tbl
+local function get_basic_rewards_page()
+	local coeff = Trackbar.new("money_reward_coeff")
+	local spread_min = Trackbar.new("reward_spread_min"):default(0.8)
+	local spread_max = Trackbar.new("reward_spread_max"):default(1.1)
+	return Page.new('')
+		:add(coeff)
+		:add(spread_min)
+		:add(spread_max)
 end
 
-local function build_task_packs_entries()
-	local entries = {}
-	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
+local function get_options_page()
+	local page = Page.new("Options")
+	page:add(ImageWithText.new("title")
+				:image("ui_options_slider_player")
+				:text("ui_mcm_igi_tasks_title"))
 
-	for k, meta_section in meta_ltx:iter() do
-		entries[#entries+1] = build_task_pack_entry(meta_section, "")
-	end
-	return entries
-end
-
-local function get_basic_reward_widgets()
-	return {
-		{id = "money_reward_coeff", type = "track", val = 2, min = 0, max = 4, step = 0.1, def = 1},
-		{id = "reward_spread_min", type = "track", val = 2, min = 0, max = 4, step = 0.1, def = 0.8},
-		{id = "reward_spread_max", type = "track", val = 2, min = 0, max = 4, step = 0.1, def = 1.1},
-	}
-end
-
-local function build_option_entries()
-	local entries = {}
 	for _, id in pairs(OPTION_IDS) do
-		entries[#entries+1] = {
-			id = id,
-			type = "check",
-			val = 1,
-			def = get_default_option(id)
-		}
+		local default = get_default_option(id)
+		page:add(Checkbox.new(id):default(default))
 	end
-	entries[#entries+1] = {
-		id = "reset_all",
-		type = "check",
-		val = 1,
-		curr = {function () return false end},
-		functor = {igi_taskdata.reset_all_custom_tables}
-	}
-	extend_list(entries, get_basic_reward_widgets())
-	return entries
+
+	page:add(Checkbox.new("reset_all")
+		:current_value({function () return false end})
+		:callback({igi_taskdata.reset_all_custom_tables})
+	)
+
+	page:merge(get_basic_rewards_page())
+	return page
 end
 
 local function reset_tasks_on_new_framework()
@@ -243,13 +232,12 @@ end
 function on_mcm_load()
 	reset_tasks_on_new_framework()
 	igi_mcm_features.add_mcm_options()
-	local op = {id= "igi_tasks", sh=false, gr={
-					{id="Options", sh=true, gr={
-						{id="title", type="slide", link="ui_options_slider_player", text="ui_mcm_igi_tasks_title", size={512,50}},
-					}}
-				}
-			}
-	extend_list(op.gr[1].gr, build_option_entries())
-    extend_list(op.gr, build_task_packs_entries())
-	return op
+	local tree = Tree.new("igi_tasks")
+	tree:add_page(get_options_page())
+
+	local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
+	for _, meta_section in meta_ltx:iter() do
+		tree:add_subtree(build_task_pack_tree(meta_section))
+	end
+	return tree:build()
 end
