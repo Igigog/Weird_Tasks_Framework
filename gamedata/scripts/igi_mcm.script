@@ -49,7 +49,15 @@ local function set_config_value_typed(task_name, prefix, path, value)
 	if type(value) == "string" then
 		value = igi_db.parse_values(value)
 	end
+	if value == "nil" then value = nil end
 	set_config_value(task_name, prefix, path, value)
+end
+
+local function set_static_reward(task_name, prefix, path, value)
+	set_config_value_typed(task_name, prefix, path, value)
+	path = dup_table(path)
+	path[#path] = "blocked"
+	set_config_value_typed(task_name, prefix, path, value ~= "nil" or nil)
 end
 
 function reset_all_tasks(task, prefix)
@@ -103,20 +111,20 @@ local function create_rewards_modifiers_widgets(task, prefix)
 	add_title_and_description(widgets, "rewards_modifiers")
 	extend_list(widgets, {
 		{id = "add_money", type = "input", val = 0, hint = "igi_tasks_add_money",
-			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "add_money"}},
-			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "add_money"}}
+			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "additional"}},
+			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "additional"}}
 		},
 		{id = "add_goodwill", type = "input", val = 0, hint = "igi_tasks_add_goodwill",
-			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "add_goodwill"}},
-			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "add_goodwill"}}
+			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}},
+			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}}
 		},
 		{id = "mult_money", type = "input", val = 0, hint = "igi_tasks_mult_money",
-			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "mult_money"}},
-			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "mult_money"}}
+			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}},
+			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}}
 		},
 		{id = "mult_goodwill", type = "input", val = 0, hint = "igi_tasks_mult_goodwill",
-			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "mult_goodwill"}},
-			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "mult_goodwill"}}
+			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}},
+			functor = {set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}}
 		}
 	})
 	return widgets
@@ -127,12 +135,12 @@ local function create_static_rewards_widgets(task, prefix)
 	add_title_and_description(widgets, "static_rewards")
 	extend_list(widgets, {
 		{id = "reward_money", type = "input", val = 0, hint = "igi_tasks_reward_money",
-			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "money"}},
-			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "money"}}
+			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "value"}},
+			functor = {set_static_reward, task, prefix, {"rewards", "COMPLETED", "money", "value"}}
 		},
 		{id = "reward_goodwill", type = "input", val = 0, hint = "igi_tasks_reward_goodwill",
-			curr = {task_table_value_safe, task, prefix, {"immutable_rewards", "completed", "goodwill", "value"}},
-			functor = {set_config_value_typed, task, prefix, {"immutable_rewards", "completed", "goodwill", "value"}}
+			curr = {task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}},
+			functor = {set_static_reward, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}}
 		},
 	})
 	return widgets
