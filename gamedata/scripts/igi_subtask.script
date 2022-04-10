@@ -99,7 +99,10 @@ EntitiesTable = {
 		local min_order = 100000
 		local target_id
 		for _, entity in pairs(self) do
-			if entity.target and (entity.order or 1) < min_order then
+			if entity.target
+				and entity:get_status() == TASK_STATUSES.RUNNING
+				and (entity.order or 1) < min_order then
+
 				local target_tbl = entity:get_target_table()
 				local target = target_tbl.quest_target(entity)
 				if target then
@@ -159,14 +162,11 @@ Entity = {
 	end,
 
 	update_status = function (self)
-		local target_tbl = self:get_target_table()
-		local old_status = self:get_status()
-		trace_dbg('new status', self, target_tbl.get_status(self))
-		self:set_status(target_tbl.get_status(self))
-		if self:get_status() ~= old_status then
-			igi_callbacks.invoke_callbacks("on_subtask_status_change", self)
-		end
-		return self:get_status() ~= old_status
+		local new_status = self:get_target_table().get_status(self)
+		if new_status == self:get_status() then return end
+		self:set_status(new_status)
+		igi_callbacks.invoke_callbacks("on_subtask_status_change", self)
+		return true
 	end,
 
 	is_optional = function (self)
