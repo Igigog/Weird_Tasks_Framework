@@ -99,7 +99,7 @@ EntitiesTable = {
 		local min_order = 100000
 		local target_id
 		for _, entity in pairs(self) do
-			if entity.target and entity.order < min_order then
+			if entity.target and (entity.order or 1) < min_order then
 				local target_tbl = entity:get_target_table()
 				local target = target_tbl.quest_target(entity)
 				if target then
