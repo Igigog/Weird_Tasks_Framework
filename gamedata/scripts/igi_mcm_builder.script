@@ -1,6 +1,13 @@
+assert(string.find(ui_mcm.VERSION, "1.%d.%d"), "MCM Builder: Unsupported MCM version")
+
 
 AbstractOption = {
+    -- Not an actual class, just a pile of methods used by
+    -- everyone else
+
     input_type = function (self, typ)
+        -- tells the script what kind of value 
+        -- the option is storing / dealing with
         if typ == "string" then
             self.val = 0
         elseif typ == "boolean" then
@@ -10,13 +17,21 @@ AbstractOption = {
         else
             assert(nil, "MCM Builder: unknown type: "..tostring(typ))
         end
+        return self
     end,
 
     cmd = function (self, cmd)
+        -- Tie an option to a console command
+        -- Refer to MCM manual for the documentation
+        assert(not self.def, "MCM Builder: default value does not work with cmd enabled")
         self.cmd = cmd
+        return self
     end,
 
     default = function (self, def)
+        -- value or table {function, parameters}
+        -- Default value of an option
+        assert(not rawget(self,"cmd"), "MCM Builder: default value does not work with cmd enabled")
         if type(def) == "table" then
             assert(type(def[1]) == "function", "MCM Builder: default table without a function")
         end
@@ -25,35 +40,446 @@ AbstractOption = {
     end,
 
     current_value = function (self, curr)
+        -- table {function, parameters}
+        -- get current value of an option by executing
+        -- the declared function, instead of reading it from axr_options.ltx
         assert(type(curr[1]) == "function", "MCM Builder: current value without a function")
         self.curr = curr
         return self
     end,
 
-    callback = function (self, func)
-        assert(type(func[1]) == "function", "MCM Builder: callback without a function")
-        self.functor = func
+    callback = function (self, tbl)
+        -- table {function, parameters}
+        -- Execute a function when option's changes get applied
+		-- The value of the option is added to the end of the parameters list.
+        assert(type(tbl[1]) == "function", "MCM Builder: callback without a function")
+        self.functor = tbl
         return self
     end,
 
     text = function (self, text)
+        -- String to show, it will be translated
         self.text = text
         return self
     end,
 
     hint = function (self, hint)
+        -- Override default name / desc rule to replace
+        -- the translation of an option with a custom one,
+        -- should be set without "ui_mcm_" and "_desc"
         self.hint = hint
         return self
     end,
 
-    color = function (self, color)
-        a, r, g, b = unpack(color)
+    color = function (self, r, g, b, a)
+        -- determines the color of the text
         assert(type(a + r + g + b) == "number", "MCM: invalid color representation")
-        self.clr = color
+        self.clr = {a,r,b,g}
         return self
     end,
 
+    minmax = function (self, min, max)
+        -- Minimum/maximum for an option
+        assert(self.val == 2, "MCM Builder: minmax does not work if input type is not float")
+        assert(min + max, "MCM Builder: bad minmax values")
+        self.min = min
+        self.max = max
+        return self
+    end,
+
+    content_pairs = function (self, content)
+        -- table {double pairs}
+        -- Declares option's selection list
+        for _, v in ipairs(content) do
+            assert(#v == 2, "MCM Builder: not a pair")
+        end
+        self.content = content
+        return self
+    end,
+
+    image = function (self, link)
+        -- Link to texture you want to show
+        self.link = link
+        return self
+    end,
+
+    dont_translate = function (self)
+        -- Usually, the 2nd key of pairs in content table are
+        -- strings to show on the UI, by translating "opt_str_lst_(string)".
+		-- When we set [no_str] to true, it will show
+        -- the string from table as it is without
+        -- translations or "opt_str_lst_"
+		-- For TrackBars: no_str won't show value next to the slider
+        self.no_str = true
+        return self
+    end,
+
+    precondition = function (self, prec)
+        -- table {function, parameters}
+        -- Show the option on UI if the precondition function returns true
+        assert(type(prec[1]) == "function", "MCM Builder: precondition without a function")
+        self.precondition = prec
+        return self
+    end,
+
+    postcondition = function (self, postc)
+        -- table {function, parameters}
+        -- Option won't execute its functor when changes are applied,
+        -- unless if the postcondition function returns true
+        assert(type(postc[1]) == "function", "MCM Builder: postcondition without a function")
+        self.postcondition = postc
+        return self
+    end,
+}
+
+Tree = {
+    -- Structural element; You'll probably need at least one to start.
+    -- Don't forget to :build() at the end.
+    _cls = "Tree",
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, sh = false, gr = {}}
+        setmetatable(t, {__index = Tree})
+        return t
+    end,
+
+    add_subtree = function (self, subtree)
+        -- Add another Tree on the next MCM level
+        assert(subtree._cls == "Tree", "MCM Builder: not a Tree")
+        assert(not subtree._subtree, "MCM Builder: Tree too deep")
+        subtree._subtree = true     -- only can add pages to subtree
+        self._subtree = true        -- can't add self to another tree
+        self.gr[#self.gr+1] = subtree
+        return self
+    end,
+
+    add_page = function (self, page)
+        -- Add Page. Page is final destination.
+        assert(page._cls == "Page", "MCM Builder: not a Page")
+        self.gr[#self.gr+1] = page
+        return self
+    end,
+
+    build = function (self)
+        -- Remove OOP features from everything. Needed as some OOP functions
+        -- collide with actual data MCM uses
+        setmetatable(self, nil)
+        self._subtree = nil
+        for _, v in pairs(self) do
+            if type(v) == "table" then
+                Tree.build(v)
+            end
+        end
+        return self
+    end,
+
+    group = function (self, group_id)
+        -- allows you to give options tree a group id,
+        -- to connect them when you want to use "Apply to all"
+        -- button for options
+        assert(type(group_id) == "string", "MCM Builder: not a text")
+        self.id_gr = group_id
+        self.apply_to_all = true
+        return self
+    end,
+
+    text = AbstractOption.text,
+}
+
+Page = {
+    -- Final destination; Options are added to this one.
+    -- Is added to a Tree, choosing it gives you the page
+    -- You probably can use it without a Tree, if you only need
+    -- one page.
+    _cls = "Page",
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, sh=true, gr={}}
+        setmetatable(t, {__index = Page})
+        return t
+    end,
+
+    add = function (self, widget)
+        -- Add widget to self
+        assert(widget._widget, "MCM Builder: Trying to add not a widget")
+        self.gr[#self.gr+1] = widget
+        return self
+    end,
+
+    merge = function (self, page)
+        -- Add everything from another Page to self
+        assert(page._cls == "Page", "MCM Builder: not a Page")
+        for _, widget in pairs(page.gr) do
+            self:add(widget)
+        end
+        return self
+    end,
+
+    precondition = AbstractOption.precondition,
+    text_on_fail = function (self, text)
+        -- Text to show when precondition fails
+        assert(type(text) == "string", "MCM Builder: not a text")
+        self.output = text
+        return self
+    end,
+
+    group = Tree.group,
+    text = AbstractOption.text,
+    build = Tree.build,
+}
+
+Checkbox = {
+    -- Literally boolean option, no bells and whistles
+    _cls = "Checkbox",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type = "check", val = 1}
+        setmetatable(t, {__index = Checkbox})
+        return t
+    end,
+
+    default = AbstractOption.default,
+    hint = AbstractOption.hint,
+    cmd = AbstractOption.cmd,
+
+    precondition = AbstractOption.precondition,
+    callback = AbstractOption.callback,
+    postcondition = AbstractOption.postcondition,
+
+    current_value = AbstractOption.current_value,
+}
+
+List = {
+    -- List of strings, useful for options with too many selections
+    _cls = "List",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type = "list", val = 0}
+        setmetatable(t, {__index = List})
+        return t
+    end,
+
+    input_type = AbstractOption.input_type,
+    cmd = AbstractOption.cmd,
+    dont_translate = AbstractOption.dont_translate,
+
+    precondition = AbstractOption.precondition,
+    callback = AbstractOption.callback,
+    postcondition = AbstractOption.postcondition,
+
+    current_value = AbstractOption.current_value,
+    hint = AbstractOption.hint,
+}
+
+InputField = {
+    -- Input box, you can type a value of your choice
+    _cls = "InputField",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, type = "input", val = 0}
+        setmetatable(t, {__index = InputField})
+        return t
+    end,
+
+    minmax = AbstractOption.minmax,
+    input_type = AbstractOption.input_type,
+    cmd = AbstractOption.cmd,
+
+    precondition = AbstractOption.precondition,
+    callback = AbstractOption.callback,
+    postcondition = AbstractOption.postcondition,
+
+    current_value = AbstractOption.current_value,
+    hint = AbstractOption.hint,
+}
+
+RadioBox = {
+    -- Radio box, select one out of many choices.
+    _cls = "RadioBox",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, type = "radio_h", val = 0}
+        setmetatable(t, {__index = RadioBox})
+        return t
+    end,
+
+    vertical = function (self)
+        -- Makes vertical, lol
+        self.type = "radio_v"
+        self.force_horz = nil
+        return self
+    end,
+
+    force_horizontal = function (self)
+        -- Force the radio buttons into horizental layout,
+        -- despite their number
+        assert(self.type == "radio_h", "MCM Builder: force_horizontal on vertical radiobox")
+        self.force_horz = true
+        return self
+    end,
+
+    input_type = AbstractOption.input_type,
+    cmd = AbstractOption.cmd,
+    dont_translate = AbstractOption.dont_translate,
+
+    precondition = AbstractOption.precondition,
+    callback = AbstractOption.callback,
+    postcondition = AbstractOption.postcondition,
+
+    current_value = AbstractOption.current_value,
+    hint = AbstractOption.hint,
+}
+
+Trackbar = {
+    -- Track bar, easy way to control numeric options with min/max values
+    _cls = "Trackbar",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type = "track", val = 2, min = 0, max = 2, step = 0.1, def = 1}
+        setmetatable(t, {__index = Trackbar})
+        return t
+    end,
+
+    step = function (self, step)
+        -- Set step
+        assert(type(step) == "number", "MCM Builder: step is not a number")
+        self.step = step
+        return self
+    end,
+
+    precision = function (self, prec)
+        -- allowed number of zeros in a number
+        self.prec = prec
+        return self
+    end,
+
+    minmax = AbstractOption.minmax,
+    default = AbstractOption.default,
+    cmd = AbstractOption.cmd,
+    dont_translate = AbstractOption.dont_translate,
+
+    precondition = AbstractOption.precondition,
+    callback = AbstractOption.callback,
+    postcondition = AbstractOption.postcondition,
+
+    current_value = AbstractOption.current_value,
+    hint = AbstractOption.hint,
+}
+
+KeybindBox = {
+    -- Button that registers a keypress after being clicked.
+    _cls = "KeybindBox",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type = "key_bind", val = 2}
+        setmetatable(t, {__index = KeybindBox})
+        return t
+    end,
+
+    cmd = AbstractOption.cmd,
+    precondition = AbstractOption.precondition,
+    hint = AbstractOption.hint,
+}
+
+
+Line = {
+    -- Literally a useless line
+    _cls = "Line",
+    _widget = true,
+
+    new = function ()
+        local t = {id = "line", type = "line"}
+        setmetatable(t, {__index = Line})
+        return t
+    end,
+}
+
+Image = {
+    -- Literally a useless image
+    _cls = "Image",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type="image"}
+        setmetatable(t, {__index = Image})
+        return t
+    end,
+
+    image = AbstractOption.image,
+}
+
+ImageWithText = {
+    -- Useless image on the left, maybe useful text on the right
+    _cls = "ImageWithText",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id=id, type="slide", size={512,50}}
+        setmetatable(t, {__index = ImageWithText})
+        return t
+    end,
+
+    size = function (self, size)
+        -- custom size for the texture
+        assert(#size == 2, "MCM Builder: unknown size type")
+        self.size = size
+        return self
+    end,
+
+    stretch = function (self)
+        -- force the texture to stretch or not
+        self.stretch = true
+        return self
+    end,
+
+    position = function (self, x, y)
+        -- position
+        assert(x + y, "MCM Builder: bad position arguments")
+        self.pos = {x, y}
+        return self
+    end,
+
+    v_offset = function (self, offset)
+        -- height offset to add extra space
+        assert(type(offset) == "number", "MCM Builder: offset is not a number")
+        self.spacing = offset
+        return self
+    end,
+
+    image = AbstractOption.image,
+    text = AbstractOption.text,
+}
+
+Title = {
+    -- Big Fucking Text
+    _cls = "Title",
+    _widget = true,
+
+    new = function (id)
+        assert(type(id) == "string", "MCM Builder: no id given")
+        local t = {id = id, type = "title", align = "c"}
+        setmetatable(t, {__index = Title})
+        return t
+    end,
+
     align = function (self, str)
+        -- determines the alignment of the title
         if str == "center" then
             self.align = 'c'
         elseif str == "right" then
@@ -66,104 +492,13 @@ AbstractOption = {
 
         return self
     end,
-}
 
-Tree = {
-    _cls = "Tree",
-
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id = id, sh = false, gr = {}, _level = 1}
-        setmetatable(t, {__index = Tree})
-        return t
-    end,
-
-    add_subtree = function (self, subtree)
-        assert(subtree._cls == "Tree", "MCM Builder: not a Tree")
-        assert(subtree._level < 2, "MCM Builder: Tree too deep")
-        if self._level <= subtree._level then
-            self._level = subtree._level + 1
-        end
-
-        self.gr[#self.gr+1] = subtree
-        return self
-    end,
-
-    add_page = function (self, page)
-        assert(page._cls, "MCM Builder: not a Page")
-        self.gr[#self.gr+1] = page
-        return self
-    end,
-
-    build = function (self)
-        setmetatable(self, nil)
-        self._level = nil
-        for _, v in pairs(self) do
-            if type(v) == "table" then
-                Tree.build(v)
-            end
-        end
-        return self
-    end,
-
-    text = AbstractOption.text,
-}
-
-Page = {
-    _cls = "Page",
-
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id=id, sh=true, gr={}}
-        setmetatable(t, {__index = Page})
-        return t
-    end,
-
-    add = function (self, widget)
-        assert(widget._widget, "MCM Builder: Trying to add not a widget")
-        self.gr[#self.gr+1] = widget
-        return self
-    end,
-
-    merge = function (self, page)
-        assert(page._cls == "Page", "MCM Builder: not a Page")
-        for _, widget in pairs(page.gr) do
-            self:add(widget)
-        end
-        return self
-    end,
-
-    text = AbstractOption.text,
-}
-
-Line = {
-    _cls = "Line",
-    _widget = true,
-
-    new = function ()
-        local t = {id = "line", type = "line"}
-        setmetatable(t, {__index = Line})
-        return t
-    end,
-}
-
-Title = {
-    _cls = "Title",
-    _widget = true,
-
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id = id, type = "title", align = "c"}
-        setmetatable(t, {__index = Title})
-        return t
-    end,
-
-    align = AbstractOption.align,
     color = AbstractOption.color,
     text = AbstractOption.text,
 }
 
 Description = {
+    -- Small text, left alignment
     _cls = "Description",
     _widget = true,
 
@@ -177,87 +512,31 @@ Description = {
     text = AbstractOption.text,
 }
 
-ImageWithText = {
-    _cls = "ImageWithText",
-    _widget = true,
+--[[
+-- Example script
 
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id=id, type="slide", size={512,50}}
-        setmetatable(t, {__index = ImageWithText})
-        return t
-    end,
+Tree = igi_mcm_builder.Tree
+Page = igi_mcm_builder.Page
+Checkbox = igi_mcm_builder.Checkbox
+Title = igi_mcm_builder.Title
+Line = igi_mcm_builder.Line
+Description = igi_mcm_builder.Description
 
-    image = function (self, link)
-        self.link = link
-        return self
-    end,
+function on_mcm_load()
+    local tree = Tree.new("MCM_Builder")
+    local page = Page.new("With Checkbox")
+    local check = Checkbox.new("My_cool_checkbox"):default(true)
+    page:add(check)
 
-    size = function (self, size)
-        assert(#size == 2, "MCM Builder: unknown size type")
-        self.size = size
-        return self
-    end,
+    local page_two = Page.new("With_description_and_line")
+    local title = Title.new("uwu")
+                    :text("Title??? Omegalul")
+                    :color(200,100,50,255)
+    page_two:add(title)
+    page_two:add(Description.new("descr"):text("What a nice description"))
+    page_two:add(Line.new())
 
-    text = AbstractOption.text,
-}
+    return tree:add_page(page):add_page(page_two):build()
+end
 
-Checkbox = {
-    _cls = "Checkbox",
-    _widget = true,
-
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id=id, type = "check", val = 1}
-        setmetatable(t, {__index = Checkbox})
-        return t
-    end,
-
-    current_value = AbstractOption.current_value,
-    callback = AbstractOption.callback,
-    default = AbstractOption.default,
-    hint = AbstractOption.hint,
-}
-
-Trackbar = {
-    _cls = "Trackbar",
-    _widget = true,
-
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id=id, type = "track", val = 2, min = 0, max = 2, step = 0.1, def = 1}
-        setmetatable(t, {__index = Trackbar})
-        return t
-    end,
-
-    minmax = function (self, min, max)
-        assert(min + max, "MCM Builder: bad minmax values")
-        self.min = min
-        self.max = max
-        return self
-    end,
-
-    current_value = AbstractOption.current_value,
-    callback = AbstractOption.callback,
-    default = AbstractOption.default,
-}
-
-InputField = {
-    _cls = "InputField",
-    _widget = true,
-
-    new = function (id)
-        assert(type(id) == "string", "MCM Builder: no id given")
-        local t = {id = id, type = "input", val = 0}
-        setmetatable(t, {__index = InputField})
-        return t
-    end,
-
-    current_value = AbstractOption.current_value,
-    callback = AbstractOption.callback,
-    hint = AbstractOption.hint,
-    input_type = AbstractOption.input_type,
-}
-
-
-
+]]
