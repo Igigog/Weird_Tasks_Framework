@@ -272,6 +272,8 @@ function get_reward(entity, task_giver_id)
 	local target_tbl = entity:get_target_table()
 	local raw_reward = target_tbl.get_raw_reward(entity, task_giver_id)
 	local reward = entity:get_reward_table()
-	reward:combine_with(raw_reward)
-	return reward
+	local reward_total = igi_rewards.RewardTable.new()
+	reward_total:combine_with(reward)
+	reward_total:combine_with(raw_reward)
+	return reward_total
 end

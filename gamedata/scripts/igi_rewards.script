@@ -88,7 +88,8 @@ EntitiesTable = {
 
 	has_material_rewards = function (self, tg_id)
 		for _, entity in pairs(self) do
-			if entity:get_final_reward(tg_id):has_material_rewards() then
+			if entity:get_status() and
+					entity:get_final_reward(tg_id):has_material_rewards() then
 				return true
 			end
 		end
@@ -294,6 +295,9 @@ GoodwillReward = {
 			local faction = factions[#factions+1-i]
 			self:add_for_faction(faction, faction_value)
 		end
+
+		self.value = 0
+		self.factions = {}
 	end,
 
 	denormalize = function (self)
