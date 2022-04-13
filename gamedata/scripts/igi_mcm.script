@@ -144,7 +144,7 @@ local function create_static_rewards_widgets(task, prefix)
 	local money = InputField.new("reward_money")
 		:hint("igi_tasks_reward_money")
 		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "value"}})
-		:callback({set_static_reward, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}})
+		:callback({set_static_reward, task, prefix, {"rewards", "COMPLETED", "money", "value"}})
 
 	local goodwill = InputField.new("reward_goodwill")
 		:hint("igi_tasks_reward_goodwill")
