@@ -47,6 +47,15 @@ function get_task_table_config(task_name, prefix)
     return json.decode(content)
 end
 
+function remove_empty_tables(tbl)
+	for k, v in pairs(tbl) do
+		if type(v) == "table" and remove_empty_tables(v) then
+			tbl[k] = nil
+		end
+ 	end
+	return not next(tbl)
+end
+
 function get_task_table(task_name, prefix)
 	trace_dbg("get_task_data: "..prefix.." "..task_name)
 	local task_table = trace_assert(
@@ -58,6 +67,7 @@ function get_task_table(task_name, prefix)
 	if task_config then
 		igi_utils.combine_tables(task_table, task_config)
 	end
+	remove_empty_tables(task_table)
 	restore_classes(task_table)
 
 	return task_table
