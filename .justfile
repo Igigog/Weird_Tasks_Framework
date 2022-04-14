@@ -1,9 +1,10 @@
 set shell := ["powershell.exe", "-c"]
 
 run:
-    - Remove-Item "D:\Games\Anomaly\MO2\mods\Weird_Tasks_Framework" -Recurse -Force
-    Copy-Item "D:\Tasks\Weird_Tasks_Framework" -Destination "D:\Games\Anomaly\MO2\mods\Weird_Tasks_Framework" -Recurse -Force
     Invoke-Item -Path "D:\Desktop\MO2Anomaly.lnk"
+
+modorg:
+    ..\..\ModOrganizer.exe
 
 lua:
     lua5.1 run.lua
