@@ -1,7 +1,7 @@
 set shell := ["powershell.exe", "-c"]
 
 run:
-    Invoke-Item -Path "D:\Desktop\MO2Anomaly.lnk"
+    ..\..\ModOrganizer.exe "moshortcut://:Anomaly (DX11-AVX)"
 
 modorg:
     ..\..\ModOrganizer.exe
