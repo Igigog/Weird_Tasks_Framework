@@ -41,6 +41,11 @@ Cache = {
 		self.status = self:get_entities():get_task_status()
 	end,
 
+	initialise_subtasks = function (self)
+		self.status = TASK_STATUSES.RUNNING
+		self:get_entities():initialise_subtasks()
+	end,
+
 	process_subtasks = function (self)
 		local updated = self:get_entities():process_subtasks()
 		if updated then self:_update_status() end
@@ -75,6 +80,14 @@ Cache = {
 
 EntitiesTable = {
 	_default_subtask_order = 0,
+
+	initialise_subtasks = function (self)
+		for _, entity in pairs(self) do
+			if entity.target then
+				entity:set_status(TASK_STATUSES.RUNNING)
+			end
+		end
+	end,
 
 	process_subtasks = function (self)
 		local updated = false
