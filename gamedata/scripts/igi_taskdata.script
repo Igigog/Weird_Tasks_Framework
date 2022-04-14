@@ -158,11 +158,6 @@ function finalize_task_cache(CACHE)
 	local setup = CACHE:get_entities()
 
 	setup:assign_group_id()
-	setup:resolve_unlinked_macros_and_link_virtual_variables()
-
-	igi_generate.unfold_generation(setup)
-
-	setup:assign_group_id()
 	setup:resolve_unlinked_macros_and_link_virtual_variables()	-- once more to link gen ids
 end
 

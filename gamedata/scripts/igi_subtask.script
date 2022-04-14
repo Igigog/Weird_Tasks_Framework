@@ -79,7 +79,7 @@ EntitiesTable = {
 	process_subtasks = function (self)
 		local updated = false
 		for _, entity in pairs(self) do
-			if entity.target and entity:update_status() then
+			if entity:is_active_subtask() and entity:update_status() then
 				updated = true
 			end
 		end
@@ -181,5 +181,12 @@ Entity = {
 	set_order = function (self, order)
 		trace_assert(type(order) == "number", "Order is not a number")
 		self.order = order
+	end,
+
+	is_active_subtask = function (self)
+		if not self.target then return end
+		local status = self:get_status()
+		return status == TASK_STATUSES.RUNNING or
+			status == TASK_STATUSES.READY_TO_FINISH
 	end,
 }
