@@ -3,7 +3,7 @@ local igi_linker = igi_linker
 local igi_macros = igi_macros
 local trace_dbg = igi_helper.trace_dbg
 
-resolve_unlinked_macros_and_link_virtual_variables = function (entities)
+function resolve_unlinked_macros_and_link_virtual_variables(entities)
 	local has_changed = true
 	while has_changed do
 		for _, entity in pairs(entities) do
@@ -14,7 +14,7 @@ resolve_unlinked_macros_and_link_virtual_variables = function (entities)
 	convert_strings_type(entities)
 end
 
-resolve_free_dependencies = function (entities, current_entity, tbl)
+function resolve_free_dependencies(entities, current_entity, tbl)
 	local has_changes = false
 	for k,v in pairs(tbl) do
 		if type(v) == "table" then
@@ -24,10 +24,10 @@ resolve_free_dependencies = function (entities, current_entity, tbl)
 
 		elseif type(v) == "string" then
 			local deps = collect_free_dependencies(v, current_entity, {})
-			for _, dep in pairs(deps) do
-				local resolved = dep:resolve(entities)
+			for dep, link in pairs(deps) do
+				local resolved = link:resolve(entities)
 				if resolved and not igi_macros.has_macro(resolved) then
-					tbl[k] = v:gsub(dep:get_original(true), resolved)
+					tbl[k] = v:gsub(igi_utils.escape_pattern(dep), resolved)
 					has_changes = true
 				end
 			end
@@ -36,7 +36,7 @@ resolve_free_dependencies = function (entities, current_entity, tbl)
 	return has_changes
 end
 
-resolve_and_link_table = function (entities, tbl)
+function resolve_and_link_table(tbl, entities)
 	local has_changed = true
 	while has_changed do
 		has_changed = resolve_unlinked_macros(tbl)
@@ -45,34 +45,32 @@ resolve_and_link_table = function (entities, tbl)
 	convert_strings_type(tbl)
 end
 
-Entity = {
-	resolve_macros_and_self_references = function (self)
-		local changes = true
-		while changes do
-			changes = resolve_unlinked_macros(self)
-			changes = self:find_resolve_self_references(self) or changes
-		end
-		convert_strings_type(self)
-	end,
+function resolve_macros_and_self_references(entity)
+	local changes = true
+	while changes do
+		changes = resolve_unlinked_macros(entity)
+		changes = find_resolve_self_references(entity, entity) or changes
+	end
+	convert_strings_type(entity)
+end
 
-	find_resolve_self_references = function (self, tbl)
-		local changes_made = false
-		for k,v in pairs(tbl) do
-			if type(v) == 'string' and not string.find(k, "link") then
-				local new_str = igi_linker.resolve_dependencies(v, self)
-				if new_str ~= v then
-					tbl[k] = new_str
-					changes_made = true
-				end
-			elseif type(v) == 'table' then
-				if self:find_resolve_self_references(v) then
-					changes_made = true
-				end
+function find_resolve_self_references(entity, tbl)
+	local changes_made = false
+	for k,v in pairs(tbl) do
+		if type(v) == 'string' and not string.find(k, "link") then
+			local new_str = igi_linker.resolve_dependencies(v, entity)
+			if new_str ~= v then
+				tbl[k] = new_str
+				changes_made = true
+			end
+		elseif type(v) == 'table' then
+			if find_resolve_self_references(entity, v) then
+				changes_made = true
 			end
 		end
-		return changes_made
-	end,
-}
+	end
+	return changes_made
+end
 
 function convert_strings_type(tbl)
 	for k,v in pairs(tbl) do
@@ -114,7 +112,7 @@ function collect_free_dependencies(str, this_entity, dest)
 
 	for dep in igi_linker.dependency_iterator(str) do
 		if not dep:find("/macro/") then
-			dest[#dest+1] = igi_linker.Link.from(dep, this_entity)
+			dest[dep] = igi_linker.Link.from(dep, this_entity)
 		end
 	end
 

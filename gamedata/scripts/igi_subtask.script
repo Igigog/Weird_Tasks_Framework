@@ -10,165 +10,90 @@ TASK_STATUSES = {
 	CANCELLED = "CANCELLED",
 }
 
-Cache = {
-	update_current_map_target = function (self)
-		self.current_target_id = self:quest_target()
-	end,
-
-	set_map_target_to_task_giver = function (self)
-		self.current_target_id = self.task_giver_id
-	end,
-
-	get_current_target_id = function (self)
-		return self.current_target_id
-	end,
-
-	quest_target = function (self)
-		return self:get_entities():quest_target()
-	end,
-
-	_update_status = function (self)
-		self.status = self:get_entities():get_task_status()
-	end,
-
-	initialise_subtasks = function (self)
-		self.status = TASK_STATUSES.RUNNING
-		self:get_entities():initialise_subtasks()
-	end,
-
-	process_subtasks = function (self)
-		local updated = self:get_entities():process_subtasks()
-		if updated then self:_update_status() end
-		return updated
-	end,
-
-	finish_all_subtasks = function (self)
-		if self.status ~= TASK_STATUSES.FAILED then
-			self.status = TASK_STATUSES.COMPLETED
-		else
-			self.status = TASK_STATUSES.FAILED
+function initialise_subtasks(CACHE)
+	CACHE.status = TASK_STATUSES.RUNNING
+	for _, entity in pairs(CACHE.entities) do
+		if entity.target then
+			entity.status = TASK_STATUSES.RUNNING
 		end
+	end
+end
 
-		self:get_entities():change_subtasks_status(
-			TASK_STATUSES.READY_TO_FINISH,
-			self.status
-		)
-	end,
+function finish_all_subtasks(CACHE)
+	if CACHE.status ~= TASK_STATUSES.FAILED then
+		CACHE.status = TASK_STATUSES.COMPLETED
+	end
 
-	is_task_failed = function (self)
-		return self.status == TASK_STATUSES.FAILED
-	end,
+	for _, entity in pairs(CACHE.entities) do
+		if entity.status == TASK_STATUSES.READY_TO_FINISH then
+			entity.status = CACHE.status
+		end
+	end
+end
 
-	is_task_completed = function (self)
-		return self.status == TASK_STATUSES.COMPLETED
-	end,
+function update_current_map_target(CACHE)
+	CACHE.current_target_id = get_quest_target(CACHE.entities)
+end
 
-	is_time_to_return = function (self)
-		return self.status ~= TASK_STATUSES.RUNNING
-	end,
-}
+function process_subtasks(CACHE)
+	local updated = false
+	for _, entity in pairs(CACHE.entities) do
+		if entity.status == TASK_STATUSES.RUNNING
+				or entity.status == TASK_STATUSES.READY_TO_FINISH then
+			updated = update_entity_status(entity) or updated
+		end
+	end
 
-EntitiesTable = {
-	_default_subtask_order = 0,
+	if updated then
+		CACHE.status = get_task_status(CACHE.entities)
+	end
+	return updated
+end
 
-	initialise_subtasks = function (self)
-		for _, entity in pairs(self) do
-			if entity.target then
-				entity:set_status(TASK_STATUSES.RUNNING)
+function get_quest_target(entities)
+	local min_order = 100000
+	local target_id
+	for _, entity in pairs(entities) do
+		if entity.target
+			and entity:get_status() == TASK_STATUSES.RUNNING
+			and (entity.order or 1) < min_order then
+
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			local target = target_tbl.quest_target(entity)
+			if target then
+				min_order = entity.order or 1
+				target_id = target
 			end
 		end
-	end,
+	end
 
-	process_subtasks = function (self)
-		local updated = false
-		for _, entity in pairs(self) do
-			if entity:is_active_subtask() and entity:update_status() then
-				updated = true
-			end
-		end
-		return updated
-	end,
+	return target_id
+end
 
-	change_subtasks_status = function (self, old_status, new_status)
-		trace_assert(TASK_STATUSES[old_status] and TASK_STATUSES[new_status], 'Unknown task status')
-		for _, entity in pairs(self) do
-			if entity:get_status() == old_status then
-				entity:set_status(new_status)
-			end
-		end
-	end,
-
-	quest_target = function (self)
-		local min_order = 100000
-		local target_id
-		for _, entity in pairs(self) do
-			if entity.target
-				and entity:get_status() == TASK_STATUSES.RUNNING
-				and (entity.order or 1) < min_order then
-
-				local target_tbl = entity:get_target_table()
-				local target = target_tbl.quest_target(entity)
-				if target then
-					min_order = entity.order or 1
-					target_id = target
-				end
-			end
+function get_task_status(entities)
+	local ready_to_finish = false
+	local running = false
+	for _, entity in pairs(entities) do
+		if entity.status == TASK_STATUSES.FAILED and not entity.optional then
+			return TASK_STATUSES.FAILED
 		end
 
-		return target_id
-	end,
-
-	get_task_status = function (self)
-		local ready_to_finish = false
-		local running = false
-		for _, entity in pairs(self) do
-			if entity.target and entity:is_subtask_failed() then
-				return TASK_STATUSES.FAILED
-			end
-
-			local status = entity.target and entity:get_status()
-			if status == TASK_STATUSES.RUNNING then
-				running = true
-			elseif status == TASK_STATUSES.READY_TO_FINISH then
-				ready_to_finish = true
-			end
+		if entity.status == TASK_STATUSES.RUNNING then
+			running = true
+		elseif entity.status == TASK_STATUSES.READY_TO_FINISH then
+			ready_to_finish = true
 		end
+	end
 
-		if running then return TASK_STATUSES.RUNNING
-		elseif ready_to_finish then return TASK_STATUSES.READY_TO_FINISH
-		else return TASK_STATUSES.COMPLETED end
-	end,
-}
+	if running then return TASK_STATUSES.RUNNING
+	elseif ready_to_finish then return TASK_STATUSES.READY_TO_FINISH
+	else return TASK_STATUSES.COMPLETED end
+end
 
-Entity = {
-	set_target = function (self, target)
-		trace_assert(igi_taskdata.get_target_table(target), "Target unknown: "..target)
-		self.target = target
-		self.status = TASK_STATUSES.RUNNING
-	end,
-
-	set_status = function (self, status)
-		trace_assert(TASK_STATUSES[status], 'Unknown task status')
-		self.status = status
-	end,
-
-	update_status = function (self)
-		local new_status = self:get_target_table().get_status(self)
-		if new_status == self:get_status() then return end
-		self:set_status(new_status)
-		igi_callbacks.invoke_callbacks("on_subtask_status_change", self)
-		return true
-	end,
-
-	is_subtask_failed = function (self)
-		return self:get_status() == TASK_STATUSES.FAILED
-			and not self:is_optional()
-	end,
-
-	is_active_subtask = function (self)
-		if not self.target then return end
-		local status = self:get_status()
-		return status == TASK_STATUSES.RUNNING or
-			status == TASK_STATUSES.READY_TO_FINISH
-	end,
-}
+function update_entity_status(entity)
+	local new_status = igi_taskdata.get_target_table(entity.target).get_status(entity)
+	if new_status == entity.status then return end
+	entity.status = new_status
+	igi_callbacks.invoke_callbacks("on_subtask_status_change", entity)
+	return true
+end

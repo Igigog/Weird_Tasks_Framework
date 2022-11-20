@@ -4,31 +4,29 @@ local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 
-Cache = {
-	collect_and_give_rewards = function (self)
-		local rewards = self.rewards or SubtaskRewards.new()
-		local reward
-		if self:is_task_completed() then
-			reward = rewards:get(TASK_STATUSES.COMPLETED)
-		else
-			reward = rewards:get(TASK_STATUSES.FAILED)
-		end
-
-		local t = self:get_entities():collect_rewards_from_subtasks(
-			self:is_task_completed(),
-			self:get_task_giver_id()
-		)
-		reward:combine_with(t)
-
-		igi_callbacks.invoke_callbacks("on_before_rewarding")
-		reward:give()
-	end,
-
-	has_material_rewards = function (self)
-		if self.rewards and self.rewards:has_material_rewards() then return true end
-		return self:get_entities():has_material_rewards(self:get_task_giver_id())
+function collect_and_give_rewards(CACHE)
+	local rewards = CACHE.rewards or SubtaskRewards.new()
+	local reward
+	if CACHE:is_task_completed() then
+		reward = rewards:get(TASK_STATUSES.COMPLETED)
+	else
+		reward = rewards:get(TASK_STATUSES.FAILED)
 	end
-}
+
+	local t = CACHE.entities:collect_rewards_from_subtasks(
+		CACHE:is_task_completed(),
+		CACHE:get_task_giver_id()
+	)
+	reward:combine_with(t)
+
+	igi_callbacks.invoke_callbacks("on_before_rewarding")
+	reward:give()
+end
+
+has_material_rewards = function (CACHE)
+	if CACHE.rewards and CACHE.rewards:has_material_rewards() then return true end
+	return CACHE.entities:has_material_rewards(CACHE:get_task_giver_id())
+end
 
 EntitiesTable = {
 	_collect_rewards_with_status = function (self, status, tg_id)

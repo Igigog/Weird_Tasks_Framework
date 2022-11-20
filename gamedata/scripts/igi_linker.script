@@ -6,7 +6,7 @@ function broadcast_entity(entities, entity)
 		if type(v) == 'string' and not string.find(k, "link") then
 			entities[k] = resolve_dependencies(v, entity)
 		elseif type(v) == 'table' then
-			EntitiesTable.broadcast_entity(v, entity)
+			broadcast_entity(v, entity)
 		end
 	end
 end
@@ -121,8 +121,6 @@ function dependency_iterator(str)
 end
 
 function resolve_dependencies(str, entity)
-	if type(str) ~= 'string' then return str end
-
 	for dep in dependency_iterator(str) do
 		local link = Link.from(dep, entity)
 		if link:is_pointed_to(entity) then

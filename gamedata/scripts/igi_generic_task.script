@@ -10,6 +10,7 @@ TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function on_game_start()
     RegisterScriptCallback("save_state",save_state)
@@ -108,7 +109,7 @@ local function initialise_CACHE(CACHE, task_giver_id)
 	trace_dbg("before target creation", CACHE)
 
 	igi_entities.create_entities(CACHE)
-	CACHE:initialise_subtasks()
+	igi_subtask.initialise_subtasks(CACHE)
 	CACHE:initialise_actions()
 
 	CACHE._initialised = true
@@ -135,22 +136,22 @@ function igi_task_generic_status(tsk,task_id)
 	---------------------------<ACTIONS>---------------------
 	igi_map_marks.update_marks(CACHE)
 	CACHE:update_actions()
-	CACHE:process_subtasks()
+	igi_subtask.process_subtasks(CACHE)
 	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
 
 	---------------------------<STAGE>----------------------
-	if CACHE:is_task_failed() then return "fail" end
-	if CACHE:is_task_completed() and not CACHE:has_material_rewards() then
+	if CACHE.status == TASK_STATUSES.FAILED then return "fail" end
+	if CACHE.status == TASK_STATUSES.COMPLETED and not CACHE:has_material_rewards() then
 		return "complete"
 	end
 
-	if CACHE:is_time_to_return() then
+	if CACHE.status == TASK_STATUSES.COMPLETED
+			or CACHE.status == TASK_STATUSES.READY_TO_FINISH then
 		tsk.stage = 1
-		CACHE:set_map_target_to_task_giver()
-		return
+		CACHE.current_target_id = CACHE.task_giver_id
 	else
 		tsk.stage = 0
-		CACHE:update_current_map_target()
+		igi_subtask.update_current_map_target(CACHE)
 	end
 end
 --< Target >--------------------------------------------------
@@ -195,7 +196,7 @@ function igi_task_generic_finish(actor,npc,p)
 	CACHE:finish_all_subtasks()
 	--Release
 	CACHE:release_targets_in_world()	-- Needed? Works? Idk
-	CACHE:unmark_all()
+	igi_map_marks.unmark_all(CACHE)
 
 	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end
 	--Reward
@@ -203,8 +204,4 @@ function igi_task_generic_finish(actor,npc,p)
 
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil
-	--Finish
-	--? Needed?
-	xr_effects.drx_sl_unregister_task_giver(nil, nil, {task_id})
-	xr_effects.drx_sl_reset_stored_task(nil, nil, {task_id})
 end

@@ -70,7 +70,8 @@ local function redirect_to_smart(entity)
 	local smart_entity = igi_entities.Entity.new("location")
 	smart_entity._state = igi_entities.ENTITY_STATES.INITIALISED
 	smart_entity:bind_to_se_obj(smart_id)
-	smart_entity:set_target("assault")
+	smart_entity.target = "assault"
+	smart_entity.status = igi_subtask.TASK_STATUSES.RUNNING
 	smart_entity:set_order(entity.order or 1)
 	smart_entity.group_id = 1000
 	smart_entity:set_id(igi_random.rand(65535))
