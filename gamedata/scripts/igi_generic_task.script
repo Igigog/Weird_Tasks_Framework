@@ -3,7 +3,7 @@
 --	Anomaly 1.5.5.0
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "3.1test6"
+TASKS_VERSION = "3.2"
 TASK_SETUP = {}
 TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 
@@ -38,14 +38,11 @@ function actor_on_first_update()
 end
 
 function save_state(m_data)
-	igi_models.save_interfaces_recursively(TASKS_CACHE)
-	m_data.igi_tasks_cache = dup_table(TASKS_CACHE)
-	igi_models.restore_interfaces_recursively(TASKS_CACHE)
+	m_data.igi_tasks_cache = TASKS_CACHE
 end
 
 function load_state(m_data)
 	TASKS_CACHE = m_data.igi_tasks_cache or {TASKS_VERSION = TASKS_VERSION}
-	igi_models.restore_interfaces_recursively(TASKS_CACHE)
 
 	if TASKS_CACHE.TASKS_VERSION == TASKS_VERSION then
 		return
@@ -83,15 +80,15 @@ function validate_generic_task(actor, npc, p)
 	trace_assert(task_data, "WTF: validate_task: task_id invalid")
 	trace_dbg("task_data", task_data)
 
-	if task_data:is_disabled() then return false end
+	if task_data.disabled then return false end
 	if not igi_mcm.get_options_value("debug") then
-		if not task_data:are_preconditions_fulfilled() then
+		if not igi_precondition.are_preconditions_fulfilled(task_data) then
 			return false
 		end
 	end
 
 
-	TASK_SETUP[task_id] = task_data:initialise_quest(task_id)
+	TASK_SETUP[task_id] = igi_entities.initialise_quest(task_data, task_id)
 	trace_dbg("setup", TASK_SETUP[task_id])
 	return TASK_SETUP[task_id] and true or false
 end
@@ -105,14 +102,16 @@ function igi_task_generic_setup(actor,npc,p)
 end
 --< Status >--------------------------------------------------
 local function initialise_CACHE(CACHE, task_giver_id)
-	CACHE:set_task_giver_id(task_giver_id)
+	CACHE.task_giver_id = task_giver_id
 
 	igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
 	trace_dbg("before target creation", CACHE)
 
-	CACHE:create_all_entities()
+	igi_entities.create_entities(CACHE)
 	CACHE:initialise_subtasks()
 	CACHE:initialise_actions()
+
+	CACHE._initialised = true
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 	trace_dbg("after target creation", CACHE)
@@ -130,11 +129,11 @@ function igi_task_generic_status(tsk,task_id)
 
 	---------------------------<INIT>-------------------------
 	-- First run, create target
-	if CACHE:is_first_run() then
+	if CACHE._initialised then
 		initialise_CACHE(CACHE, tsk.task_giver_id)
 	end
 	---------------------------<ACTIONS>---------------------
-	CACHE:update_marks()
+	igi_map_marks.update_marks(CACHE)
 	CACHE:update_actions()
 	CACHE:process_subtasks()
 	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
@@ -149,19 +148,18 @@ function igi_task_generic_status(tsk,task_id)
 		tsk.stage = 1
 		CACHE:set_map_target_to_task_giver()
 		return
+	else
+		tsk.stage = 0
+		CACHE:update_current_map_target()
 	end
-
-	tsk.stage = 0
-	CACHE:update_current_map_target()
 end
 --< Target >--------------------------------------------------
 function igi_task_generic_target(task_id,field,p,tsk)
 	--This function point to a task target in PDA
 	local CACHE = get_cache(task_id)
-	-- if not CACHE then return end
-	local target_id = CACHE:get_current_target_id()
 
 	-- trace target in debug mode
+	local target_id = CACHE.current_target_id
 	if igi_mcm.get_options_value("debug") then
 		if target_id and target_id > 0 then
 			local se_obj = WorldState.objects[target_id]
@@ -172,7 +170,7 @@ function igi_task_generic_target(task_id,field,p,tsk)
 		end
 	end
 
-	return target_id
+	return CACHE.current_target_id
 end
 --< Text >--------------------------------------------------
 function igi_task_generic_text(task_id,field,p,tsk)

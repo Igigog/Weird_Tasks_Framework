@@ -1,16 +1,6 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation("Entity", Entity)
-	igi_models.add_interface_implementation("EntitiesTable", EntitiesTable)
-	igi_models.add_interface_implementation("Cache", Cache)
-end
-
 TASK_STATUSES = {
 	RUNNING = "RUNNING",
 	COMPLETED = "COMPLETED",
@@ -151,22 +141,10 @@ EntitiesTable = {
 }
 
 Entity = {
-	is_subtask = function (self)
-		return self.target and true
-	end,
-
-	get_target = function (self)
-		return self.target
-	end,
-
 	set_target = function (self, target)
 		trace_assert(igi_taskdata.get_target_table(target), "Target unknown: "..target)
 		self.target = target
 		self.status = TASK_STATUSES.RUNNING
-	end,
-
-	get_status = function (self)
-		return self.status
 	end,
 
 	set_status = function (self, status)
@@ -182,18 +160,9 @@ Entity = {
 		return true
 	end,
 
-	is_optional = function (self)
-		return self.optional
-	end,
-
 	is_subtask_failed = function (self)
 		return self:get_status() == TASK_STATUSES.FAILED
 			and not self:is_optional()
-	end,
-
-	set_order = function (self, order)
-		trace_assert(type(order) == "number", "Order is not a number")
-		self.order = order
 	end,
 
 	is_active_subtask = function (self)

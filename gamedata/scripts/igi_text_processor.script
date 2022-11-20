@@ -3,69 +3,54 @@ local igi_linker = igi_linker
 local igi_macros = igi_macros
 local trace_dbg = igi_helper.trace_dbg
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation("Entity", Entity)
-	igi_models.add_interface_implementation("EntitiesTable", EntitiesTable)
-end
-
-EntitiesTable = {
-	resolve_unlinked_macros_and_link_virtual_variables = function (self)
-		local has_changed = true
-		while has_changed do
-			has_changed = false
-			for _, entity in pairs(self) do
-				has_changed = resolve_unlinked_macros(entity) or has_changed
-				has_changed = self:resolve_free_dependencies(entity, entity) or has_changed
-			end
+resolve_unlinked_macros_and_link_virtual_variables = function (entities)
+	local has_changed = true
+	while has_changed do
+		for _, entity in pairs(entities) do
+			has_changed = resolve_unlinked_macros(entity)
+			has_changed = resolve_free_dependencies(entities, entity, entity) or has_changed
 		end
-		convert_strings_type(self)
-	end,
+	end
+	convert_strings_type(entities)
+end
 
-	resolve_free_dependencies = function (self, current_entity, tbl)
-		local has_changes = false
-		for k,v in pairs(tbl) do
-			if type(v) == "table" then
-				if self:resolve_free_dependencies(current_entity, v) then
+resolve_free_dependencies = function (entities, current_entity, tbl)
+	local has_changes = false
+	for k,v in pairs(tbl) do
+		if type(v) == "table" then
+			if resolve_free_dependencies(entities, current_entity, v) then
+				has_changes = true
+			end
+
+		elseif type(v) == "string" then
+			local deps = collect_free_dependencies(v, current_entity, {})
+			for _, dep in pairs(deps) do
+				local resolved = dep:resolve(entities)
+				if resolved and not igi_macros.has_macro(resolved) then
+					tbl[k] = v:gsub(dep:get_original(true), resolved)
 					has_changes = true
 				end
-
-			elseif type(v) == "string" then
-				local deps = collect_free_dependencies(v, current_entity, {})
-				for _, dep in pairs(deps) do
-					if dep:is_resolvable(self) then
-						local resolved = dep:resolve(self)
-						if not igi_macros.has_macro(resolved) then
-							tbl[k] = v:gsub(dep:get_original(true), resolved)
-							has_changes = true
-						end
-					end
-				end
 			end
 		end
-		return has_changes
-	end,
+	end
+	return has_changes
+end
 
-	resolve_and_link_table = function (self, tbl)
-		local has_changed = true
-		while has_changed do
-			has_changed = resolve_unlinked_macros(tbl)
-			has_changed = self:resolve_free_dependencies(nil, tbl) or has_changed
-		end
-		convert_strings_type(tbl)
-	end,
-}
+resolve_and_link_table = function (entities, tbl)
+	local has_changed = true
+	while has_changed do
+		has_changed = resolve_unlinked_macros(tbl)
+		has_changed = resolve_free_dependencies(entities, nil, tbl) or has_changed
+	end
+	convert_strings_type(tbl)
+end
 
 Entity = {
 	resolve_macros_and_self_references = function (self)
-		local has_changed = true
-		while has_changed do
-			has_changed = false
-			has_changed = resolve_unlinked_macros(self) or has_changed
-			has_changed = self:find_resolve_self_references(self) or has_changed
+		local changes = true
+		while changes do
+			changes = resolve_unlinked_macros(self)
+			changes = self:find_resolve_self_references(self) or changes
 		end
 		convert_strings_type(self)
 	end,
@@ -74,15 +59,11 @@ Entity = {
 		local changes_made = false
 		for k,v in pairs(tbl) do
 			if type(v) == 'string' and not string.find(k, "link") then
-				local new_str = v
-				for dep in igi_linker.dependency_iterator(v) do
-					local dep = igi_linker.Dependency.from(dep, self)
-					if not dep:is_resolvable() then
-						new_str = dep:resolve_in_string(new_str)
-						changes_made = true
-					end
+				local new_str = igi_linker.resolve_dependencies(v, self)
+				if new_str ~= v then
+					tbl[k] = new_str
+					changes_made = true
 				end
-				tbl[k] = new_str
 			elseif type(v) == 'table' then
 				if self:find_resolve_self_references(v) then
 					changes_made = true
@@ -133,7 +114,7 @@ function collect_free_dependencies(str, this_entity, dest)
 
 	for dep in igi_linker.dependency_iterator(str) do
 		if not dep:find("/macro/") then
-			dest[#dest+1] = igi_linker.Dependency.from(dep, this_entity)
+			dest[#dest+1] = igi_linker.Link.from(dep, this_entity)
 		end
 	end
 

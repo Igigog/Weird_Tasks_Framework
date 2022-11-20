@@ -1,29 +1,6 @@
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation('Cache', Cache)
-	igi_models.add_interface_implementation('ActionsTable', ActionsTable)
-	igi_models.add_interface_implementation('Action', Action)
-	igi_models.add_interface_implementation('RepairAction', RepairAction)
-	igi_models.add_interface_implementation('ChangeFactionAction', ChangeFactionAction)
-	igi_models.add_interface_implementation('ConditionsTable', ConditionsTable)
-	igi_models.add_interface_implementation('IsOnlineCondition', IsOnlineCondition)
-	igi_models.add_interface_implementation('IsParentDeadCondition', IsParentDeadCondition)
-	igi_models.add_interface_implementation('IsLowCondition', IsLowCondition)
-	
-
-	igi_taskdata.add_classification_rule(function (CACHE)
-		if not CACHE.actions then return end
-		igi_models.set_class(CACHE.actions, "ActionsTable")
-		CACHE.actions:restore_classes()
-	end)
-end
-
 Cache = {
 	initialise_actions = function (self)
 		if not self.actions then return end
@@ -43,13 +20,6 @@ ActionsTable = {
 	update_all = function (self)
 		for _, action in pairs(self) do
 			action:update()
-		end
-	end,
-
-	restore_classes = function (self)
-		for _, action in pairs(self) do
-			igi_models.set_class(action, self.__types[action.type])
-			action:restore_classes()
 		end
 	end,
 
@@ -74,13 +44,6 @@ Action = {
 
 	run = function (self)
 		trace_assert(nil, "Abstract method not implemented!")
-	end,
-
-	restore_classes = function (self)
-		if self.conditions then
-			igi_models.set_class(self.conditions, ConditionsTable.__cls)
-			self.conditions:restore_classes()
-		end
 	end,
 }
 
@@ -136,12 +99,6 @@ ConditionsTable = {
 
 	add_type = function (self, type, cls)
 		self.__types[type] = cls
-	end,
-
-	restore_classes = function (self)
-		for _, condition in pairs(self) do
-			igi_models.set_class(condition, self.__types[condition.type])
-		end
 	end,
 }
 

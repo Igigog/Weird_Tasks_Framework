@@ -1,124 +1,64 @@
-
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation("Cache", Cache)
-	igi_models.add_interface_implementation("EntitiesTable", EntitiesTable)
-	igi_models.add_interface_implementation("Entity", Entity)
-	igi_models.add_interface_implementation("Dependency", Dependency)
-	
-end
-
-
-Cache = {
-	get_entity_from_link = function (self, link)
-		return self:get_entities():get_by_link(link)
-	end
-}
-
-EntitiesTable = {
-	_fill_counters = function (self)
-		local counters = igi_utils.defaultdict(0)
-		for _, entity in pairs(self) do
-			local counter = counters[entity.entity_type]
-			if entity.group_id and (entity.group_id > counter) then
-				counters[entity.entity_type] = entity.group_id
-			end
-		end
-		return counters
-	end,
-
-	set_missing_group_ids = function (self)
-		local counters = self:_fill_counters()
-		for _, entity in pairs(self) do
-			if not entity.group_id then
-				counters[entity.entity_type] = counters[entity.entity_type] + 1
-				entity.group_id = counters[entity.entity_type]
-			end
-		end
-	end,
-
-	assign_group_id = function (self)
-		trace_dbg("Before assigning group id", self)
-		self:set_missing_group_ids()
-		local tmp = self.new()
-		for _, entity in pairs(self) do
-			tmp[entity:get_link()] = entity
-		end
-		empty_table(self)
-		igi_utils.shallow_copy(self, tmp)
-		trace_dbg("After assigning group id", self)
-	end,
-
-	get_by_link = function (self, link)
-		return self[link]
-	end,
-
-	relink = function (self)
-		local tmp = {}
-		for _, entity in pairs(self) do
-			tmp[#tmp+1] = entity
-		end
-
-		empty_table(self)
-		for _, entity in pairs(tmp) do
-			self[entity:get_link()] = entity
-		end
-	end,
-
-	broadcast_entity = function (self, entity)
-		for k,v in pairs(self) do
-			if type(v) == 'string' and not string.find(k, "link") then
-				self[k] = resolve_dependencies(v, entity)
-			elseif type(v) == 'table' then
-				EntitiesTable.broadcast_entity(v, entity)
-			end
+function broadcast_entity(entities, entity)
+	for k,v in pairs(entities) do
+		if type(v) == 'string' and not string.find(k, "link") then
+			entities[k] = resolve_dependencies(v, entity)
+		elseif type(v) == 'table' then
+			EntitiesTable.broadcast_entity(v, entity)
 		end
 	end
-}
+end
 
-Entity = {
-	get_link = function (self)
-		trace_assert(self.entity_type and self.group_id,
-			"linker: entity has insufficient data", self)
+function set_missing_group_ids(entities)
+	local counters = entities:_fill_counters()
+	for _, entity in pairs(entities) do
+		if not entity.group_id then
+			counters[entity.entity_type] = counters[entity.entity_type] + 1
+			entity.group_id = counters[entity.entity_type]
+		end
+	end
+end
 
-		local id = "$"..self.entity_type.."_"..tostring(self.group_id)
-		if self.entity_id then id = id.."_"..tostring(self.entity_id) end
-		id = id.."$"
-		return id
-	end,
+function count_entity_types(entities)
+	local counters = igi_utils.defaultdict(0)
+	for _, entity in pairs(entities) do
+		local counter = counters[entity.entity_type]
+		if entity.group_id and (entity.group_id > counter) then
+			counters[entity.entity_type] = entity.group_id
+		end
+	end
+	return counters
+end
 
-	resolve_field = function (self, field)
-		return self[field]
-	end,
-
-	set_id = function (self, id)
-		self.entity_id = id
-	end,
-
-	has_no_outer_links = function (tbl)
-		for k,v in pairs(tbl) do
-			if type(v) == 'string' and not string.find(k, "link") then
-				for k2 in dependency_iterator(v) do
-					if not Dependency.from(k2):has_self_reference() then
-						return false
-					end
+function has_no_outer_links(tbl, entity)
+	for k,v in pairs(tbl) do
+		if type(v) == 'string' and not string.find(k, "link") then
+			for k2 in dependency_iterator(v) do
+				if not Link.from(k2, entity):is_pointed_to(entity) then
+					return false
 				end
-			elseif type(v) == 'table' and not Entity.has_no_outer_links(v) then
-				return false
 			end
+		elseif type(v) == 'table' and not has_no_outer_links(v, entity) then
+			return false
 		end
-		return true
 	end
-}
+	return true
+end
 
-Dependency = {
-	__cls = 'Dependency',
+Link = {
+	__cls = 'Link',
+
+	new = function (self, typ, group_id, entity_id, field)
+		local t = {
+			type = typ,
+			group_id = tonumber(group_id) or 1,
+			entity_id = tonumber(entity_id) or 1,
+			field = field ~= "" and field or "id",
+		}
+		return setmetatable(t, {__index = Link})
+	end,
 
 	from = function (str, this_entity)
 		-- Won't work with dependencies with macros
@@ -126,148 +66,54 @@ Dependency = {
 
 		local pattern = "%$([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%$"
 		local typ, group_id, entity_id, field = str:match(pattern)
-		trace_assert(typ, "Dependency can't be resolved: "..str)
+		trace_assert(typ, "Link can't be resolved: "..str)
 
-		local t = {
-			type = typ,
-			group_id = group_id ~= "" and group_id or "1",
-			entity_id = entity_id ~= "" and entity_id or "1",
-			field = field ~= "" and field or "id",
-			original = str,
-			this = this_entity,
-		}
-		igi_models.set_class(t, Dependency.__cls)
-		return t
+		if typ == "this" then
+			typ = this_entity.entity_type
+			group_id = this_entity.group_id
+			entity_id = this_entity.entity_id
+		end
+
+		return Link:new(typ, group_id, entity_id, field)
 	end,
 
-	wrap = function (self, str)
-		return "$"..str.."$"
+	from_entity = function (entity)
+		trace_assert(entity.entity_type and entity.group_id,
+			"linker: entity has insufficient data", entity)
+		return Link:new(entity.entity_type, entity.group_id, entity.entity_id)
 	end,
 
-	unwrap = function (self, str)
-		return str:match("%$(.*)%$")
-	end,
-
-	_get_unwrapped_group_link = function (self)
-		if self.type == "this" then return "this" end
-		return self.type.."_"..self.group_id
-	end,
-
-	_get_unwrapped_link = function (self)
-		if self.type == "this" then return "this" end
-		return self:_get_unwrapped_group_link().."_"..self.entity_id
-	end,
-
-	_to_unwrapped_string = function (self)
-		return self:_get_unwrapped_link().."."..self.field
-	end,
-
-	get_group_link = function (self)
-		return self:wrap(self:_get_unwrapped_group_link())
-	end,
-
-	get_link = function (self)
-		return self:wrap(self:_get_unwrapped_link())
-	end,
-
-	to_string = function (self, safe_mode)
-		local str = self:wrap(self:_to_unwrapped_string())
-		if safe_mode then str = igi_utils.escape_pattern(str) end
-		return str
-	end,
-
-	get_original = function (self, safe_mode)
-		if safe_mode then return igi_utils.escape_pattern(self.original) end
-		return self.original
+	is_link = function (str)
+		if not type(str) == "string" then return end
+		return string.find(str, "^%$.*%$$")
 	end,
 
 	get_linked_entity = function (self, entities)
-		if self.type == "this" then
-			return self.this
-		else
-			-- trace_dbg("getting entity", self, entities)
-			return entities[self:get_link()] or entities[self:get_group_link()]
+		for _, entity in pairs(entities) do
+			if self:is_pointed_to(entity) then
+				return entity
+			end
 		end
 	end,
 
 	resolve = function (self, entities)
 		local entity = self:get_linked_entity(entities)
-		return tostring(entity:resolve_field(self.field))
+		return tostring(self:resolve_field(entity))
 	end,
 
-	to_repr = function (self)
-		local str = "Dependency:\n"
-		for k, v in pairs(self) do
-			if type(v) ~= "function" then
-				str = str.."	"..k..": "..v.."\n"
-			end
-		end
-		return str
-	end,
-
-	get_name = function (self)
-		return self:_get_unwrapped_link()
-	end,
-
-	get_field = function (self)
-		return self.field
-	end,
-
-	has_self_reference = function (self)
-		return self.type == 'this'
-	end,
-
-	equals = function (self, dep)
-		return (self.type == dep.type) and
-			(self.group_id == dep.group_id) and
-			(self.entity_id == dep.entity_id)
+	resolve_field = function (self, entity)
+		return entity[self.field]
 	end,
 
 	is_pointed_to = function (self, entity)
 		return (self.type == entity.entity_type) and
-			(self.group_id == tostring(entity.group_id)) and
-			(self.entity_id == tostring(entity.entity_id or 1))
-	end,
-
-	is_resolvable = function (self, entities)
-		-- field valid
-		if not self.field:match("^[A-Za-z_]*$") then return false end
-
-		-- self is given and field exists
-		if self:has_self_reference() then
-			if not self.this then return false end
-			return self.this:resolve_field(self.field) ~= nil
-		end
-
-		-- entity exists and the field exists
-		if not entities then return false end
-		local entity = entities:get_by_link(self:get_link())
-			or entities:get_by_link(self:get_group_link())
-		if not entity then return false end
-		return entity:resolve_field(self.field) ~= nil
-	end,
-
-	resolve_in_string = function (self, str, entities)
-		return str:gsub(self:get_original(true), self:resolve(entities))
+			(self.group_id == entity.group_id) and
+			(self.entity_id == (entity.entity_id or 1))
 	end,
 }
 
 function has_dependency(str)
     return string.find(str, "%b$$")
-end
-
-function is_dependency(str)
-	if not type(str) == "string" then return end
-	return string.find(str, "^%$.*%$$")
-end
-
-function finalize_dependency(str)
-	return Dependency.from(str):to_string()
-end
-
-function finalize_all_dependencies(str)
-	trace_assert(type(str) == "string", "str is not string")
-	return str:gsub("%b$$", finalize_dependency)
 end
 
 function dependency_iterator(str)
@@ -278,21 +124,10 @@ function resolve_dependencies(str, entity)
 	if type(str) ~= 'string' then return str end
 
 	for dep in dependency_iterator(str) do
-		dep = Dependency.from(dep)
-		if dep:is_pointed_to(entity) then
-			local value = entity:resolve_field(dep:get_field())
-			str = str:gsub(dep:get_original(true), value)
+		local link = Link.from(dep, entity)
+		if link:is_pointed_to(entity) then
+			str = str:gsub(igi_utils.escape_pattern(dep), link:resolve_field(entity))
 		end
 	end
 	return str
-end
-
-function resolve_self_reference(str, entity)
-    for dep in dependency_iterator(str) do
-		dep = Dependency.from(dep)
-		if dep:has_self_reference() then
-        	str = str:gsub(dep.get_original(true), entity:resolve_field(dep.get_field()))
-		end
-    end
-    return str
 end

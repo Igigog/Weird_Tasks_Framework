@@ -1,33 +1,9 @@
 local trace_assert = igi_helper.trace_assert
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+are_preconditions_fulfilled = function (CACHE)
+	if not CACHE.preconditions then return true end
+	return CACHE.preconditions:check()
 end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation('Cache', Cache)
-	igi_models.add_interface_implementation(PreconditionTable.__cls, PreconditionTable)
-	igi_models.add_interface_implementation(GoodwillPrecondition.__cls, GoodwillPrecondition)
-	igi_models.add_interface_implementation(RankPrecondition.__cls, RankPrecondition)
-	igi_models.add_interface_implementation(DaytimePrecondition.__cls, DaytimePrecondition)
-
-	igi_taskdata.add_classification_rule(function (CACHE)
-		if not CACHE.preconditions then return end
-		igi_models.set_class(CACHE.preconditions, PreconditionTable.__cls)
-		CACHE.preconditions:restore_classes()
-	end)
-end
-
-Cache = {
-	are_preconditions_fulfilled = function (self)
-		if not self.preconditions then return true end
-		return self.preconditions:check()
-	end,
-
-	is_disabled = function (self)
-		return self.disabled
-	end,
-}
 
 PreconditionTable = {
 	__cls = "PreconditionTable",
@@ -40,12 +16,6 @@ PreconditionTable = {
 			end
 		end
 		return true
-	end,
-
-	restore_classes = function (self)
-		for _, tbl in pairs(self) do
-			igi_models.set_class(tbl, self.__precondition_types[tbl.type].__cls)
-		end
 	end,
 
 	add_type = function (self, precondition_class)
@@ -64,6 +34,7 @@ GoodwillPrecondition = {
 	end
 }
 PreconditionTable:add_type(GoodwillPrecondition)
+
 RankPrecondition = {
 	__cls = "RankPrecondition",
 	type = "rank",

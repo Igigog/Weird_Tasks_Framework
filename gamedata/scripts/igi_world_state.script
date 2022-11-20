@@ -16,9 +16,6 @@ function server_entity_on_unregister(se_obj)
 end
 
 function actor_on_first_update()
-	igi_models.add_interface_implementation("Entity", Entity)
-	igi_models.add_interface_implementation("Cache", Cache)
-
     WorldState.sim = alife()
     WorldState.gg = game_graph()
     CreateTimeEvent("igi_world_state", "fill_objects", 0, fill_objects)
@@ -26,60 +23,43 @@ function actor_on_first_update()
 	sort_smarts_by_level()
 end
 
-Entity = {
-	get_se_obj = function (self)
-		igi_helper.trace_assert(self.id and self.section_name, 'No id or section', self)
-		local se_obj = WorldState.objects[self.id]
-		if not se_obj then return end
-		return se_obj:section_name() == self.section_name and se_obj or nil
-	end,
+function is_entity_in_world(entity)
+	local se_obj = igi_entities.get_binded_object(entity)
+	return se_obj and se_obj.parent_id == 65535
+end
 
-	is_in_world = function (self)
-		local se_obj = self:get_se_obj()
-		return se_obj and se_obj.parent_id == 65535
-	end,
+function release_entity(entity)
+	local se_obj = igi_entities.get_binded_object(entity)
+	if not se_obj then return end
 
-	release = function (self)
-		if self.entity_type == 'item' then
-			local se_obj = self:get_se_obj()
-			if se_obj then
-				safe_release_manager.release(se_obj)
-			end
-			return
+	if entity.entity_type == 'item' then
+		safe_release_manager.release(se_obj)
+	elseif entity.entity_type == 'squad' then
+		SIMBOARD:remove_squad(se_obj)
+	end
+end
+
+function release_targets_in_world(CACHE)
+	for _, entity in pairs(CACHE.entities) do
+		if entity.id and entity.section_name then
+			igi_helper.trace_dbg("WTF: Release from world: "..entity.section_name.." with id: "..entity.id)
+			release_entity(entity)
 		end
+	end
+end
 
-		if self.entity_type == 'squad' then
-			local se_obj = self:get_se_obj()
-			if se_obj then
-				SIMBOARD:remove_squad(se_obj)
-			end
-			return
-		end
-	end,
+WorldState = {
+	objects_by_name = igi_utils.defaultdict(function () return {} end),
+	levels_by_distance = igi_utils.defaultdict(function () return {} end),
+	smarts_by_level = igi_utils.defaultdict(function () return {} end),
+	objects = {}, -- 3x slower access to se_objects that do not exist, 100x faster access to existing objects
+	distance_by_level = {},
+	factions = _g.squad_community_by_behaviour,
 }
-
-Cache = {
-	release_targets_in_world = function (self)
-		for _, entity in pairs(self:get_entities()) do
-			if entity.id and entity.section_name then
-				igi_helper.trace_dbg("WTF: Release from world: "..entity.section_name.." with id: "..entity.id)
-				entity:release()
-			end
-		end
-	end,
-}
-
-WorldState = {}
-WorldState.objects_by_name = igi_utils.defaultdict(function () return {} end)
-WorldState.levels_by_distance = igi_utils.defaultdict(function () return {} end)
-WorldState.smarts_by_level = igi_utils.defaultdict(function () return {} end)
-WorldState.objects = {} -- 3x slower access to se_objects that do not exist, 100x faster access to existing objects
-WorldState.distance_by_level = {}
-WorldState.factions = _g.squad_community_by_behaviour
 
 
 setmetatable(WorldState.objects, {__index = function (self, key)
-    id = tonumber(key)
+    local id = tonumber(key)
     igi_helper.trace_assert(id and id <= 65535, "Don't look at me, senpai >//////<\n")
 
     local se_obj = WorldState.sim:object(id)

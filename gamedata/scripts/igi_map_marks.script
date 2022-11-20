@@ -1,52 +1,36 @@
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+update_mark = function (entity)
+	if not entity.mark then return end
+	local has_spot = level.map_has_object_spot(entity.id, entity.mark) == 1
+	local object_in_world = igi_world_state.is_entity_in_world(entity)
+
+	if object_in_world and not has_spot then
+		level.map_add_object_spot(
+			entity.id,
+			entity.mark,
+			game.translate_string(entity.mark)
+		)
+
+	elseif (not object_in_world) and has_spot then
+		level.map_remove_object_spot(entity.id, entity.mark)
+	end
 end
 
-function actor_on_first_update()
-	igi_models.add_interface_implementation("Entity", Entity)
-	igi_models.add_interface_implementation("Cache", Cache)
+remove_mark = function (entity)
+	if not entity.mark then return end
+	level.map_remove_object_spot(entity.id, entity.mark)
 end
 
-Entity = {
-	update_mark = function (self)
-		if not self.mark then return end
-		local has_spot = level.map_has_object_spot(self.id, self.mark) == 1
-		local object_in_world = self:is_in_world()
-
-		if object_in_world and not has_spot then
-			level.map_add_object_spot(
-				self.id,
-				self.mark,
-				game.translate_string(self.mark)
-			)
-
-		elseif (not object_in_world) and has_spot then
-			level.map_remove_object_spot(self.id, self.mark)
-		end
-	end,
-
-	remove_mark = function (self)
-		if not self.mark then return end
-		level.map_remove_object_spot(self.id, self.mark)
+update_marks = function (CACHE)
+	for _, entity in pairs(CACHE.entities) do
+		update_mark(entity)
 	end
-}
+end
 
-
-Cache = {
-	update_marks = function (self)
-		local entities = self:get_entities()
-		for _, entity in pairs(entities) do
-			entity:update_mark()
-		end
-	end,
-
-	unmark_all = function (self)
-		local entities = self:get_entities()
-		for _, entity in pairs(entities) do
-			entity:remove_mark()
-		end
+unmark_all = function (CACHE)
+	for _, entity in pairs(CACHE.entities) do
+		remove_mark(entity)
 	end
-}
+end
 
 
 

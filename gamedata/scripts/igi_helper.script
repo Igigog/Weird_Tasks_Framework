@@ -110,9 +110,7 @@ function trace_dbg(title, ...)
 		printf("WTF DBG: "..title)
 		for k, v in pairs({...}) do
 			if type(v) == "table" then
-				igi_models.save_interfaces_recursively(v)
 				printf(utils_data.print_table(v, k, true))
-				igi_models.restore_interfaces_recursively(v)
 			else
 				printf(tostring(v))
 			end

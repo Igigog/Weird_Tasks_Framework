@@ -3,34 +3,6 @@ local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation('Cache', Cache)
-	igi_models.add_interface_implementation('Entity', Entity)
-	igi_models.add_interface_implementation('EntitiesTable', EntitiesTable)
-	igi_models.add_interface_implementation(GoodwillReward.__cls, GoodwillReward)
-	igi_models.add_interface_implementation(MoneyReward.__cls, MoneyReward)
-	igi_models.add_interface_implementation(RewardTable.__cls, RewardTable)
-	igi_models.add_interface_implementation(SubtaskRewards.__cls, SubtaskRewards)
-
-	igi_taskdata.add_classification_rule(function (CACHE)
-		if CACHE.rewards then
-			igi_models.set_class(CACHE.rewards, SubtaskRewards.__cls)
-			CACHE.rewards:repair_self()
-		end
-		if not CACHE:get_entities() then return end
-		for _, entity in pairs(CACHE:get_entities())do
-			if entity.rewards then
-				igi_models.set_class(entity.rewards, SubtaskRewards.__cls)
-				entity.rewards:repair_self()
-			end
-		end
-	end)
-end
-
 
 Cache = {
 	collect_and_give_rewards = function (self)
@@ -118,17 +90,7 @@ SubtaskRewards = {
 	__cls = "SubtaskRewards",
 
 	new = function ()
-		local t = {}
-		igi_models.set_class(t, SubtaskRewards.__cls)
-		return t
-	end,
-
-	repair_self = function (self)
-		for status, reward_table in pairs(self) do
-			trace_assert(igi_subtask.TASK_STATUSES[status], "Unknown task status")
-			igi_models.set_class(reward_table, RewardTable.__cls)
-			reward_table:repair_self()
-		end
+		return setmetatable({}, {__index = SubtaskRewards})
 	end,
 
 	get = function (self, status)
@@ -166,9 +128,7 @@ RewardTable = {
 	end,
 
 	new = function ()
-		local t = {}
-		igi_models.set_class(t, RewardTable.__cls)
-		return t
+		return setmetatable({}, {__index = RewardTable})
 	end,
 
 	get = function (self, key)
@@ -177,14 +137,6 @@ RewardTable = {
 			self[key] = self._classes[key].new()
 		end
 		return self[key]
-	end,
-
-	repair_self = function (self)
-		for k, v in pairs(self) do
-			if k ~= "blocked" then
-				igi_models.set_class(v, self._classes[k].__cls)
-			end
-		end
 	end,
 
 	combine_with = function (self, other)
@@ -276,8 +228,7 @@ GoodwillReward = {
 			factions = {},
 			factions_goodwill = {},
 		}
-		igi_models.set_class(t, GoodwillReward.__cls)
-		return t
+		return setmetatable(t, {__index = GoodwillReward})
 	end,
 
 	_assert_faction_exists = function (self, faction)
@@ -433,8 +384,7 @@ MoneyReward = {
 
 	new = function ()
 		local t = {value = 0,}
-		igi_models.set_class(t, MoneyReward.__cls)
-		return t
+		return setmetatable(t, {__index = MoneyReward})
 	end,
 
 	set = function (self, v)

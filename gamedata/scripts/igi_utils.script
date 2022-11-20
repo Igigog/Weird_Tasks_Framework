@@ -2,22 +2,11 @@
 
 local trace_assert = igi_helper.trace_assert
 
-
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation(Heap.__cls, Heap)
-	igi_models.add_interface_implementation(Set.__cls, Set)
-end
 Set = {
 	__cls = 'Set',
 
 	new = function()
-		local t = {}
-		igi_models.set_class(t, Set.__cls)
-		return t
+		return setmetatable({}, {__index = Set})
 	end,
 
 	union = function(self, set2)
@@ -74,8 +63,7 @@ Heap = {
 			priorities = {},
 			payloads = {},
 		}
-		igi_models.set_class(t, Heap.__cls)
-		return t
+		return setmetatable(t, {__index = Heap})
 	end,
 
 	swap = function(self, index1, index2)

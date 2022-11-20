@@ -3,16 +3,6 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation("Cache", Cache)
-	igi_models.add_interface_implementation('TaskDescription', TaskDescription)
-	igi_models.add_interface_implementation("DescriptionItem", DescriptionItem)
-end
-
 local function table_find(tbl, val)
 	for k, v in pairs(tbl) do
 		if v == val then return k end
@@ -63,8 +53,7 @@ TaskDescription = {
 			factions = DescriptionItem:new(),
 			_location_links = {}
 		}
-		igi_models.set_class(t, TaskDescription.__cls)
-		return t
+		return setmetatable(t, {__index = TaskDescription})
 	end,
 
 	add_from_entity = function (self, entity)
@@ -91,8 +80,8 @@ TaskDescription = {
 
 	link_locations = function (self, tbl)
 		for k, v in pairs(tbl) do
-			if igi_linker.is_dependency(v) then
-				local dep = igi_linker.Dependency.from(v)
+			if igi_linker.Link.is_link(v) then
+				local dep = igi_linker.Link.from(v)
 				tbl[k] = self._location_links[dep:get_link()]
 			end
 		end
@@ -108,9 +97,7 @@ DescriptionItem = {
 	label = "",
 
 	new = function (self)
-		local t = {}
-		igi_models.set_class(t, self.__cls)
-		return t
+		return setmetatable({}, {__index = DescriptionItem})
 	end,
 
 	add = function (self, value)

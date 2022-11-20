@@ -3,204 +3,106 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-function on_game_start()
-	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function actor_on_first_update()
-	igi_models.add_interface_implementation(Entity.__cls, Entity)
-	igi_models.add_interface_implementation('Cache', Cache)
-	igi_models.add_interface_implementation(EntitiesTable.__cls, EntitiesTable)
-
-	igi_taskdata.add_classification_rule(function (CACHE)
-		local entities = CACHE:get_entities()
-		if not entities then return end
-		igi_models.set_class(entities, EntitiesTable.__cls)
-		for _, v in pairs(entities) do
-			igi_models.set_class(v, Entity.__cls)
-		end
-	end)
-end
-
 ENTITY_STATES = {
 	INITIALISED = "INITIALISED",
 	CREATED = "CREATED",
 }
 
-Cache = {
-	get_entities = function (self)
-		return self.entities
-	end,
+function initialise_quest(task_data, task_id)
+	trace_dbg("setup "..task_id, task_data)
+	igi_random.set_seed(task_id)
 
-	initialise_quest = function (self, task_id)
-		trace_dbg("setup "..task_id)
-		igi_random.set_seed(task_id)
+	local CACHE = dup_table(task_data)
+	igi_taskdata.finalize_task_cache(CACHE, task_id)
+	initialise_entities(CACHE)
 
-		local CACHE = igi_models.Cache.from(self) -- clone and finalize
-		CACHE:set_task_id(task_id)
-		trace_dbg("finalized CACHE", CACHE)
+	trace_dbg("CACHE after setup "..task_id, CACHE)
+	return CACHE
+end
 
-		CACHE.disabled = nil	-- not needed anymore
-		CACHE.preconditions = nil	-- not needed
+function initialise_entities(CACHE)
+	local entities = CACHE.entities
+	local new = {}
+	for _, entity in pairs(entities) do
+		if not entity._state then
+			trace_dbg('setup group '..tostring(_), entity)
+			local new_entities = initialise(entity)
+			if not new_entities then
+				return trace_dbg("entity failed", entity)
+			end
+			trace_dbg('group_data, new entities', entity, new_entities)
 
-		if not CACHE:initialise_entities() then return end
-		trace_dbg("CACHE after setup "..task_id, CACHE)
-		return CACHE
-	end,
-
-	initialise_entities = function (self)
-		return self:get_entities():initialise_all()
-	end,
-
-	create_all_entities = function (self)
-		self:get_entities():create_all()
-	end,
-}
-
-EntitiesTable = {
-	__cls = 'EntitiesTable',
-
-	new = function (entity_type)
-		local t = {entity_type = entity_type}
-		igi_models.set_class(t, EntitiesTable.__cls)
-		return t
-	end,
-
-	add = function (self, entity)
-		local link = entity:get_link()
-		trace_assert(not self[link], "Entity already exists")
-		self[link] = entity
-	end,
-
-	count_types = function (self)
-		local counter = igi_utils.defaultdict(0)
-		for _, v in pairs(self) do
-			counter[v.entity_type] = counter[v.entity_type] + 1
-		end
-		return counter
-	end,
-
-	initialise_all = function (self)
-		local new = {}
-		for _, entity in pairs(self) do
-			if not entity:is_initialised() then
-				trace_dbg('setup group '..tostring(_), entity)
-				local new_entities = entity:initialise()
-				if not new_entities then
-					return trace_dbg("entity failed", entity)
-				end
-				trace_dbg('group_data, new entities', entity, new_entities)
-
-				for _, entity in pairs(new_entities) do
-					new[#new+1] = entity
-				end
+			for _, entity in pairs(new_entities) do
+				new[#new+1] = entity
 			end
 		end
+	end
 
-		for _, entity in pairs(new) do
-			self:add(entity)
-		end
+	for _, entity in pairs(new) do
+		add_entity(entities, entity)
+	end
+end
 
-		self:relink()
-		return true
-	end,
-
-	create_all = function (self)
-		-- if it's not ready after n^2 tries, it won't be ready
-		for _=1, size_table(self) do
-			for _,entity in pairs(self) do
-				if (not entity:is_created()) and entity:has_no_outer_links() then
-					trace_dbg("entity_setup", entity)
-					entity:create()
-					self:broadcast_entity(entity)
-					trace_dbg("After broadcasting "..entity:get_link(), self)
-				end
+function create_entities(CACHE)
+	local entities = CACHE.entities
+	-- if it's not ready after n^2 tries, it won't be ready
+	for _=1, size_table(entities) do
+		for _,entity in pairs(entities) do
+			if entity._state ~= ENTITY_STATES.CREATED and igi_linker.has_no_outer_links(entity) then
+				trace_dbg("entity_setup", entity)
+				create(entity)
+				igi_linker.broadcast_entity(entities, entity)
+				trace_dbg("After broadcasting "..entity:get_link(), entities)
 			end
 		end
+	end
 
-		for _,entity in pairs(self) do
-			if not entity:is_created() then
-				trace_dbg("Creation failed", self)
-				trace_assert(nil, "Entity not created")
-			end
+	for _,entity in pairs(entities) do
+		if entity._state ~= ENTITY_STATES.CREATED then
+			trace_dbg("Creation failed", entities)
+			trace_assert(nil, "Entity not created")
 		end
+	end
 
-		self:relink()
-		igi_callbacks.invoke_callbacks("on_after_target_creation")
-	end,
-}
+	igi_callbacks.invoke_callbacks("on_after_target_creation")
+end
 
-Entity = {
-	__cls = 'Entity',
+function add_entity(entities, entity)
+	entities[#entities+1] = entity
+end
 
-	new = function (typ, group_id, entity_id)
-		local t = {
-			entity_type = typ,
-			group_id = group_id,
-			entity_id = entity_id
-		}
-		igi_models.set_class(t, Entity.__cls)
-		return t
-	end,
+function bind_to_se_obj(entity, id)
+	local se_obj = igi_world_state.WorldState.objects[id]
+	trace_assert(se_obj, "Server object does not exist")
+	entity.id = se_obj.id
+	entity.section_name = se_obj:section_name()
+	return entity
+end
 
-	binded_to = function (self, id)
-		self:bind_to_se_obj(id)
-		return self
-	end,
+function get_binded_object(entity)
+	local se_obj = WorldState.objects[entity.id]
+	if not se_obj then return end
+	if se_obj:section_name() ~= entity.section_name then return end
+	return se_obj
+end
 
-	bind_to_se_obj = function (self, id)
-		local se_obj = igi_world_state.WorldState.objects[id]
-		trace_assert(se_obj, "Server object does not exist")
-		self.id = se_obj.id
-		self.section_name = se_obj:section_name()
-	end,
+function initialise(entity)
+	assert(not entity._state, "Not a raw entity")
+	entity._state = ENTITY_STATES.INITIALISED
+	entity.entity_id = 1
+	local target_tbl = entity:get_target_table()
+	return target_tbl["setup_"..entity.entity_type](entity)
+end
 
-	is_binded_to_se_obj = function (self)
-		return self.id and self.section_name
-	end,
+function create(entity)
+	trace_assert(entity._state == ENTITY_STATES.INITIALISED, "Not an initialised entity")
+	entity._state = ENTITY_STATES.CREATED
 
-	get_binded_object = function (self)
-		local se_obj = WorldState.objects[self.id]
-		if not se_obj then return end
-		if se_obj:section_name() ~= self.section_name then return end
-		return se_obj
-	end,
+	entity:resolve_macros_and_self_references()
+	trace_dbg("processed entity", entity)
 
-	clone = function (self)
-		trace_assert(self.entity_id == 1, "Please clone the original entity")
-
-		local t = dup_table(self)
-		igi_models.set_class(t, self.__cls)
-		self._clones = (self._clones or 0) + 1
-		t.entity_id = self.entity_id + self._clones
-		return t
-	end,
-
-	initialise = function (self)
-		self._state = ENTITY_STATES.INITIALISED
-		self.entity_id = 1
-		local target_tbl = self:get_target_table()
-		return target_tbl["setup_"..self.entity_type](self)
-	end,
-
-	create = function (self)
-		trace_assert(self:is_initialised(), "Trying to create raw entity")
-		self._state = ENTITY_STATES.CREATED
-
-		self:resolve_macros_and_self_references()
-		trace_dbg("processed entity", self)
-
-		local target_tbl = self:get_target_table()
-    	local new_entities = target_tbl["create_"..self.entity_type](self)
-		trace_dbg("group_data, new entities", self, new_entities)
-		return new_entities
-	end,
-
-	is_created = function (self)
-		return self._state == ENTITY_STATES.CREATED
-	end,
-
-	is_initialised = function (self)
-		return self._state == ENTITY_STATES.INITIALISED
-	end,
-}
+	local target_tbl = igi_taskdata.get_target_table(entity.target)
+	local new_entities = target_tbl["create_"..entity.entity_type](entity)
+	trace_dbg("group_data, new entities", entity, new_entities)
+	return new_entities
+end

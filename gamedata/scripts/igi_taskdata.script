@@ -68,7 +68,6 @@ function get_task_table(task_name, prefix)
 		igi_utils.combine_tables(task_table, task_config)
 	end
 	remove_empty_tables(task_table)
-	restore_classes(task_table)
 
 	return task_table
 end
@@ -130,35 +129,20 @@ function get_task_data(task_id)
 	local task_tbl = get_task_table(task_name, prefix)
 	trace_assert(task_tbl, "No such task: "..tostring(task_id or "nil"))
 
-	restore_classes(task_tbl)
 	igi_callbacks.invoke_callbacks_custom("on_get_taskdata", task_tbl, task_id)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
 
-function get_task_setup(task_id)
-	return get_task_data(task_id).setup
-end
+function finalize_task_cache(CACHE, task_id)
+	CACHE.disabled = nil	-- not needed anymore
+	CACHE.preconditions = nil	-- not needed
+	CACHE.task_id = task_id
 
-function add_classification_rule(rule)
-	classification_rules[rule] = true
-end
+	igi_linker.set_missing_group_ids(CACHE.entities)
+	igi_text_processor.resolve_unlinked_macros_and_link_virtual_variables(CACHE.entities)
 
-classification_rules = {}
-function restore_classes(CACHE)
-	igi_models.set_class(CACHE, 'Cache')
-	for rule in pairs(classification_rules) do
-		rule(CACHE)
-	end
-end
-
-function finalize_task_cache(CACHE)
-	restore_classes(CACHE)
-	trace_dbg('restored', CACHE)
-	local setup = CACHE:get_entities()
-
-	setup:assign_group_id()
-	setup:resolve_unlinked_macros_and_link_virtual_variables()	-- once more to link gen ids
+	trace_dbg("finalized CACHE", CACHE)
 end
 
 function get_target_table(target)
