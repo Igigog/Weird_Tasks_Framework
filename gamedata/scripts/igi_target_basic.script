@@ -5,6 +5,7 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
+local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 
 local function ids_to_entities(prototype, ids)
@@ -233,47 +234,27 @@ function quest_target(entity)
 	return entity.id
 end
 
-function get_completed_money(entity)
-	return 3000
-end
-
-function get_completed_goodwill(entity)
-	return 25
-end
-
-function get_factions(entity, task_giver_id)
-	return {igi_helper.get_community_by_id(task_giver_id)}
-end
-
-function get_failed_money(entity)
-	return 0
-end
-
-function get_failed_goodwill(entity)
-	return -25
-end
-
-function get_raw_reward(entity, task_giver_id)
-	local target_tbl = entity:get_target_table()
-	local status = entity:get_status():lower()
-	local reward = igi_rewards.RewardTable.new()
-
-	local goodwill = reward:get('goodwill')
-	goodwill:set_value(target_tbl["get_"..status.."_goodwill"](entity))
-	goodwill:set_factions(target_tbl.get_factions(entity, task_giver_id))
-
-	local money = reward:get('money')
-	money:set(target_tbl["get_"..status.."_money"](entity))
-
-	return reward
-end
-
-function get_reward(entity, task_giver_id)
-	local target_tbl = entity:get_target_table()
-	local raw_reward = target_tbl.get_raw_reward(entity, task_giver_id)
-	local reward = entity:get_reward_table()
-	local reward_total = igi_rewards.RewardTable.new()
-	reward_total:combine_with(reward)
-	reward_total:combine_with(raw_reward)
-	return reward_total
+function get_rewards(entity, task_giver_id)
+	local tg_faction = igi_helper.get_community_by_id(task_giver_id)
+	if entity.status == TASK_STATUSES.COMPLETED then
+		return {
+			money = {
+				value = 3000
+			},
+			goodwill = {
+				values = {
+					[tg_faction] = 25
+				}
+			}
+		}
+	elseif entity.status == TASK_STATUSES.FAILED then
+		return {
+			goodwill = {
+				values = {
+					[tg_faction] = -25
+				}
+			}
+		}
+	end
+	return {}
 end

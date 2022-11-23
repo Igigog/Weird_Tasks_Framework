@@ -3,414 +3,83 @@ local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
+REWARD_TYPES = {}
 
 function collect_and_give_rewards(CACHE)
-	local rewards = CACHE.rewards or SubtaskRewards.new()
-	local reward
-	if CACHE:is_task_completed() then
-		reward = rewards:get(TASK_STATUSES.COMPLETED)
-	else
-		reward = rewards:get(TASK_STATUSES.FAILED)
+	local rewards = dup_table(CACHE.rewards and CACHE.rewards[CACHE.status] or {})
+	merge_rewards_from_subtasks(rewards, CACHE.entities, CACHE.status, CACHE.task_giver_id)
+	igi_callbacks.invoke_callbacks("on_before_rewarding", rewards)
+	give_rewards(rewards)
+end
+
+function merge_rewards_from_subtasks(dest, entities, is_successful, tg_id)
+	-- Always add failed: if task is successful then these ones are failed optionals
+	merge_rewards_with_status(dest, TASK_STATUSES.FAILED, tg_id)
+	if is_successful then
+		merge_rewards_with_status(dest, entities, TASK_STATUSES.COMPLETED, tg_id)
 	end
-
-	local t = CACHE.entities:collect_rewards_from_subtasks(
-		CACHE:is_task_completed(),
-		CACHE:get_task_giver_id()
-	)
-	reward:combine_with(t)
-
-	igi_callbacks.invoke_callbacks("on_before_rewarding")
-	reward:give()
+	trace_dbg("With rewards from subtasks: ", dest)
 end
 
-has_material_rewards = function (CACHE)
-	if CACHE.rewards and CACHE.rewards:has_material_rewards() then return true end
-	return CACHE.entities:has_material_rewards(CACHE:get_task_giver_id())
+function merge_rewards_with_status(dest, entities, status, tg_id)
+	trace_dbg('Entities, status, rewards', entities, status, dest)
+	for _, entity in pairs(entities) do
+		if entity.status == status then
+			merge_reward_tables(dest, get_subtask_rewards(entity, tg_id))
+		end
+	end
 end
 
-EntitiesTable = {
-	_collect_rewards_with_status = function (self, status, tg_id)
-		local reward_tbl = RewardTable.new()
-		trace_dbg('Entities, status', self, status)
-		for _, entity in pairs(self) do
-			if entity:get_status() == status then
-				local entity_reward = entity:get_final_reward(tg_id)
-				reward_tbl:combine_with(entity_reward)
-				trace_dbg('combined', reward_tbl)
-			end
+function get_subtask_rewards(entity, tg_id)
+	local target_tbl = igi_taskdata.get_target_table(entity.target)
+	local dynamic_rewards = target_tbl.get_rewards(entity, tg_id)
+	local static_rewards = dup_table(entity.rewards and entity.rewards[entity.status] or {})
+	trace_dbg('static rewards, dynamic: ', static_rewards, dynamic_rewards)
+
+	merge_reward_tables(static_rewards, dynamic_rewards)
+	return static_rewards
+end
+
+function merge_reward_tables(this, other)
+	trace_dbg("Combine: reward, other", this, other)
+
+	for k, reward in pairs(other) do
+		if this[k] and not this[k].blocked then
+			local typ = REWARD_TYPES[k]
+			typ.merge(this[k], reward)
+		elseif (not this[k]) and not this.blocked then
+			this[k] = dup_table(reward)
 		end
-		return reward_tbl
-	end,
+	end
+	trace_dbg('combined', this)
+end
 
-	collect_rewards_from_subtasks = function (self, is_successful, tg_id)
-		local reward_tbl = RewardTable.new()
+function give_rewards(rewards_tbl)
+	rewards_tbl.blocked = nil
+	for typ, reward in pairs(rewards_tbl) do
+		REWARD_TYPES[typ].give(reward)
+	end
+end
 
-		-- Always add failed: if task is successful then these ones are failed optionals
-		local t = self:_collect_rewards_with_status(igi_subtask.TASK_STATUSES.FAILED, tg_id)
-		reward_tbl:combine_with(t)
-		if is_successful then
-			t = self:_collect_rewards_with_status(igi_subtask.TASK_STATUSES.COMPLETED, tg_id)
-			reward_tbl:combine_with(t)
-		end
-		trace_dbg("Rewards from subtasks: ", reward_tbl)
-		return reward_tbl
-	end,
-
-	has_material_rewards = function (self, tg_id)
-		for _, entity in pairs(self) do
-			if entity:get_status() and
-					entity:get_final_reward(tg_id):has_material_rewards() then
-				return true
-			end
-		end
-		return false
-	end,
-}
-
-Entity = {
-	get_final_reward = function (self, task_giver_id)
-		return self:get_target_table().get_reward(self, task_giver_id)
-	end,
-
-	get_reward_table = function (self)
-		return self:get_all_rewards():get(self:get_status())
-	end,
-
-	get_all_rewards = function (self)
-		if not self.rewards then
-			self.rewards = SubtaskRewards.new()
-		end
-		return self.rewards
-	end,
-}
-
-SubtaskRewards = {
-	__cls = "SubtaskRewards",
-
-	new = function ()
-		return setmetatable({}, {__index = SubtaskRewards})
-	end,
-
-	get = function (self, status)
-		trace_assert(igi_subtask.TASK_STATUSES[status], "Unknown task status")
-		if not self[status] then
-			self[status] = RewardTable.new()
-		end
-		return self[status]
-	end,
-
-	set_reward_of_status = function (self, status, reward)
-		trace_assert(igi_subtask.TASK_STATUSES[status], "Unknown task status")
-		trace_assert(reward.__cls == RewardTable.__cls, "Not a reward table")
-		self[status] = reward
-	end,
-
-	has_material_rewards = function (self)
-		for _, reward in pairs(self) do
-			if reward ~= "blocked" and reward:has_material_rewards() then
-				return true
-			end
-		end
-	end,
-}
-
-
-RewardTable = {
-	__cls = 'RewardTable',
-
-	_classes = {},
-
-	add_class = function (key, class)
-		trace_assert(class.__cls, 'Class is not a class')
-		RewardTable._classes[key] = class
-	end,
-
-	new = function ()
-		return setmetatable({}, {__index = RewardTable})
-	end,
-
-	get = function (self, key)
-		if not self[key] then
-			trace_assert(self._classes[key], "Unknown reward type: "..key)
-			self[key] = self._classes[key].new()
-		end
-		return self[key]
-	end,
-
-	combine_with = function (self, other)
-		trace_assert(other.__cls == RewardTable.__cls, 'Tried to add wrong type')
-		other:finalize()
-		return_block = other:unblock()
-
-		trace_dbg("Combine: self, other", self, other)
-
-		for k, reward in pairs(other) do
-			if (not self.blocked) or self[k] then
-				self:get(k):combine_with(reward)
-			end
-		end
-
-		return_block(other)
-	end,
-
-	unblock = function (self)
-		local was_blocked = self.blocked
-		self.blocked = nil
-		if was_blocked then return self.block end
-		return function () end
-	end,
-
-	block = function (self)
-		self.blocked = true
-	end,
-
-	finalize = function (self)
-		local return_block = self:unblock()
-		for _, reward in pairs(self) do
-			reward:apply_multiplier()
-			reward:apply_additional_value()
-		end
-		return_block(self)
-	end,
-
-	has_material_rewards = function (self)
-		for k, reward in pairs(self) do
-			if k ~= "blocked" and reward:is_material() then
-				return true
-			end
-		end
-		return false
-	end,
-
-	add = function (self, reward)
-		self:get(reward.__key):combine_with(reward)
-	end,
-
-	give = function (self)
-		local return_block = self:unblock()
-		for _, reward in pairs(self) do
-			reward:give()
-		end
-		return_block(self)
-	end,
-}
-
-AbstractReward = {
-	__cls = 'AbstractReward',
-
-	_empty_func = function () end,
-
-	unblock = function (self)
-		local was_blocked = self.blocked
-		self.blocked = nil
-		if was_blocked then return self.block end
-		return AbstractReward._empty_func
-	end,
-
-	block = function (self)
-		self.blocked = true
-	end,
-
-	is_material = function (self)
-		return true
-	end,
-}
-
-GoodwillReward = {
-	__cls = 'GoodwillReward',
-	__key = 'goodwill',
-
-	new = function()
-		local t = {
-			value = 0,
-			factions = {},
-			factions_goodwill = {},
-		}
-		return setmetatable(t, {__index = GoodwillReward})
-	end,
-
-	_assert_faction_exists = function (self, faction)
-		trace_assert(igi_world_state.WorldState.factions[faction], "Faction not found: ", faction)
-	end,
-
-	normalize = function(self)
-		trace_dbg("rewards" ,self)
-		-- Goodwill (1/gaussian_sum to last community, 2/sum to second last, ..., 1/2 to first)
-		local factions = self.factions
-		local parts = (#factions)*(#factions+1)/2
-
-		for i=1,#factions do
-			local faction_value = math.floor((i*self.value)/parts)
-			local faction = factions[#factions+1-i]
-			self:add_for_faction(faction, faction_value)
-		end
-
-		self.value = 0
-		self.factions = {}
-	end,
-
-	denormalize = function (self)
-		for faction, v in pairs(self.factions_goodwill) do
-			self:add(v)
-			self:add_faction(faction)
-		end
-	end,
-
-	rebalance = function (self)
-		self:denormalize()
-		self:normalize()
-	end,
-
-	add = function (self, value)
-		if self.blocked then return end
-		trace_assert(type(value) == "number", "Trying to set a non-number goodwill value")
-		self.value = self.value + value
-	end,
-
-	add_faction = function (self, faction)
-		if self.blocked then return end
-		self:_assert_faction_exists(faction)
-		for _, v in pairs(self) do
-			if v == faction then return	end
-		end
-		self.factions[#self.factions+1] = faction
-	end,
-
-	set_factions = function (self, factions)
-		empty_table(self.factions)
-		for _, faction in pairs(factions) do
-			self:add_faction(faction)
-		end
-	end,
-
-	set_value = function (self, value)
-		trace_assert(type(value) == "number", "Trying to set a non-number goodwill value")
-		self.value = value
-	end,
-
-	set_for_faction = function (self, faction, value)
-		self:_assert_faction_exists(faction)
-		self.factions_goodwill[faction] = value
-	end,
-
-	get_for_faction = function (self, faction)
-		return rawget(self.factions_goodwill, faction) or 0
-	end,
-
-	add_for_faction = function (self, faction, value)
-		if self.blocked then return end
-		local new_val = self:get_for_faction(faction) + value
-		self:set_for_faction(faction, new_val)
-	end,
-
-	get_factions_goodwill = function (self)
-		return self.factions_goodwill
-	end,
-
-	apply_additional_value = function (self)
-		if not self.additional then return end
-		local to_add = self.additional/size_table(self.factions_goodwill)
-		for k, val in pairs(self.goodwill) do
-			self.goodwill[k] = val + to_add
-		end
-	end,
-
-	apply_multiplier = function (self)
-		if not self.multiplier then return end
-		for k, val in pairs(self.goodwill) do
-			self.goodwill[k] = val*self.multiplier
-		end
-		self.multiplier = nil
-	end,
-
-	_factions_defined = function (self)
-		if not self.factions then self.factions = {} end
-		if not self.factions_goodwill then self.factions_goodwill = {} end
-		return next(self.factions) or next(self.factions_goodwill)
-	end,
-
-	_get_denormalized_factions = function (self)
-		self:normalize()
-		local factions_goodwill = self:get_factions_goodwill()
-		sorted = {}
-
-		for k in pairs(factions_goodwill) do
-			sorted[#sorted+1] = k
-		end
-
-		table.sort(sorted, function(a,b)
-			return factions_goodwill[a] > factions_goodwill[b]
-		end)
-		return sorted
-	end,
-
-	combine_with = function (self, other)
-		other:normalize()
-		if self.blocked and not self:_factions_defined() then
-			self:set_factions(other:_get_denormalized_factions())
-			self:normalize()
-			return
-		end
-
-		self:normalize()
-		for faction, goodwill in pairs(other:get_factions_goodwill()) do
-			self:add_for_faction(faction, goodwill)
+REWARD_TYPES.goodwill = {
+	merge = function (self, other)
+		for faction, goodwill in pairs(other.values) do
+			self.values[faction] = self.values[faction] + goodwill
 		end
 	end,
 
 	give = function (self)
-		self:normalize()
-		for faction, value in pairs(self:get_factions_goodwill()) do
+		for faction, value in pairs(self.values) do
 			if value ~= 0 then
 				xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
 			end
 		end
 	end,
-
-	is_material = function (self)
-		return false
-	end,
-
-	unblock = AbstractReward.unblock,
-	block = AbstractReward.block,
 }
-RewardTable.add_class(GoodwillReward.__key, GoodwillReward)
 
-MoneyReward = {
-	__cls = "MoneyReward",
-	__key = 'money',
-
-	new = function ()
-		local t = {value = 0,}
-		return setmetatable(t, {__index = MoneyReward})
-	end,
-
-	set = function (self, v)
-		self.value = v
-	end,
-
-	get = function (self)
-		return self.value
-	end,
-
-	add = function (self, v)
-		if self.blocked then return end
-		self.value = self.value + v
-	end,
-
-	apply_additional_value = function (self)
-		if not self.additional then return end
-		self:add(self.additional)
-	end,
-
-	apply_multiplier = function (self)
-		if not self.multiplier then return end
-		self:set(self:get()*self.multiplier)
-	end,
-
-	combine_with = function (self, other)
-		if self.blocked then return end
-		self:add(other:get())
+REWARD_TYPES.money = {
+	merge = function (self, other)
+		self.value = self.value + other.value
 	end,
 
 	give = function (self)
@@ -422,12 +91,31 @@ MoneyReward = {
 			xr_effects.reward_random_money(nil, nil, {min, max})
 		end
 	end,
-
-	is_material = function (self)
-		return self.value > 0
-	end,
-
-	unblock = AbstractReward.unblock,
-	block = AbstractReward.block,
 }
-RewardTable.add_class(MoneyReward.__key, MoneyReward)
+
+function has_material_rewards(CACHE)
+	local static_rewards = CACHE.rewards and CACHE.rewards.COMPLETED
+	if static_rewards and static_rewards.money then
+		return true
+	end
+
+	if static_rewards and static_rewards.blocked then return false end
+
+	for _, entity in pairs(CACHE.entities) do
+		if entity.target then
+			local static_rewards = CACHE.rewards and CACHE.rewards.COMPLETED
+			if static_rewards and static_rewards.money then
+				return true
+			end
+			if not (static_rewards and static_rewards.blocked) then
+				local target_tbl = igi_taskdata.get_target_table(entity.target)
+				local dynamic_rewards = target_tbl.get_rewards(entity, CACHE.task_giver_id)
+				if dynamic_rewards.money then
+					return true
+				end
+			end
+		end
+	end
+	
+	return false
+end
