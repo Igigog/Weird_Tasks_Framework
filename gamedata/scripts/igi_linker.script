@@ -12,7 +12,7 @@ function broadcast_entity(entities, entity)
 end
 
 function set_missing_group_ids(entities)
-	local counters = entities:_fill_counters()
+	local counters = count_entity_types(entities)
 	for _, entity in pairs(entities) do
 		if not entity.group_id then
 			counters[entity.entity_type] = counters[entity.entity_type] + 1
@@ -98,7 +98,8 @@ Link = {
 
 	resolve = function (self, entities)
 		local entity = self:get_linked_entity(entities)
-		return tostring(self:resolve_field(entity))
+		local out = self:resolve_field(entity)
+		return out and tostring(out) or nil
 	end,
 
 	resolve_field = function (self, entity)

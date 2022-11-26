@@ -15,17 +15,17 @@ function get_status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
-function entity_on_first_run(entity)
-	local reward = igi_rewards.RewardTable.new()
-	reward:get("goodwill"):add(get_goodwill_reward(entity))
-	reward:get("money"):add(get_money_reward(entity))
-	entity.raw_reward = reward
-end
-
-function get_raw_reward(entity, task_giver_id)
-	entity.raw_reward:get("goodwill")
-		:set_factions(igi_target_basic.get_factions(nil, task_giver_id))
-	return entity.raw_reward
+function entity_on_first_run(entity, CACHE)
+	entity.rewards = {
+		money = {
+			value = get_money_reward(entity)
+		},
+		goodwill = {
+			values = {
+				[CACHE.task_giver_id] = get_goodwill_reward(entity)
+			}
+		}
+	}
 end
 
 local function get_monster_value(se_npc)
@@ -85,4 +85,8 @@ function get_goodwill_reward(entity)
 	end
 
 	return 50 - (40/npc_count)
+end
+
+function get_rewards(entity)
+	return entity.rewards
 end

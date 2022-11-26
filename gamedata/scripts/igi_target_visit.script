@@ -22,8 +22,8 @@ local function explode_path(entity)
 
 	local clones = {}
 	for i=2, #names do
-		local new = entity:clone()
-		new:set_order(new.entity_id)
+		local new = dup_table(entity)
+		new.order = entity.order + i
 		new.name = names[i]
 		clones[#clones+1] = new
 	end

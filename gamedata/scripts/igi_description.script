@@ -8,120 +8,80 @@ local function table_find(tbl, val)
 		if v == val then return k end
 	end
 end
-Cache = {
-	get_description = function (self)
-		if not self.description then
-			self:_prepare_description()
-		end
-		return self.description:get_description()
-	end,
 
-	_prepare_description = function (self)
-		local desc = TaskDescription.new()
-		for _, entity in pairs(self:get_entities()) do
-			if entity.entity_type == "location" then
-				desc:setup_location(entity)
-			end
-		end
-
-		for _, entity in pairs(self:get_entities()) do
-			desc:add_from_entity(entity)
-		end
-		self.description = desc
-	end,
-
-	get_task_text_function = function (self)
-		local title = "[WTF] "..get_task_text(self.task_id, "title")
-		local text = self:get_description()
-		local icon = task_manager.task_ini:r_string_ex(self.task_id, "icon")
-		icon = icon or "ui_iconsTotal_mutant"
-
-		return function ()
-			db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
-			return true
-		end
-	end,
-}
-
-TaskDescription = {
-	__cls = "TaskDescription",
-
-	new = function ()
-		local t = {
-			targets = DescriptionItem:new(),
-			locations = DescriptionItem:new(),
-			factions = DescriptionItem:new(),
-			_location_links = {}
+function get_description(CACHE)
+	if not CACHE.description then
+		CACHE.description = {
+			targets = {},
+			locations = {},
+			factions = {},
 		}
-		return setmetatable(t, {__index = TaskDescription})
-	end,
 
-	add_from_entity = function (self, entity)
-		if entity.no_description then return end
-		local target_tbl = entity:get_target_table()
-		local desc = target_tbl.get_description(entity)
-		for k, tbl in pairs(desc) do
-			self:link_locations(tbl)
-			for _, v in pairs(tbl) do
-				self[k]:add(v)
-			end
+		for _, entity in pairs(CACHE.entities) do
+			add_from_entity(CACHE.description, entity, CACHE.entities)
 		end
-	end,
+	end
 
-	get_description = function (self)
-		self._location_links = nil
-		local content = {}
-		for label, v in pairs(self) do
-			content[#content+1] = v:to_string(label)
+	local content = {}
+	for label, v in pairs(CACHE.description) do
+		content[#content+1] = item_to_string(v, label)
+	end
+
+	return table.concat(content, "\\n")
+end
+
+function get_task_text_function(CACHE)
+	local title = "[WTF] "..get_task_text(CACHE.task_id, "title")
+	local text = get_description(CACHE)
+	local icon = task_manager.task_ini:r_string_ex(CACHE.task_id, "icon")
+	icon = icon or "ui_iconsTotal_mutant"
+
+	return function ()
+		db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
+		return true
+	end
+end
+
+function add_from_entity(description, entity, entities)
+	if entity.no_description then return end
+
+	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
+	local desc = target_tbl.get_description(entity)
+	for k, tbl in pairs(desc) do
+		link_locations(tbl, entities)
+		add_all_values(description[k], tbl)
+	end
+end
+
+function add_all_values(dest, src)
+	for _, v in pairs(src) do
+		if not table_find(dest, v) then
+			dest[#dest+1] = v
 		end
+	end
+end
 
-		return table.concat(content, "\\n")
-	end,
-
-	link_locations = function (self, tbl)
-		for k, v in pairs(tbl) do
-			if igi_linker.Link.is_link(v) then
-				local dep = igi_linker.Link.from(v)
-				tbl[k] = self._location_links[dep:get_link()]
-			end
+function link_locations(tbl, entities)
+	for k, v in pairs(tbl) do
+		if igi_linker.Link.is_link(v) then
+			local link = igi_linker.Link.from(v)
+			local loc = link:resolve(entities)
+			tbl[k] = igi_target_basic.get_location_description(loc)
 		end
-	end,
+	end
+end
 
-	setup_location = function (self, entity)
-		self._location_links[entity:get_link()] = igi_target_basic.get_location_description(entity)
-	end,
-}
+function item_to_string(item, label)
+	if not next(item) then return "" end
 
-DescriptionItem = {
-	__cls = "DescriptionItem",
-	label = "",
+	local details = {}
+	for i, value in ipairs(item) do
+		details[i] = game.translate_string(value)
+	end
 
-	new = function (self)
-		return setmetatable({}, {__index = DescriptionItem})
-	end,
-
-	add = function (self, value)
-		if not table_find(self, value) then
-			self[#self+1] = value
-		end
-	end,
-
-	_get_item_string = function (item)
-		return game.translate_string(item)
-	end,
-
-	to_string = function (self, label)
-		if not next(self) then return "" end
-
-		local details = {}
-		for i, value in ipairs(self) do
-			details[i] = self._get_item_string(value)
-		end
-
-		label = game.translate_string(igi_db.TEXT_HEADER..label)
-		return label..": "..table.concat(details, ', ')
-	end,
-}
+	label = game.translate_string(igi_db.TEXT_HEADER..label)
+	return label..": "..table.concat(details, ', ')
+end
 
 function get_task_text(task_id, field)
 	-- returns exclusive task text if exists

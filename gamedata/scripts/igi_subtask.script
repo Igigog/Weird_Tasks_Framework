@@ -55,7 +55,7 @@ function get_quest_target(entities)
 	local target_id
 	for _, entity in pairs(entities) do
 		if entity.target
-			and entity:get_status() == TASK_STATUSES.RUNNING
+			and entity.status == TASK_STATUSES.RUNNING
 			and (entity.order or 1) < min_order then
 
 			local target_tbl = igi_taskdata.get_target_table(entity.target)

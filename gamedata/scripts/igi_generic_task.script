@@ -83,7 +83,7 @@ function validate_generic_task(actor, npc, p)
 
 	if task_data.disabled then return false end
 	if not igi_mcm.get_options_value("debug") then
-		if not igi_precondition.are_preconditions_fulfilled(task_data) then
+		if not igi_precondition.check_conditions(task_data.preconditions) then
 			return false
 		end
 	end
@@ -99,7 +99,8 @@ function igi_task_generic_setup(actor,npc,p)
 	--This function will be called on_job_descr
 	local CACHE = get_setup_cache(p[1])
 	--Print the message
-	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0, CACHE:get_task_text_function())
+	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0,
+		igi_description.get_task_text_function(CACHE))
 end
 --< Status >--------------------------------------------------
 local function initialise_CACHE(CACHE, task_giver_id)
@@ -110,7 +111,7 @@ local function initialise_CACHE(CACHE, task_giver_id)
 
 	igi_entities.create_entities(CACHE)
 	igi_subtask.initialise_subtasks(CACHE)
-	CACHE:initialise_actions()
+	igi_actions.initialise_actions(CACHE)
 
 	CACHE._initialised = true
 
@@ -135,13 +136,13 @@ function igi_task_generic_status(tsk,task_id)
 	end
 	---------------------------<ACTIONS>---------------------
 	igi_map_marks.update_marks(CACHE)
-	CACHE:update_actions()
+	igi_actions.update_actions(CACHE)
 	igi_subtask.process_subtasks(CACHE)
 	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
 
 	---------------------------<STAGE>----------------------
 	if CACHE.status == TASK_STATUSES.FAILED then return "fail" end
-	if CACHE.status == TASK_STATUSES.COMPLETED and not CACHE:has_material_rewards() then
+	if CACHE.status == TASK_STATUSES.COMPLETED and not igi_rewards.has_material_rewards(CACHE) then
 		return "complete"
 	end
 
@@ -183,7 +184,7 @@ function igi_task_generic_text(task_id,field,p,tsk)
 	end
 
 	local text = igi_description.get_task_text(task_id, field)
-	local desc = field ~= "title" and ("\\n "..CACHE:get_description()) or ""
+	local desc = field ~= "title" and ("\\n "..igi_description.get_description(CACHE)) or ""
 
 	return "[WTF] "..text..desc
 end
@@ -193,14 +194,14 @@ function igi_task_generic_finish(actor,npc,p)
 	local CACHE = get_cache(task_id)
 
 	igi_callbacks.invoke_callbacks("on_complete", CACHE)
-	CACHE:finish_all_subtasks()
+	igi_subtask.finish_all_subtasks(CACHE)
 	--Release
-	CACHE:release_targets_in_world()	-- Needed? Works? Idk
+	igi_world_state.release_targets_in_world(CACHE)	-- Needed? Works? Idk
 	igi_map_marks.unmark_all(CACHE)
 
 	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end
 	--Reward
-	CACHE:collect_and_give_rewards()
+	igi_rewards.collect_and_give_rewards(CACHE)
 
 	--Reset stored data
 	TASKS_CACHE[task_id] = nil

@@ -15,12 +15,14 @@ local function ids_to_entities(prototype, ids)
 	ids = igi_utils.get_random_items(ids, prototype.amount or 1)
 	if not ids then return end
 
-	prototype:bind_to_se_obj(ids[#ids])
+	igi_entities.bind_to_se_obj(prototype, ids[#ids])
 	ids[#ids] = nil
 
 	local new_entities = {}
 	for _, id in ipairs(ids) do
-		new_entities[#new_entities+1] = prototype:clone():binded_to(id)
+		local t = dup_table(prototype)
+		igi_entities.bind_to_se_obj(t, id)
+		new_entities[#new_entities+1] = t
 	end
 	return new_entities
 end
@@ -28,7 +30,8 @@ end
 local function unwrap_entity_amount(prototype)
 	local new_entities = {}
 	for _=2, prototype.amount or 1 do
-		new_entities[#new_entities+1] = prototype:clone()
+		local t = dup_table(prototype)
+		new_entities[#new_entities+1] = t
 	end
 	return new_entities
 end
@@ -75,19 +78,24 @@ function get_location_description(entity)
 end
 
 function get_se_entity_description(entity)
-	local desc = igi_description.TaskDescription.new()
 	local se_obj = WorldState.objects[entity.id]
-	desc.locations:add(get_location_description(entity))
-
 	if entity.entity_type == "squad" then
-		desc.factions:add(se_obj.player_id)
+		return {
+			locations = {get_location_description(entity)},
+			factions = {se_obj.player_id},
+		}
 	elseif igi_helper.is_common_npc(se_obj.parent_id) then
 		local parent_npc = WorldState.objects[se_obj.parent_id]
-		desc.factions:add(alife_character_community(parent_npc))
-		desc.targets:add(parent_npc:character_name())
+		return {
+			locations = {get_location_description(entity)},
+			factions = {alife_character_community(parent_npc)},
+			targets = {parent_npc:character_name()}
+		}
+	else
+		return {
+			locations = {get_location_description(entity)}
+		}
 	end
-
-	return desc
 end
 
 function get_description(entity)
@@ -95,12 +103,12 @@ function get_description(entity)
 		return get_se_entity_description(entity)
 	end
 
-	local desc = igi_description.TaskDescription.new()
+	local desc = {}
 	if entity.entity_type == "squad" then
-		desc.factions:add(entity.faction)
-		desc.locations:add(entity.where)
+		desc.factions = {entity.faction}
+		desc.locations = {entity.where}
 	elseif entity.entity_type == "item" then
-		desc.targets:add(ini_sys:r_string_ex(entity.section_name, "inv_name_short"))
+		desc.targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
 	end
 	return desc
 end
@@ -117,7 +125,7 @@ function setup_location(entity)
 	end
 
 	if entity.id then
-		entity:bind_to_se_obj(entity.id)
+		igi_entities.bind_to_se_obj(entity, entity.id)
 		return unwrap_entity_amount(entity)
 	end
 
@@ -125,7 +133,7 @@ function setup_location(entity)
 		local smart = trace_assert(
 			SIMBOARD.smarts_by_names[entity.name],
 			"Unknown name "..entity.name)
-		entity:bind_to_se_obj(smart.id)
+		igi_entities.bind_to_se_obj(entity, smart.id)
 		entity.name = nil
 		return unwrap_entity_amount(entity)
 	end
@@ -184,10 +192,10 @@ function create_location(entity)
 end
 
 function create_squad(entity)
-	if entity:is_binded_to_se_obj() then
-		local squad = entity:get_binded_object()
-		squad.stay_time = game.get_game_time()
-		squad.force_online = true
+	local se_obj = igi_entities.get_binded_object(entity)
+	if se_obj then
+		se_obj.stay_time = game.get_game_time()
+		se_obj.force_online = true
 		return
 	end
 
@@ -196,16 +204,16 @@ function create_squad(entity)
 	squad.stay_time = game.get_game_time()
 	squad.force_online = true
 
-	entity:bind_to_se_obj(squad.id)
+	igi_entities.bind_to_se_obj(squad.id)
 end
 
 function create_item(entity)
-	if entity:is_binded_to_se_obj() then
-		force_parent_online(entity:get_binded_object())
+	local se_obj = igi_entities.get_binded_object(entity)
+	if se_obj then
+		force_parent_online(se_obj)
 		return
 	end
 
-	local se_obj
 	if SIMBOARD.smarts[entity.where] then -- TODO: distinction with flag
 		local smart = SIMBOARD.smarts[entity.where].smrt
 		local location = vector():set(
@@ -222,7 +230,7 @@ function create_item(entity)
 		local lvl, x, y, z = get_coords(entity.where)
 		se_obj = alife_create(entity.section_name, vector():set(x,y+1,z), 0, lvl)
 	end
-	entity:bind_to_se_obj(se_obj.id)
+	igi_entities.bind_to_se_obj(se_obj.id)
 end
 
 ------------------------------------------------

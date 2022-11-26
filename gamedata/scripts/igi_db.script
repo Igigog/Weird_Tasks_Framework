@@ -135,7 +135,6 @@ end
 function SectionView_mt:__index(key)
 	if not key then return end
 	if self._methods[key] then return self._methods[key] end
-	if self._custom[key] then return self._custom[key] end
 
 	local values_str, line_key
 	if type(key) == "number" then
@@ -150,31 +149,19 @@ function SectionView_mt:__index(key)
 	return parse_values(values_str)
 end
 
-function SectionView_mt:__newindex(k, v)
-	self._custom[k] = v
-end
-
 function SectionView_mt:__len()
 	return self._ini:line_count(self._section) + #self._custom
 end
 
 function SectionView._methods:as_table()
 	-- Lua 5.1 sucks, so you need to use this table for pairs()
-	local new_tbl = get_table(self._ini, self._section)
-	for k, v in pairs(self._custom) do
-		new_tbl[k] = v
-	end
-	return new_tbl
+	return get_table(self._ini, self._section)
 end
 
 function SectionView._methods:as_set()
 	local new_tbl = get_table(self._ini, self._section)
 	set = {}
 	for _, v in pairs(new_tbl) do
-		set[v] = true
-	end
-	
-	for _, v in pairs(self._custom) do
 		set[v] = true
 	end
 	return set

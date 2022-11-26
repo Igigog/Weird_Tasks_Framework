@@ -6,8 +6,9 @@ local trace_dbg = igi_helper.trace_dbg
 function resolve_unlinked_macros_and_link_virtual_variables(entities)
 	local has_changed = true
 	while has_changed do
+		has_changed = false
 		for _, entity in pairs(entities) do
-			has_changed = resolve_unlinked_macros(entity)
+			has_changed = resolve_unlinked_macros(entity) or has_changed
 			has_changed = resolve_free_dependencies(entities, entity, entity) or has_changed
 		end
 	end
@@ -39,8 +40,8 @@ end
 function resolve_and_link_table(tbl, entities)
 	local has_changed = true
 	while has_changed do
-		has_changed = resolve_unlinked_macros(tbl)
-		has_changed = resolve_free_dependencies(entities, nil, tbl) or has_changed
+		has_changed = resolve_free_dependencies(entities, nil, tbl)
+		has_changed = resolve_unlinked_macros(tbl) or has_changed
 	end
 	convert_strings_type(tbl)
 end
@@ -48,8 +49,8 @@ end
 function resolve_macros_and_self_references(entity)
 	local changes = true
 	while changes do
-		changes = resolve_unlinked_macros(entity)
-		changes = find_resolve_self_references(entity, entity) or changes
+		changes = find_resolve_self_references(entity, entity)
+		changes = resolve_unlinked_macros(entity) or changes
 	end
 	convert_strings_type(entity)
 end
@@ -91,6 +92,7 @@ end
 function resolve_unlinked_macros(tbl)
 	local has_changed = false
 	for k,v in pairs(tbl) do
+		trace_dbg("resolve macros before", tbl[k])
 		if type(v) == 'table' then
 			if resolve_unlinked_macros(v) then
 				has_changed = true
@@ -100,6 +102,7 @@ function resolve_unlinked_macros(tbl)
 			tbl[k] = igi_macros.resolve_all_macros(v)
 			has_changed = true
 		end
+		trace_dbg("resolve macros after", tbl[k])
 	end
 	return has_changed
 end

@@ -32,14 +32,15 @@ function initialise_entities(CACHE)
 			end
 			trace_dbg('group_data, new entities', entity, new_entities)
 
-			for _, entity in pairs(new_entities) do
-				new[#new+1] = entity
+			for i, new_entity in ipairs(new_entities) do
+				new_entity.entity_id = i + entity.entity_id
+				new[#new+1] = new_entity
 			end
 		end
 	end
 
 	for _, entity in pairs(new) do
-		add_entity(entities, entity)
+		entities[#entities+1] = entity
 	end
 end
 
@@ -52,7 +53,9 @@ function create_entities(CACHE)
 				trace_dbg("entity_setup", entity)
 				create(entity)
 				igi_linker.broadcast_entity(entities, entity)
-				trace_dbg("After broadcasting "..entity:get_link(), entities)
+				trace_dbg(
+					"After broadcasting "..entity.entity_type..entity.group_id
+					..":"..entity.entity_id, entities)
 			end
 		end
 	end
@@ -67,8 +70,26 @@ function create_entities(CACHE)
 	igi_callbacks.invoke_callbacks("on_after_target_creation")
 end
 
-function add_entity(entities, entity)
-	entities[#entities+1] = entity
+function initialise(entity)
+	assert(not entity._state, "Not a raw entity")
+	entity._state = ENTITY_STATES.INITIALISED
+	entity.entity_id = 1
+
+	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
+	return target_tbl["setup_"..entity.entity_type](entity)
+end
+
+function create(entity)
+	trace_assert(entity._state == ENTITY_STATES.INITIALISED, "Not an initialised entity")
+	entity._state = ENTITY_STATES.CREATED
+
+	igi_text_processor.resolve_macros_and_self_references(entity)
+	trace_dbg("processed entity", entity)
+
+	local target_tbl = igi_taskdata.get_target_table(entity.target)
+	local new_entities = target_tbl["create_"..entity.entity_type](entity)
+	trace_dbg("group_data, new entities", entity, new_entities)
+	return new_entities
 end
 
 function bind_to_se_obj(entity, id)
@@ -84,25 +105,4 @@ function get_binded_object(entity)
 	if not se_obj then return end
 	if se_obj:section_name() ~= entity.section_name then return end
 	return se_obj
-end
-
-function initialise(entity)
-	assert(not entity._state, "Not a raw entity")
-	entity._state = ENTITY_STATES.INITIALISED
-	entity.entity_id = 1
-	local target_tbl = entity:get_target_table()
-	return target_tbl["setup_"..entity.entity_type](entity)
-end
-
-function create(entity)
-	trace_assert(entity._state == ENTITY_STATES.INITIALISED, "Not an initialised entity")
-	entity._state = ENTITY_STATES.CREATED
-
-	entity:resolve_macros_and_self_references()
-	trace_dbg("processed entity", entity)
-
-	local target_tbl = igi_taskdata.get_target_table(entity.target)
-	local new_entities = target_tbl["create_"..entity.entity_type](entity)
-	trace_dbg("group_data, new entities", entity, new_entities)
-	return new_entities
 end
