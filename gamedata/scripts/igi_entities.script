@@ -49,7 +49,7 @@ function create_entities(CACHE)
 	-- if it's not ready after n^2 tries, it won't be ready
 	for _=1, size_table(entities) do
 		for _,entity in pairs(entities) do
-			if entity._state ~= ENTITY_STATES.CREATED and igi_linker.has_no_outer_links(entity) then
+			if entity._state ~= ENTITY_STATES.CREATED and igi_linker.has_no_outer_links(entity, entity) then
 				trace_dbg("entity_setup", entity)
 				create(entity)
 				igi_linker.broadcast_entity(entities, entity)

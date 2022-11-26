@@ -24,8 +24,9 @@ function resolve_free_dependencies(entities, current_entity, tbl)
 			end
 
 		elseif type(v) == "string" then
-			local deps = collect_free_dependencies(v, current_entity, {})
-			for dep, link in pairs(deps) do
+			for dep in igi_linker.free_dependency_iterator(v) do
+				trace_dbg("Resolve free dependency", dep)
+				local link = igi_linker.Link.from(dep, current_entity)
 				local resolved = link:resolve(entities)
 				if resolved and not igi_macros.has_macro(resolved) then
 					tbl[k] = v:gsub(igi_utils.escape_pattern(dep), resolved)
@@ -58,7 +59,7 @@ end
 function find_resolve_self_references(entity, tbl)
 	local changes_made = false
 	for k,v in pairs(tbl) do
-		if type(v) == 'string' and not string.find(k, "link") then
+		if type(v) == 'string' then
 			local new_str = igi_linker.resolve_dependencies(v, entity)
 			if new_str ~= v then
 				tbl[k] = new_str
@@ -105,19 +106,4 @@ function resolve_unlinked_macros(tbl)
 		trace_dbg("resolve macros after", tbl[k])
 	end
 	return has_changed
-end
-
-function collect_free_dependencies(str, this_entity, dest)
-	for macro in igi_macros.macro_iterator(str) do
-		str = str:gsub(igi_utils.escape_pattern(macro), "/macro/")
-		collect_free_dependencies(macro, this_entity, dest)
-	end
-
-	for dep in igi_linker.dependency_iterator(str) do
-		if not dep:find("/macro/") then
-			dest[dep] = igi_linker.Link.from(dep, this_entity)
-		end
-	end
-
-	return dest
 end

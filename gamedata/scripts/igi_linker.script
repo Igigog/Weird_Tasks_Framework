@@ -3,7 +3,7 @@ local trace_assert = igi_helper.trace_assert
 
 function broadcast_entity(entities, entity)
 	for k,v in pairs(entities) do
-		if type(v) == 'string' and not string.find(k, "link") then
+		if type(v) == 'string' then
 			entities[k] = resolve_dependencies(v, entity)
 		elseif type(v) == 'table' then
 			broadcast_entity(v, entity)
@@ -34,7 +34,7 @@ end
 
 function has_no_outer_links(tbl, entity)
 	for k,v in pairs(tbl) do
-		if type(v) == 'string' and not string.find(k, "link") then
+		if type(v) == 'string' then
 			for k2 in dependency_iterator(v) do
 				if not Link.from(k2, entity):is_pointed_to(entity) then
 					return false
@@ -48,23 +48,11 @@ function has_no_outer_links(tbl, entity)
 end
 
 Link = {
-	__cls = 'Link',
-
-	new = function (self, typ, group_id, entity_id, field)
-		local t = {
-			type = typ,
-			group_id = tonumber(group_id) or 1,
-			entity_id = tonumber(entity_id) or 1,
-			field = field ~= "" and field or "id",
-		}
-		return setmetatable(t, {__index = Link})
-	end,
-
 	from = function (str, this_entity)
 		-- Won't work with dependencies with macros
 		trace_assert(type(str) == "string", str)
 
-		local pattern = "%$([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%$"
+		local pattern = "%[([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%]"
 		local typ, group_id, entity_id, field = str:match(pattern)
 		trace_assert(typ, "Link can't be resolved: "..str)
 
@@ -74,18 +62,19 @@ Link = {
 			entity_id = this_entity.entity_id
 		end
 
-		return Link:new(typ, group_id, entity_id, field)
-	end,
+		local t = {
+			type = typ,
+			group_id = tonumber(group_id) or 1,
+			entity_id = tonumber(entity_id) or 1,
+			field = field ~= "" and field or "id",
+		}
 
-	from_entity = function (entity)
-		trace_assert(entity.entity_type and entity.group_id,
-			"linker: entity has insufficient data", entity)
-		return Link:new(entity.entity_type, entity.group_id, entity.entity_id)
+		return setmetatable(t, {__index = Link})
 	end,
 
 	is_link = function (str)
 		if not type(str) == "string" then return end
-		return string.find(str, "^%$.*%$$")
+		return string.find(str, "^%b[]$")
 	end,
 
 	get_linked_entity = function (self, entities)
@@ -114,11 +103,15 @@ Link = {
 }
 
 function has_dependency(str)
-    return string.find(str, "%b$$")
+    return string.find(str, "%b[]")
 end
 
 function dependency_iterator(str)
-	return str:gmatch("%b$$")
+	return str:gmatch("%b[]")
+end
+
+function free_dependency_iterator(str)
+	return str:gmatch("%[[^%[%]%&]+%]")
 end
 
 function resolve_dependencies(str, entity)
