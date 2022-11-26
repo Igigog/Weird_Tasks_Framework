@@ -18,15 +18,16 @@ end
 
 function update_action(action)
 	if action._state == "finished" then return end
-	if not are_conditions_fulfilled(args.conditions) then return end
+	if not are_conditions_fulfilled(action.conditions) then return end
 	local to_rerun = actions[action.type](action)
 	if not to_rerun then action._state = "finished" end
 end
 
-function are_conditions_fulfilled(conditions)
-	for _, condition in ipairs(conditions) do
-		local cond = conditions[condition.type]
-		if not cond.fulfilled(condition) then return false end
+function are_conditions_fulfilled(conds)
+	for _, condition in ipairs(conds) do
+		if not conditions[condition.type](condition) then
+			return false
+		end
 	end
 	return true
 end

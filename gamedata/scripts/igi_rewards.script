@@ -14,7 +14,7 @@ end
 
 function merge_rewards_from_subtasks(dest, entities, is_successful, tg_id)
 	-- Always add failed: if task is successful then these ones are failed optionals
-	merge_rewards_with_status(dest, TASK_STATUSES.FAILED, tg_id)
+	merge_rewards_with_status(dest, entities, TASK_STATUSES.FAILED, tg_id)
 	if is_successful then
 		merge_rewards_with_status(dest, entities, TASK_STATUSES.COMPLETED, tg_id)
 	end

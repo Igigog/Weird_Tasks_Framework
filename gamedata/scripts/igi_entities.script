@@ -86,7 +86,7 @@ function create(entity)
 	igi_text_processor.resolve_macros_and_self_references(entity)
 	trace_dbg("processed entity", entity)
 
-	local target_tbl = igi_taskdata.get_target_table(entity.target)
+	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
 	local new_entities = target_tbl["create_"..entity.entity_type](entity)
 	trace_dbg("group_data, new entities", entity, new_entities)
 	return new_entities
@@ -101,6 +101,7 @@ function bind_to_se_obj(entity, id)
 end
 
 function get_binded_object(entity)
+	if not entity.id then return end
 	local se_obj = WorldState.objects[entity.id]
 	if not se_obj then return end
 	if se_obj:section_name() ~= entity.section_name then return end

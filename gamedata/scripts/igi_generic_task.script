@@ -131,7 +131,7 @@ function igi_task_generic_status(tsk,task_id)
 
 	---------------------------<INIT>-------------------------
 	-- First run, create target
-	if CACHE._initialised then
+	if not CACHE._initialised then
 		initialise_CACHE(CACHE, tsk.task_giver_id)
 	end
 	---------------------------<ACTIONS>---------------------

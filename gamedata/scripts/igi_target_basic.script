@@ -204,7 +204,7 @@ function create_squad(entity)
 	squad.stay_time = game.get_game_time()
 	squad.force_online = true
 
-	igi_entities.bind_to_se_obj(squad.id)
+	igi_entities.bind_to_se_obj(entity, squad.id)
 end
 
 function create_item(entity)
@@ -230,7 +230,7 @@ function create_item(entity)
 		local lvl, x, y, z = get_coords(entity.where)
 		se_obj = alife_create(entity.section_name, vector():set(x,y+1,z), 0, lvl)
 	end
-	igi_entities.bind_to_se_obj(se_obj.id)
+	igi_entities.bind_to_se_obj(entity, se_obj.id)
 end
 
 ------------------------------------------------

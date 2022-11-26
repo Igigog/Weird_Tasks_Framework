@@ -60,7 +60,10 @@ WorldState = {
 
 setmetatable(WorldState.objects, {__index = function (self, key)
     local id = tonumber(key)
-    igi_helper.trace_assert(id and id <= 65535, "Don't look at me, senpai >//////<\n")
+	if not (id and id <= 65535) then
+		-- after if to avoid unnecessary string concatenation
+		igi_helper.trace_assert(nil, "Don't look at me, senpai, I'm "..tostring(key).." >//////<")
+	end
 
     local se_obj = WorldState.sim:object(id)
     if not se_obj then return end
