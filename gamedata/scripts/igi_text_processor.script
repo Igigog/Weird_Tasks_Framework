@@ -93,17 +93,15 @@ end
 function resolve_unlinked_macros(tbl)
 	local has_changed = false
 	for k,v in pairs(tbl) do
-		trace_dbg("resolve macros before", tbl[k])
 		if type(v) == 'table' then
 			if resolve_unlinked_macros(v) then
 				has_changed = true
 			end
 		elseif type(v) == 'string' and igi_macros.has_macro(v)
 				and not igi_linker.has_dependency(v) then
-			tbl[k] = igi_macros.resolve_all_macros(v)
+			tbl[k] = igi_macros.Macro.resolve_in_str(v)
 			has_changed = true
 		end
-		trace_dbg("resolve macros after", tbl[k])
 	end
 	return has_changed
 end

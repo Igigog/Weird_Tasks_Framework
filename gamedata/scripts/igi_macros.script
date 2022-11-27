@@ -1,6 +1,7 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
+local Set = igi_utils.Set
 
 function on_game_start()
 	igi_callbacks.add_callback("on_get_taskdata", set_task_giver)
@@ -21,115 +22,114 @@ function set_task_giver(CACHE, task_id)
 end
 
 function has_macro(str)
-	trace_assert(type(str) == "string", "Macro is not a string")
 	return str:find("%b&&")
 end
 
-local Set = igi_utils.Set
-
-local _pattern = "%&(.*%(.*%))%&"
-
-function despace_args(args)
-	for k,v in pairs(args) do
-		args[k] = v:gsub('%s', '')
+function convert_type(str)
+	if tonumber(str) then
+		return tonumber(str)
+	elseif str == "true" then
+		return true
+	elseif str == "false" then
+		return false
+	else
+		return str
 	end
-	return args
-end
-
-function convert_numbers(args)
-	for k,v in pairs(args) do
-		args[k] = tonumber(v) or v
-	end
-	return args
-end
-
-function parse_args(args)
-	return convert_numbers(despace_args(args))
 end
 
 Macro = {
-    _cls = "Macro"
+    from = function (str)
+		local typ, args = string.match(str, "%&(.-)%((.*)%)%&")
+		trace_dbg("Macro: ", typ, args)
+
+		local arg_table = {}
+		for arg in args:gmatch("([^,]+)") do
+			local despaced = arg:gsub('^%s?(.*)%s?$', '%1')
+			arg_table[#arg_table + 1] = convert_type(despaced)
+		end
+		trace_assert(Macro[typ], args)
+
+		local t = {
+			type = typ,
+			args = arg_table
+		}
+		trace_dbg("Macro after: ", t)
+
+		return setmetatable(t, {__index = Macro})
+	end,
+
+	is_macro = function (str)
+		return str:find("^%b&&$")
+	end,
+
+	resolve = function (self)
+		return Macro[self.type](self)
+	end,
+
+	resolve_in_str = function (str)
+		local changes = true
+		while changes do
+			changes = false
+			for macro_str in Macro.free_iterator(str) do
+				local resolved = Macro.from(macro_str):resolve()
+				str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
+				changes = true
+			end
+		end
+
+		return str
+	end,
+
+	iterator = function (str)
+		return str:gmatch("%b&&")
+	end,
+
+	free_iterator = function (str)
+		return str:gmatch("%&[a-zA-Z]+%([^&]*%)%&")
+	end,
 }
 
-function Macro.ScaleToPlayer(args)
-	args = parse_args(args)
-	return igi_helper.scale_to_player(unpack(args))
+
+function Macro.ScaleToPlayer(self)
+	return igi_helper.scale_to_player(unpack(self.args))
 end
 
-function Macro.Random(args)
-	args = parse_args(args)
-	return igi_random.rand(unpack(args))
+function Macro.Random(self)
+	return igi_random.rand(unpack(self.args))
 end
 
-function Macro.TableValueRandom(args)
-	args = parse_args(args)
-	local tbl = igi_db.ini_tables[args[1]]:as_table()
+function Macro.TableValueRandom(self)
+	local tbl = igi_db.ini_tables[self.args[1]]:as_table()
 	return igi_utils.random_table_element(tbl)
 end
 
-function Macro.TableValueByKey(args)
-	trace_assert(args and args[1] and args[2])
-	
-	args = parse_args(args)
-	local tbl = igi_db.ini_tables[args[1]]
-	return tbl[args[2]]
+function Macro.TableValueByKey(self)
+	trace_assert(#self.args == 2)
+	local tbl = igi_db.ini_tables[self.args[1]]
+	return tbl[self.args[2]]
 end
 
-function Macro.ChooseOne(args)
-	args = parse_args(args)
-	return igi_utils.random_table_element(args)
+function Macro.ChooseOne(self)
+	return igi_utils.random_table_element(self.args)
 end
 
-stateful_random_states = igi_utils.MemoizeCache.new('one-quest')
-function Macro.StatefulRandom(args)
-	args = parse_args(args)
-	local min, max = args[1], args[2]
-	local total = args[3]
-	local current = args[4]
-	local id = args[5] or ""
-
-	if not stateful_random_states[id] then
-		trace_assert(min <= total, 'StatefulRandom: min > total')
-		trace_assert(max <= total, 'StatefulRandom: max > total')
-		stateful_random_states[id] = {}
-		for i=1,total do
-			stateful_random_states[id][i] = false
-		end
-
-		for _=1,min do
-			local k
-			repeat
-				k = igi_random.rand(total)
-			until not stateful_random_states[id][k]
-			stateful_random_states[id][k] = true
-		end
-
-		for _=1,max-min do
-			local k = igi_random.rand(total)
-			stateful_random_states[id][k] = true
-		end
+function Macro.If(self)
+	if self.args[1] then
+		return self.args[2]
+	else
+		return self.args[3]
 	end
-
-	return stateful_random_states[id][current]
-end
-
-function Macro.If(args)
-	args = parse_args(args)
-	if args[1] then return args[2] end
-	return args[3]
 end
 
 local constant_functions = {
 	actor_level = level.name,
 	player_level = level.name,
 }
-function Macro.Constant(args)
-	args = parse_args(args)
-	return constant_functions[args[1]]()
+function Macro.Constant(self)
+	return constant_functions[self.args[1]]()
 end
 
 local function get_faction(keyword)
-	trace_dbg("faction", keyword)
 	if keyword == "actor" then
 		return db.actor:character_community()
 	elseif keyword == 'taskgiver' then
@@ -140,7 +140,7 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Macro.Faction(args)
+function Macro.Faction(self)
 	-- args checker needed
 	local args_str = args[1]
 	local tokens = tokenize(args_str)
@@ -153,53 +153,18 @@ function Macro.Faction(args)
 	end
 end
 
-local function escape_pattern(text)
-    return text:gsub("([^%w])", "%%%1")
-end
-
-local function resolve_macro(macro)
-	local macro_func = trace_assert(Macro[macro[1]], macro[1])
-	return macro_func(macro[2])
-end
-
-local function parse_macro(str)
-	local typ, args = string.match(str, "(.-)%((.*)%)")
-	
-	local arg_table = {}
-	for arg in args:gmatch("([^,]+)") do
-    	local k, v = arg:match("(.*)=(.*)")
-    	if k then
-    	    arg_table[k] = v
-   	 	else
-    	    arg_table[#arg_table + 1] = arg
-    	end
-	end
-	
-	return {typ, arg_table}
-end
-
-local function stringify(shit)
-	if type(shit) == "table" then
-		return table.concat(shit, ",")
-	end
-	return tostring(shit)
-end
-
-function resolve_all_macros(str, entities)
-	if not str then return nil end
-    if not has_macro(str) then return str end
-
-	local new_str = str
-	for macro_str in str:gmatch(_pattern) do
-		local before = escape_pattern(macro_str)
-		if has_macro(macro_str) then
-			macro_str = resolve_all_macros(macro_str)
+function resolve_all_macros(str)
+	local changes = true
+	while changes do
+		changes = false
+		for macro_str in Macro.free_iterator(str) do
+			local resolved = Macro.from(macro_str):resolve()
+			str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
+			changes = true
 		end
-		local macro = parse_macro(macro_str)
-		local resolved = resolve_macro(macro)
-		new_str = string.gsub(new_str, '%&'..before..'%&', stringify(resolved))
 	end
-	return new_str
+
+	return str
 end
 
 ----------------BOOLEAN----------------------------------
@@ -332,16 +297,12 @@ end
 
 -------------------------------------------------------
 
-function macro_iterator(str)
-	return str:gmatch("%&(.*%(.*%))%&")
-end
-
-function resolve_all(tbl, entities)
+function resolve_all(tbl)
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
-			tbl[k] = resolve_all(v, entities)
+			tbl[k] = resolve_all(v)
 		elseif type(v) == 'string' and has_macro(v) then
-			tbl[k] = resolve_all_macros(v, entities)
+			tbl[k] = Macro.resolve_in_str(v)
 		end
 	end
 	return tbl
@@ -353,18 +314,8 @@ function resolve_unlinked(tbl)
 			tbl[k] = resolve_unlinked(v)
 		elseif type(v) == 'string' and has_macro(v)
 				and not igi_linker.has_dependency(v) then
-			tbl[k] = resolve_all_macros(v)
+			tbl[k] = Macro.resolve_in_str(v)
 		end
 	end
 	return tbl
 end
-
-
-
-
-
-
-
-
-
-
