@@ -1,10 +1,11 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
+local Link = igi_text_processor.Link
 
 function broadcast_entity(entities, entity)
 	for k,v in pairs(entities) do
 		if type(v) == 'string' then
-			entities[k] = resolve_dependencies(v, entity)
+			entities[k] = Link.link_entity(v, entity)
 		elseif type(v) == 'table' then
 			broadcast_entity(v, entity)
 		end
@@ -35,7 +36,7 @@ end
 function has_no_outer_links(tbl, entity)
 	for k,v in pairs(tbl) do
 		if type(v) == 'string' then
-			for k2 in dependency_iterator(v) do
+			for k2 in Link.iterator(v) do
 				if not Link.from(k2, entity):is_pointed_to(entity) then
 					return false
 				end
@@ -45,81 +46,4 @@ function has_no_outer_links(tbl, entity)
 		end
 	end
 	return true
-end
-
-Link = {
-	from = function (str, this_entity)
-		-- Won't work with dependencies with macros
-		trace_assert(type(str) == "string", str)
-
-		local pattern = "%[([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%]"
-		local typ, group_id, entity_id, field = str:match(pattern)
-		trace_assert(typ, "Link can't be resolved: "..str)
-
-		if typ == "this" then
-			typ = this_entity.entity_type
-			group_id = this_entity.group_id
-			entity_id = this_entity.entity_id
-		end
-
-		local t = {
-			type = typ,
-			group_id = tonumber(group_id) or 1,
-			entity_id = tonumber(entity_id) or 1,
-			field = field ~= "" and field or "id",
-		}
-
-		return setmetatable(t, {__index = Link})
-	end,
-
-	is_link = function (str)
-		if not type(str) == "string" then return end
-		return string.find(str, "^%b[]$")
-	end,
-
-	get_linked_entity = function (self, entities)
-		for _, entity in pairs(entities) do
-			if self:is_pointed_to(entity) then
-				return entity
-			end
-		end
-	end,
-
-	resolve = function (self, entities)
-		local entity = self:get_linked_entity(entities)
-		local out = self:resolve_field(entity)
-		return out and tostring(out) or nil
-	end,
-
-	resolve_field = function (self, entity)
-		return entity[self.field]
-	end,
-
-	is_pointed_to = function (self, entity)
-		return (self.type == entity.entity_type) and
-			(self.group_id == entity.group_id) and
-			(self.entity_id == (entity.entity_id or 1))
-	end,
-}
-
-function has_dependency(str)
-    return string.find(str, "%b[]")
-end
-
-function dependency_iterator(str)
-	return str:gmatch("%b[]")
-end
-
-function free_dependency_iterator(str)
-	return str:gmatch("%[[^%[%]%&]+%]")
-end
-
-function resolve_dependencies(str, entity)
-	for dep in dependency_iterator(str) do
-		local link = Link.from(dep, entity)
-		if link:is_pointed_to(entity) then
-			str = str:gsub(igi_utils.escape_pattern(dep), link:resolve_field(entity))
-		end
-	end
-	return str
 end

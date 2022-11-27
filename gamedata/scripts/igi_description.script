@@ -63,8 +63,8 @@ end
 
 function link_locations(tbl, entities)
 	for k, v in pairs(tbl) do
-		if igi_linker.Link.is_link(v) then
-			local link = igi_linker.Link.from(v)
+		if igi_text_processor.Link.is_link(v) then
+			local link = igi_text_processor.Link.from(v)
 			local loc = link:resolve(entities)
 			tbl[k] = igi_target_basic.get_location_description(loc)
 		end

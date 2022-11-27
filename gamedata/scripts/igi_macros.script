@@ -2,6 +2,7 @@ local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local Set = igi_utils.Set
+local Macro = igi_text_processor.Macro
 
 function on_game_start()
 	igi_callbacks.add_callback("on_get_taskdata", set_task_giver)
@@ -20,75 +21,6 @@ function set_task_giver(CACHE, task_id)
 		current_tg_faction = story_id:match("sim_default_(.*)_.*") or "stalker"
 	end
 end
-
-function has_macro(str)
-	return str:find("%b&&")
-end
-
-function convert_type(str)
-	if tonumber(str) then
-		return tonumber(str)
-	elseif str == "true" then
-		return true
-	elseif str == "false" then
-		return false
-	else
-		return str
-	end
-end
-
-Macro = {
-    from = function (str)
-		local typ, args = string.match(str, "%&(.-)%((.*)%)%&")
-		trace_dbg("Macro: ", typ, args)
-
-		local arg_table = {}
-		for arg in args:gmatch("([^,]+)") do
-			local despaced = arg:gsub('^%s?(.*)%s?$', '%1')
-			arg_table[#arg_table + 1] = convert_type(despaced)
-		end
-		trace_assert(Macro[typ], args)
-
-		local t = {
-			type = typ,
-			args = arg_table
-		}
-		trace_dbg("Macro after: ", t)
-
-		return setmetatable(t, {__index = Macro})
-	end,
-
-	is_macro = function (str)
-		return str:find("^%b&&$")
-	end,
-
-	resolve = function (self)
-		return Macro[self.type](self)
-	end,
-
-	resolve_in_str = function (str)
-		local changes = true
-		while changes do
-			changes = false
-			for macro_str in Macro.free_iterator(str) do
-				local resolved = Macro.from(macro_str):resolve()
-				str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
-				changes = true
-			end
-		end
-
-		return str
-	end,
-
-	iterator = function (str)
-		return str:gmatch("%b&&")
-	end,
-
-	free_iterator = function (str)
-		return str:gmatch("%&[a-zA-Z]+%([^&]*%)%&")
-	end,
-}
-
 
 function Macro.ScaleToPlayer(self)
 	return igi_helper.scale_to_player(unpack(self.args))
@@ -151,20 +83,6 @@ function Macro.Faction(self)
 	else
 		return get_faction(factions)
 	end
-end
-
-function resolve_all_macros(str)
-	local changes = true
-	while changes do
-		changes = false
-		for macro_str in Macro.free_iterator(str) do
-			local resolved = Macro.from(macro_str):resolve()
-			str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
-			changes = true
-		end
-	end
-
-	return str
 end
 
 ----------------BOOLEAN----------------------------------
@@ -293,29 +211,4 @@ function evaluate(tokens, tstart, tend)
         end
     end
     return evaluate_no_par(new_tokens, 1, #new_tokens)
-end
-
--------------------------------------------------------
-
-function resolve_all(tbl)
-	for k,v in pairs(tbl) do
-		if type(v) == 'table' then
-			tbl[k] = resolve_all(v)
-		elseif type(v) == 'string' and has_macro(v) then
-			tbl[k] = Macro.resolve_in_str(v)
-		end
-	end
-	return tbl
-end
-
-function resolve_unlinked(tbl)
-	for k,v in pairs(tbl) do
-		if type(v) == 'table' then
-			tbl[k] = resolve_unlinked(v)
-		elseif type(v) == 'string' and has_macro(v)
-				and not igi_linker.has_dependency(v) then
-			tbl[k] = Macro.resolve_in_str(v)
-		end
-	end
-	return tbl
 end
