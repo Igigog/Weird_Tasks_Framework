@@ -1,19 +1,57 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert  = igi_helper.trace_assert
+local convert_type = igi_utils.convert_type
 
-function resolve_unlinked_macros_and_link_virtual_variables(entities)
+function resolve_macros_and_link_variables(entities)
 	local has_changed = true
 	while has_changed do
 		has_changed = false
 		for _, entity in pairs(entities) do
-			has_changed = resolve_unlinked_macros(entity) or has_changed
-			has_changed = resolve_free_dependencies(entities, entity, entity) or has_changed
+			has_changed = resolve_and_link_table(entity, entities, entity) or has_changed
 		end
 	end
-	convert_strings_type(entities)
+end
+
+function resolve_and_link_table(tbl, entities, this_entity)
+	local made_changes = false
+
+	local has_changed = true
+	while has_changed do
+		has_changed = resolve_free_dependencies(entities, this_entity, tbl)
+		has_changed = resolve_macros(tbl) or has_changed
+		if has_changed then
+			made_changes = true
+		end
+	end
+	return made_changes
+end
+
+----------------LINKS----------------
+
+function str_to_link(str, this_entity)
+	local link = try_str_to_link(str, this_entity)
+	return trace_assert(link, "Link can't be resolved: "..str)
+end
+
+function try_str_to_link(str, this_entity)
+	-- Won't work with dependencies with macros
+	local typ, group_id, entity_id, field = str:match("%[([a-zA-Z]+)_?(%d*)_?(%d*)%.([a-zA-Z_]+)%]")
+
+	if typ == "this" then
+		typ = this_entity.entity_type
+		group_id = this_entity.group_id
+		entity_id = this_entity.entity_id
+	end
+
+	if not (typ and tonumber(group_id) and tonumber(entity_id) and field) then
+		return nil
+	end
+
+	return igi_linker.Link.new(typ, group_id, entity_id, field)
 end
 
 function resolve_free_dependencies(entities, current_entity, tbl)
+	trace_dbg("resolve before ", tbl)
 	local has_changes = false
 	for k,v in pairs(tbl) do
 		if type(v) == "table" then
@@ -22,100 +60,45 @@ function resolve_free_dependencies(entities, current_entity, tbl)
 			end
 
 		elseif type(v) == "string" then
-			for dep in Link.free_iterator(v) do
-				local link = Link.from(dep, current_entity)
-				local resolved = link:resolve(entities)
-				if resolved and not Macro.has_macro(resolved) then
-					tbl[k] = v:gsub(igi_utils.escape_pattern(dep), resolved)
-					has_changes = true
-				end
+			local str, changes = resolve_links_in_str(v, entities, current_entity)
+			if changes then
+				tbl[k] = str
+				has_changes = true
 			end
 		end
 	end
+	trace_dbg("resolve after ", tbl, has_changes)
 	return has_changes
 end
 
-function resolve_and_link_table(tbl, entities)
-	local has_changed = true
-	while has_changed do
-		has_changed = resolve_free_dependencies(entities, nil, tbl)
-		has_changed = resolve_unlinked_macros(tbl) or has_changed
-	end
-	convert_strings_type(tbl)
-end
-
-function resolve_macros_and_self_references(entity)
-	local changes = true
-	while changes do
-		changes = find_resolve_self_references(entity, entity)
-		changes = resolve_unlinked_macros(entity) or changes
-	end
-	convert_strings_type(entity)
-end
-
-function find_resolve_self_references(entity, tbl)
-	local changes_made = false
-	for k,v in pairs(tbl) do
-		if type(v) == 'string' then
-			local new_str = Link.link_entity(v, entity)
-			if new_str ~= v then
-				tbl[k] = new_str
-				changes_made = true
-			end
-		elseif type(v) == 'table' then
-			if find_resolve_self_references(entity, v) then
-				changes_made = true
-			end
+function resolve_links_in_str(str, entities, current_entity)
+	local has_changes = false
+	for dep in link_iterator(str) do
+		local link = str_to_link(dep, current_entity)
+		local resolved = link:resolve(entities)
+		if resolved and not has_macro(resolved) then
+			str = convert_type(str:gsub(igi_utils.escape_pattern(dep), resolved))
+			has_changes = true
 		end
 	end
-	return changes_made
+	return str, has_changes
 end
 
-function convert_strings_type(tbl)
-	for k,v in pairs(tbl) do
-		if type(v) == "string" then
-			tbl[k] = convert_type(v)
-		elseif type(v) == "table" then
-			convert_strings_type(v)
+function link_entity(str, entity)
+	for dep in link_iterator(str) do
+		local link = str_to_link(dep)
+		if link:is_pointed_to(entity) then
+			str = str:gsub(igi_utils.escape_pattern(dep), igi_linker.resolve_field(link, entity))
 		end
 	end
+	return convert_type(str)
 end
-
-function convert_type(str)
-	if tonumber(str) then
-		return tonumber(str)
-	elseif str == "true" then
-		return true
-	elseif str == "false" then
-		return false
-	else
-		return str
-	end
-end
-
-function resolve_unlinked_macros(tbl)
-	local has_changed = false
-	for k,v in pairs(tbl) do
-		if type(v) == 'table' then
-			if resolve_unlinked_macros(v) then
-				has_changed = true
-			end
-		elseif type(v) == 'string' and Macro.has_macro(v)
-				and not Link.has_link(v) then
-			tbl[k] = Macro.resolve_in_str(v)
-			has_changed = true
-		end
-	end
-	return has_changed
-end
-
--- Old linker
 
 function has_no_outer_links(tbl, entity)
 	for k,v in pairs(tbl) do
 		if type(v) == 'string' then
-			for k2 in Link.iterator(v) do
-				if not Link.from(k2, entity):is_pointed_to(entity) then
+			for k2 in link_iterator(v) do
+				if not str_to_link(k2, entity):is_pointed_to(entity) then
 					return false
 				end
 			end
@@ -126,160 +109,71 @@ function has_no_outer_links(tbl, entity)
 	return true
 end
 
-Link = {
-	from = function (str, this_entity)
-		-- Won't work with dependencies with macros
-		trace_assert(type(str) == "string", str)
-
-		local pattern = "%[([^_%.]+)_?([^_%.]*)_?([^_%.]*)%.?(.-)%]"
-		local typ, group_id, entity_id, field = str:match(pattern)
-		trace_assert(typ, "Link can't be resolved: "..str)
-
-		if typ == "this" then
-			typ = this_entity.entity_type
-			group_id = this_entity.group_id
-			entity_id = this_entity.entity_id
-		end
-
-		local t = {
-			type = typ,
-			group_id = tonumber(group_id) or 1,
-			entity_id = tonumber(entity_id) or 1,
-			field = field ~= "" and field or "id",
-		}
-
-		return setmetatable(t, {__index = Link})
-	end,
-
-	is_link = function (str)
-		if not type(str) == "string" then return end
-		return string.find(str, "^%b[]$")
-	end,
-
-	get_linked_entity = function (self, entities)
-		for _, entity in pairs(entities) do
-			if self:is_pointed_to(entity) then
-				return entity
-			end
-		end
-	end,
-
-	resolve = function (self, entities)
-		local entity = self:get_linked_entity(entities)
-		local out = self:resolve_field(entity)
-		return out and tostring(out) or nil
-	end,
-
-	resolve_field = function (self, entity)
-		return entity[self.field]
-	end,
-
-	is_pointed_to = function (self, entity)
-		return (self.type == entity.entity_type) and
-			(self.group_id == entity.group_id) and
-			(self.entity_id == (entity.entity_id or 1))
-	end,
-
-	iterator = function (str)
-		return str:gmatch("%b[]")
-	end,
-
-	free_iterator = function (str)
-		return str:gmatch("%[[^%[%]%&]+%]")
-	end,
-
-	has_link = function (str)
-		return str:find("%b[]")
-	end,
-
-	link_entity = function (str, entity)
-		for dep in Link.iterator(str) do
-			local link = Link.from(dep, entity)
-			if link:is_pointed_to(entity) then
-				str = str:gsub(igi_utils.escape_pattern(dep), link:resolve_field(entity))
-			end
-		end
-		return str
-	end,
-}
-
---- Macros ---
-
-function resolve_unlinked(tbl)
-	for k,v in pairs(tbl) do
-		if type(v) == 'table' then
-			tbl[k] = resolve_unlinked(v)
-		elseif type(v) == 'string' and Macro.has_macro(v)
-				and not Link.has_link(v) then
-			tbl[k] = Macro.resolve_in_str(v)
-		end
-	end
-	return tbl
+function link_iterator(str)
+	return str:gmatch("%[[^%[%]%&]+%]")
 end
 
-Macro = {
-    from = function (str)
-		local typ, args = string.match(str, "%&(.-)%((.*)%)%&")
-		trace_dbg("Macro: ", typ, args)
+--------------MACROS--------------
 
-		local arg_table = {}
-		for arg in args:gmatch("([^,]+)") do
-			local despaced = arg:gsub('^%s?(.*)%s?$', '%1')
-			arg_table[#arg_table + 1] = convert_type(despaced)
-		end
-		trace_assert(Macro[typ], args)
+function str_to_macro(str)
+	local macro = try_str_to_macro(str)
+	return trace_assert(macro, "Macro can't be resolved: "..str)
+end
 
-		local t = {
-			type = typ,
-			args = arg_table
-		}
-		trace_dbg("Macro after: ", t)
+function try_str_to_macro(str)
+	local typ, args = string.match(str, "%&(.-)%((.*)%)%&")
 
-		return setmetatable(t, {__index = Macro})
-	end,
-
-	is_macro = function (str)
-		return str:find("^%b&&$")
-	end,
-
-	resolve = function (self)
-		return Macro[self.type](self)
-	end,
-
-	resolve_in_str = function (str)
-		local changes = true
-		while changes do
-			changes = false
-			for macro_str in Macro.free_iterator(str) do
-				local resolved = Macro.from(macro_str):resolve()
-				str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
-				changes = true
-			end
-		end
-
-		return str
-	end,
-
-	iterator = function (str)
-		return str:gmatch("%b&&")
-	end,
-
-	free_iterator = function (str)
-		return str:gmatch("%&[a-zA-Z]+%([^&]*%)%&")
-	end,
-
-	resolve_all = function (tbl)
-		for k,v in pairs(tbl) do
-			if type(v) == 'table' then
-				tbl[k] = Macro.resolve_all(v)
-			elseif type(v) == 'string' and Macro.has_macro(v) then
-				tbl[k] = Macro.resolve_in_str(v)
-			end
-		end
-		return tbl
-	end,
-
-	has_macro = function (str)
-		return str:find("%b&&")
+	if not (typ and args) then
+		return nil
 	end
-}
+
+	local arg_table = {}
+	for arg in args:gmatch("([^,]+)") do
+		local despaced = arg:gsub('^%s?(.*)%s?$', '%1')
+		arg_table[#arg_table + 1] = convert_type(despaced)
+	end
+
+	return igi_macros.Macro.new(typ, arg_table)
+end
+
+function resolve_macros(tbl)
+	local has_changed = false
+	for k,v in pairs(tbl) do
+		if type(v) == 'table' then
+			has_changed = resolve_macros(v) or has_changed
+		elseif type(v) == 'string' then
+			local str, changes = resolve_in_str(v)
+			if changes then
+				tbl[k] = str
+				has_changed = true
+			end
+			
+		end
+	end
+	return has_changed
+end
+
+function resolve_in_str(str)
+	local has_changed = false
+	local changes = true
+	while changes do
+		changes = false
+		for macro_str in macro_iterator(str) do
+			trace_dbg("resolve macro", macro_str)
+			local resolved = str_to_macro(macro_str):resolve()
+			str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
+			changes = true
+			has_changed = true
+		end
+	end
+
+	return str, has_changed
+end
+
+function macro_iterator(str)
+	return str:gmatch("%&[a-zA-Z]+%([^&%[%]]*%)%&")
+end
+
+function has_macro(str)
+	return str:find("%b&&")
+end

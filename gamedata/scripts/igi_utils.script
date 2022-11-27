@@ -359,3 +359,15 @@ function shallow_copy(dest, src)
 		dest[k] = v
 	end
 end
+
+function convert_type(str)
+	if tonumber(str) then
+		return tonumber(str)
+	elseif str == "true" then
+		return true
+	elseif str == "false" then
+		return false
+	else
+		return str
+	end
+end

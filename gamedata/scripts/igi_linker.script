@@ -1,11 +1,49 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
-local Link = igi_text_processor.Link
+
+function resolve_link(link, entities)
+	local entity = get_linked_entity(entities, link)
+	local out = resolve_field(link, entity)
+	return out and tostring(out) or nil
+end
+
+function get_linked_entity(entities, link)
+	for _, entity in pairs(entities) do
+		if link:is_pointed_to(entity) then
+			return entity
+		end
+	end
+end
+
+function resolve_field(link, entity)
+	return entity[link.field]
+end
+
+Link = {
+	new = function (typ, group_id, entity_id, field)
+		local t = {
+			entity_type = typ,
+			group_id = tonumber(group_id),
+			entity_id = tonumber(entity_id),
+			field = field,
+		}
+
+		return setmetatable(t, {__index = Link})
+	end,
+
+	is_pointed_to = function (self, entity)
+		return (self.entity_type == entity.entity_type) and
+			(self.group_id == entity.group_id) and
+			(self.entity_id == (entity.entity_id or 1))
+	end,
+
+	resolve = resolve_link, -- for convenience
+}
 
 function broadcast_entity(entities, entity)
 	for k,v in pairs(entities) do
 		if type(v) == 'string' then
-			entities[k] = Link.link_entity(v, entity)
+			entities[k] = igi_text_processor.link_entity(v, entity)
 		elseif type(v) == 'table' then
 			broadcast_entity(v, entity)
 		end
@@ -19,6 +57,9 @@ function set_missing_group_ids(entities)
 			counters[entity.entity_type] = counters[entity.entity_type] + 1
 			entity.group_id = counters[entity.entity_type]
 		end
+		if not entity.entity_id then
+			entity.entity_id = 1
+		end
 	end
 end
 
@@ -31,19 +72,4 @@ function count_entity_types(entities)
 		end
 	end
 	return counters
-end
-
-function has_no_outer_links(tbl, entity)
-	for k,v in pairs(tbl) do
-		if type(v) == 'string' then
-			for k2 in Link.iterator(v) do
-				if not Link.from(k2, entity):is_pointed_to(entity) then
-					return false
-				end
-			end
-		elseif type(v) == 'table' and not has_no_outer_links(v, entity) then
-			return false
-		end
-	end
-	return true
 end

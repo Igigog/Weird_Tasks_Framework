@@ -2,7 +2,6 @@ local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local Set = igi_utils.Set
-local Macro = igi_text_processor.Macro
 
 function on_game_start()
 	igi_callbacks.add_callback("on_get_taskdata", set_task_giver)
@@ -22,34 +21,53 @@ function set_task_giver(CACHE, task_id)
 	end
 end
 
-function Macro.ScaleToPlayer(self)
-	return igi_helper.scale_to_player(unpack(self.args))
+function resolve(macro)
+	return Macro[macro.type](macro.args)
 end
 
-function Macro.Random(self)
-	return igi_random.rand(unpack(self.args))
+Macro = {
+    new = function (typ, args)
+		trace_assert(Macro[typ], args)
+		local t = {
+			type = typ,
+			args = args
+		}
+		return setmetatable(t, {__index = Macro})
+	end,
+
+	resolve = function(self)
+		return Macro[self.type](self.args)
+	end
+}
+
+function Macro.ScaleToPlayer(args)
+	return igi_helper.scale_to_player(unpack(args))
 end
 
-function Macro.TableValueRandom(self)
-	local tbl = igi_db.ini_tables[self.args[1]]:as_table()
+function Macro.Random(args)
+	return igi_random.rand(unpack(args))
+end
+
+function Macro.TableValueRandom(args)
+	local tbl = igi_db.ini_tables[args[1]]:as_table()
 	return igi_utils.random_table_element(tbl)
 end
 
-function Macro.TableValueByKey(self)
-	trace_assert(#self.args == 2)
-	local tbl = igi_db.ini_tables[self.args[1]]
-	return tbl[self.args[2]]
+function Macro.TableValueByKey(args)
+	trace_assert(#args == 2)
+	local tbl = igi_db.ini_tables[args[1]]
+	return tbl[args[2]]
 end
 
-function Macro.ChooseOne(self)
-	return igi_utils.random_table_element(self.args)
+function Macro.ChooseOne(args)
+	return igi_utils.random_table_element(args)
 end
 
-function Macro.If(self)
-	if self.args[1] then
-		return self.args[2]
+function Macro.If(args)
+	if args[1] then
+		return args[2]
 	else
-		return self.args[3]
+		return args[3]
 	end
 end
 
@@ -57,8 +75,8 @@ local constant_functions = {
 	actor_level = level.name,
 	player_level = level.name,
 }
-function Macro.Constant(self)
-	return constant_functions[self.args[1]]()
+function Macro.Constant(args)
+	return constant_functions[args[1]]()
 end
 
 local function get_faction(keyword)
@@ -72,7 +90,7 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Macro.Faction(self)
+function Macro.Faction(args)
 	-- args checker needed
 	local args_str = args[1]
 	local tokens = tokenize(args_str)

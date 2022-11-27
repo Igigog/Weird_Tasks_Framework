@@ -73,7 +73,6 @@ end
 function initialise(entity)
 	assert(not entity._state, "Not a raw entity")
 	entity._state = ENTITY_STATES.INITIALISED
-	entity.entity_id = 1
 
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
 	return target_tbl["setup_"..entity.entity_type](entity)
@@ -83,7 +82,7 @@ function create(entity)
 	trace_assert(entity._state == ENTITY_STATES.INITIALISED, "Not an initialised entity")
 	entity._state = ENTITY_STATES.CREATED
 
-	igi_text_processor.resolve_macros_and_self_references(entity)
+	igi_text_processor.resolve_macros(entity)
 	trace_dbg("processed entity", entity)
 
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")

@@ -39,11 +39,10 @@ function setup_item(entity)
 end
 
 function get_description(entity)
-	local desc = igi_description.TaskDescription.new()
-	local text_name = ini_sys:r_string_ex(entity.section_name, "inv_name")
-	local desc_target = game.translate_string(text_name)..", "..tostring(entity.amount)
-	desc.targets[#desc.targets+1] = desc_target
-	return desc
+	local item_name = ini_sys:r_string_ex(entity.section_name, "inv_name")
+	return {
+		targets = {game.translate_string(item_name)..", "..tostring(entity.amount)}
+	}
 end
 
 function create_item(entity)
