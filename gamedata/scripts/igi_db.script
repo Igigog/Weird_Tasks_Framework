@@ -124,7 +124,6 @@ function SectionView_mt:__call(ini, section)
 	local view = {
 		_ini = ini,
 		_section = section,
-		_custom = {},
 		_methods = self._methods,
 		_line_count = ini:line_count(section),
 	}

@@ -52,7 +52,16 @@ Set = {
 
 	insert = function (self, k)
 		self[k] = true
-	end
+	end,
+
+	is_subset = function (set1, set2)
+		for k in pairs(set1) do
+			if not set2[k] then
+				return false
+			end
+		end
+		return true
+	end,
 }
 
 Heap = {

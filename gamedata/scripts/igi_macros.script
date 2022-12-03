@@ -9,7 +9,8 @@ end
 
 current_tg_faction = nil
 function set_task_giver(CACHE, task_id)
-	local story_id = task_id:match("(.*)_task_.*")
+	local npc = mob_trade.GetTalkingNpc()
+	local story_id = npc:section() ~= "m_trader" and npc:section() or npc:name()
 	trace_dbg(story_id)
 	local se_obj = get_story_se_object(story_id)
 	if se_obj then

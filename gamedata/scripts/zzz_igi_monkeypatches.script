@@ -1,34 +1,34 @@
 local get_task_text = igi_description.get_task_text
 
-function on_game_start()
-	local old_get_task_complete_text = axr_task_manager.get_task_complete_text
-	function axr_task_manager.get_task_complete_text(task_id)
-		local task_complete_descr = old_get_task_complete_text(task_id)
+old_get_task_complete_text = axr_task_manager.get_task_complete_text
+function axr_task_manager.get_task_complete_text(task_id)
+	local CACHE = igi_generic_task.TASKS_CACHE[task_id]
 
-		if task_complete_descr and string.find(task_complete_descr, ".*_.*_.*_.*") then
-			task_complete_descr = get_task_text(task_id, "finish")
-		end
-		return task_complete_descr
+	if CACHE then
+		return get_task_text(CACHE.description_key, "finish", CACHE.task_giver_id)
+	end
+	return old_get_task_complete_text(task_id)
+end
+
+old_get_task_job_description = axr_task_manager.get_task_job_description
+function axr_task_manager.get_task_job_description( task_id )
+	local CACHE = igi_generic_task.TASKS_CACHE[task_id]
+
+	if CACHE then
+		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+	end
+	return old_get_task_job_description(task_id)
+end
+
+old_text_npc_has_task = dialogs.text_npc_has_task
+function dialogs.text_npc_has_task(a,b)
+	local npc = dialogs.who_is_npc(a, b)
+	local task_id = axr_task_manager.available_tasks[npc:id()] and axr_task_manager.available_tasks[npc:id()][1]
+	local CACHE = igi_generic_task.TASK_SETUP[task_id]
+
+	if CACHE then
+		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
 	end
 
-	local old_get_task_job_description = axr_task_manager.get_task_job_description
-	function axr_task_manager.get_task_job_description( task_id )
-		local job_descr = old_get_task_job_description(task_id)
-
-		if job_descr and string.find(job_descr, ".*_.*_.*_.*") then
-			return get_task_text(task_id, "job_descr")
-		end
-		return job_descr
-	end
-
-	local old_text_npc_has_task = dialogs.text_npc_has_task
-	function dialogs.text_npc_has_task(a,b)
-		local text = old_text_npc_has_task(a, b)
-
-		if text and string.find(text, igi_db.TEXT_HEADER) then
-			local task_id = text:match(igi_db.TEXT_HEADER.."(.*)_job_descr")
-			return get_task_text(task_id, "job_descr")
-		end
-		return text
-	end
+	return old_text_npc_has_task(a, b)
 end

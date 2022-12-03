@@ -63,6 +63,8 @@ function get_task_table(task_name, prefix)
 		"task_json: no json file for task "..prefix.."_"..task_name
 	)
 
+	task_table.description_key = task_table.description_key or (prefix.."_"..task_name)
+
 	local task_config = get_task_table_config(task_name, prefix)
 	if task_config then
 		igi_utils.combine_tables(task_table, task_config)
@@ -119,6 +121,29 @@ function reset_all_custom_tables()
 			save_task_config(task_name, prefix, {})
 		end
 	end
+end
+
+IGI_QUESTS = {}
+function get_all_quests()
+	if not next(IGI_QUESTS) then
+		local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
+		for _, meta_section in meta_ltx:iter() do
+			trace_dbg("meta", meta_section, meta_section.prefix)
+			local prefix = meta_section.prefix
+			IGI_QUESTS[prefix] = {}
+
+			local files = getFS():file_list_open("$game_config$",
+			"igi_tasks\\tasks\\"..prefix.."\\",
+			1+4+8)
+
+			for i=0, files:Size()-1 do
+				trace_dbg("i", i)
+				local quest_name = files:GetAt(i)
+				IGI_QUESTS[prefix][quest_name] = get_task_table(quest_name, prefix)
+			end
+		end
+	end
+	return IGI_QUESTS
 end
 
 -------------------------------------------------

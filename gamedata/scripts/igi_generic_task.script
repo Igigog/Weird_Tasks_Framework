@@ -44,21 +44,6 @@ end
 
 function load_state(m_data)
 	TASKS_CACHE = m_data.igi_tasks_cache or {TASKS_VERSION = TASKS_VERSION}
-
-	if TASKS_CACHE.TASKS_VERSION == TASKS_VERSION then
-		return
-	end
-
-	tm = task_manager.get_task_manager()
-	for task_id in pairs(TASKS_CACHE) do
-		m_data.task_info[task_id] = nil
-		TASKS_CACHE[task_id] = nil
-		if tm.task_info[task_id] then
-			-- idk if repeat timeout step is needed
-			tm.task_info[task_id].repeat_timeout = 1
-			tm.task_info[task_id] = nil
-		end
-	end
 end
 
 local function get_cache(task_id)
@@ -73,12 +58,9 @@ local function get_setup_cache(task_id)
 	return trace_assert(TASK_SETUP[task_id], "task "..task_id.." : SETUP not initialised")
 end
 ---------------------------< Precondition >---------------------------
-function validate_generic_task(actor, npc, p)
-	local task_id = p[1]
+function validate_generic_task(task_id, task_data, tg_id)
 	trace_dbg("validate "..task_id)
-
-	local task_data = igi_taskdata.get_task_data(task_id)
-	trace_assert(task_data, "WTF: validate_task: task_id invalid")
+	trace_assert(task_data, "WTF: validate_task: no task data")
 	trace_dbg("task_data", task_data)
 
 	if task_data.disabled then return false end
@@ -89,7 +71,7 @@ function validate_generic_task(actor, npc, p)
 	end
 
 
-	TASK_SETUP[task_id] = igi_entities.initialise_quest(task_data, task_id)
+	TASK_SETUP[task_id] = igi_entities.initialise_quest(task_data, task_id, tg_id)
 	trace_dbg("setup", TASK_SETUP[task_id])
 	return TASK_SETUP[task_id] and true or false
 end
@@ -103,9 +85,7 @@ function igi_task_generic_setup(actor,npc,p)
 		igi_description.get_task_text_function(CACHE))
 end
 --< Status >--------------------------------------------------
-local function initialise_CACHE(CACHE, task_giver_id)
-	CACHE.task_giver_id = task_giver_id
-
+local function initialise_CACHE(CACHE)
 	igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
 	trace_dbg("before target creation", CACHE)
 
@@ -132,7 +112,7 @@ function igi_task_generic_status(tsk,task_id)
 	---------------------------<INIT>-------------------------
 	-- First run, create target
 	if not CACHE._initialised then
-		initialise_CACHE(CACHE, tsk.task_giver_id)
+		initialise_CACHE(CACHE)
 	end
 	---------------------------<ACTIONS>---------------------
 	igi_map_marks.update_marks(CACHE)
@@ -183,7 +163,7 @@ function igi_task_generic_text(task_id,field,p,tsk)
 		field = "done"
 	end
 
-	local text = igi_description.get_task_text(task_id, field)
+	local text = igi_description.get_task_text(CACHE.description_key, field, CACHE.task_giver_id)
 	local desc = field ~= "title" and ("\\n "..igi_description.get_description(CACHE)) or ""
 
 	return "[WTF] "..text..desc
@@ -199,7 +179,6 @@ function igi_task_generic_finish(actor,npc,p)
 	igi_world_state.release_targets_in_world(CACHE)	-- Needed? Works? Idk
 	igi_map_marks.unmark_all(CACHE)
 
-	if is_completed then xr_effects.inc_task_stage(nil, nil, {task_id}) end
 	--Reward
 	igi_rewards.collect_and_give_rewards(CACHE)
 

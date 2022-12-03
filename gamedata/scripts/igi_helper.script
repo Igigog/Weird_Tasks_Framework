@@ -14,7 +14,7 @@ function level_object(id)
 end
 
 function get_task_name(task_id)
-	return task_id:match(".*task_([^_]*)_(.*)")
+	return task_id[1], task_id[2]
 end
 
 function scale_to_player(a, b)

@@ -31,10 +31,9 @@ function get_description(CACHE)
 end
 
 function get_task_text_function(CACHE)
-	local title = "[WTF] "..get_task_text(CACHE.task_id, "title")
+	local title = "[WTF] "..get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
 	local text = get_description(CACHE)
-	local icon = task_manager.task_ini:r_string_ex(CACHE.task_id, "icon")
-	icon = icon or "ui_iconsTotal_mutant"
+	local icon = CACHE.icon or "ui_iconsTotal_mutant"
 
 	return function ()
 		db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
@@ -85,15 +84,19 @@ function item_to_string(item, label)
 	return label..": "..table.concat(details, ', ')
 end
 
-function get_task_text(task_id, field)
+function get_task_text(desc_key, field, tg_id)
+	local se_tg = igi_world_state.WorldState.objects[tg_id]
+	local tg_name = se_tg:section_name() ~= "m_trader" and se_tg:section_name() or se_tg:name()
+
 	-- returns exclusive task text if exists
-	local text_id = igi_db.TEXT_HEADER..task_id.."_"..field
+	local text_id = igi_db.TEXT_HEADER..tg_name.."_"..desc_key.."_"..field
+	trace_dbg("text_id", text_id)
 	local text = game.translate_string(text_id)
 	if text ~= text_id then return text end
 
 	-- fallback to basic field for this task type
-	local prefix, task_name = igi_helper.get_task_name(task_id)
-	text_id = igi_db.TEXT_HEADER..prefix.."_"..task_name.."_"..field
+	text_id = igi_db.TEXT_HEADER..desc_key.."_"..field
+	trace_dbg("text_id2", text_id)
 	text = game.translate_string(text_id)
 	if text ~= text_id then return text end
 

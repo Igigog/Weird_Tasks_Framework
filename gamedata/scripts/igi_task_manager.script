@@ -1,0 +1,410 @@
+local set = igi_utils.Set.from_list
+local is_subset = igi_utils.Set.is_subset
+local trace_dbg = igi_helper.trace_dbg
+
+NPC_TAGS = {
+	-- Agroprom
+	agr_smart_terrain_1_6_army_mechanic_stalker = set{"Mechanic", "Agroprom", "Army"},
+	agr_1_6_medic_army_mlr = set{"Medic", "Agroprom", "Army"},
+	agr_smart_terrain_1_6_near_2_military_colonel_kovalski = set{"Leader", "Agroprom", "Army", "Kuznetsov"},
+	-- Bar
+	bar_visitors_stalker_mechanic = set{"Mechanic", "Bar", "Duty"},
+	bar_dolg_medic = set{"Medic", "Bar", "Duty"},
+	bar_visitors_barman_stalker_trader = set{"Barman", "Trader", "Loner", "Bar", "Barkeep"},
+	bar_dolg_leader = set{"Trader", "Bar", "Duty", "Voronin"},
+	bar_dolg_general_petrenko_stalker = set{"Leader", "Bar", "Duty", "Petrenko"},
+	snitch = set{"Bar", "Loner", "Snitch"},
+	-- Darkscape
+	dasc_tech_mlr = set{"Mechanic", "Darkscape", "Loner"},
+	-- Dark Valley
+	val_smart_terrain_7_3_bandit_mechanic_stalker = set{"Mechanic", "DarkValley", "Bandit"},
+	bandit_main_base_medic_mlr = set{"Medic", "DarkValley", "Bandit"},
+	zat_b7_bandit_boss_sultan = set{"Leader", "DarkValley", "Bandit", "Sultan"},
+	val_smart_terrain_7_4_bandit_trader_stalker = set{"Trader", "DarkValley", "Bandit", "Olivius"},
+	-- Dead City
+	cit_killers_merc_mechanic_stalker = set{"Mechanic", "DeadCity", "Mercenary"},
+	cit_killers_merc_medic_stalker = set{"Medic", "DeadCity", "Mercenary"},
+	cit_killers_merc_trader_stalker = set{"Leader", "Trader", "DeadCity", "Mercenary", "Dushman"},
+	cit_killers_merc_barman_mlr = set{"Barman", "Trader", "DeadCity", "Mercenary", "Aslan"},
+	-- Escape
+	esc_smart_terrain_5_7_loner_mechanic_stalker = set{"Mechanic", "Escape", "Loner"},
+	army_south_mechan_mlr = set{"Mechanic", "Escape", "Army"},
+	esc_m_trader = set{"Trader", "Leader", "Escape", "Loner", "Sidorovich"},
+	esc_2_12_stalker_wolf = set{"TaskGiver", "Loner", "Escape", "Wolf"},
+	esc_2_12_stalker_nimble = set{"Trader", "Loner", "Escape", "Nimble"},
+	esc_3_16_military_trader = set{"Trader", "Army", "Escape"},
+	esc_2_12_stalker_fanat = set{"TaskGiver", "Loner", "Escape", "Fanatic"},
+	-- Garbage
+	hunter_gar_trader = set{"Hunter", "Loner", "Garbage", "Trader", "Butcher"},
+	baraholka_trader = set{"Trader", "Loner", "Garbage"},
+	baraholka_trader_night = set{"Trader", "Loner", "Garbage", "NightTrader"},
+	-- Jupiter
+	jup_b217_stalker_tech = set{"Mechanic", "Loner", "Jupiter"},
+	jup_cont_mech_bandit = set{"Mechanic", "Bandit", "Jupiter"},
+	mechanic_monolith_jup_depo = set{"Mechanic", "Monolith", "Jupiter"},
+	jup_a6_stalker_medik = set{"Medic", "Loner", "Jupiter"},
+	drx_sl_jup_a6_freedom_leader = set{"Leader", "Freedom", "Jupiter", "Loki"},
+	jup_b6_scientist_tech = set{"Mechanic", "Ecolog", "Jupiter", "Tukarev"},
+	jup_b220_trapper = set{"Hunter", "Loner", "Jupiter", "Trapper"},
+	jup_b19_freedom_yar = set{"TaskGiver", "Freedom", "Jupiter", "Yar"},
+	jup_b6_scientist_nuclear_physicist = set{"Leader", "Ecolog", "Jupiter", "Hermann"},
+	-- Marsh
+	mar_base_stalker_tech = set{"Mechanic", "ClearSky", "Marsh"},
+	mar_smart_terrain_base_doctor = set{"Medic", "ClearSky", "Marsh"},
+	mar_smart_terrain_base_stalker_leader_marsh = set{"Leader", "ClearSky", "Marsh", "Cold"},
+	mar_base_owl_stalker_trader = set{"Trader", "ClearSky", "Marsh", "Spore"},
+	mar_base_stalker_barmen = set{"Barman", "Trader", "ClearSky", "Marsh", "Librarian"},
+	-- Army Warehouses
+	mil_smart_terrain_7_7_freedom_mechanic_stalker = set{"Mechanic", "Freedom", "AW"},
+	mil_freedom_medic = set{"Medic", "Freedom", "AW"},
+	mil_smart_terrain_7_7_freedom_leader_stalker = set{"Leader", "Freedom", "AW", "Lukash"},
+	mil_smart_terrain_7_10_freedom_trader_stalker = set{"Trader", "Freedom", "AW", "Skinflint"},
+	-- Pripyat 2
+	pri_monolith_monolith_mechanic_stalker = set{"Mechanic", "Monolith", "Pripyat2"},
+	merc_pri_a18_mech_mlr = set{"Mechanic", "Mercenary", "Pripyat2"},
+	mechanic_monolith_kbo = set{"Mechanic", "Monolith", "Pripyat2"},
+	pri_monolith_monolith_trader_stalker = set{"Trader", "Monolith", "Pripyat2", "Rabbit"},
+	lider_monolith_haron = set{"Leader", "Monolith", "Pripyat2", "Haron"},
+	monolith_eidolon = set{"TaskGiver", "Monolith", "Pripyat2", "Eidolon"},
+	merc_pri_grifon_mlr = set{"Leader", "Mercenary", "Pripyat2", "Griffin"},
+	-- Red Forest
+	red_greh_tech = set{"Mechanic", "Greh", "RedForest"},
+	-- Truck Cemetery
+	trucks_cemetery_bandit_mechanic = set{"Mechanic", "Bandit", "TruckCemetery"},
+	-- Yantar
+	mechanic_army_yan_mlr = set{"Mechanic", "Army", "Yantar"},
+	yan_stalker_sakharov = set{"Leader", "Ecolog", "Yantar", "Sakharov"},
+	-- Zaton
+	zat_a2_stalker_mechanic = set{"Mechanic", "Loner", "Zaton"},
+	zat_stancia_mech_merc = set{"Mechanic", "Mercenary", "Zaton"},
+	zat_tech_mlr = set{"Mechanic", "Loner", "Zaton"},
+	zat_b22_stalker_medic = set{"Medic", "Loner", "Zaton"},
+	zat_a2_stalker_barmen = set{"Barman", "Trader", "Leader", "Loner", "Zaton", "Beard"},
+	zat_stancia_trader_merc = set{"Trader", "Mercenary", "Zaton"},
+}
+
+NPC_QUESTS = {}
+function get_all_quests_for_npc(npc)
+	local npc_name = npc:section() ~= "m_trader" and npc:section() or npc:name()
+	if not NPC_QUESTS[npc_name] then
+		local quest_list = {}
+		for k, quests in pairs(igi_taskdata.get_all_quests()) do
+			for quest_name, quest_table in pairs(quests) do
+				if npc_has_quest(npc_name, quest_table) then
+					quest_list[#quest_list+1] = {k, quest_name}
+				end
+			end
+		end
+		NPC_QUESTS[npc_name] = quest_list
+	end
+	trace_dbg("Npc quests: ", npc_name, NPC_QUESTS[npc_name])
+	return NPC_QUESTS[npc_name]
+end
+
+function get_valid_quests_for_npc(npc)
+	local quest_list = {}
+	for _, quest_id in pairs(get_all_quests_for_npc(npc)) do
+		local task_data = igi_taskdata.get_task_data(quest_id)
+		local task_id = quest_id[1]..quest_id[2]..npc:id()
+		if igi_generic_task.validate_generic_task(task_id, task_data, npc:id()) then
+			quest_list[#quest_list+1] = task_id
+		end
+	end
+	return quest_list
+end
+
+old_generate_available_tasks = axr_task_manager.generate_available_tasks
+function axr_task_manager.generate_available_tasks(npc,is_sim)
+	old_generate_available_tasks(npc, is_sim)
+	inject_tasks(npc)
+end
+
+old_generate_mechanic_tasks = axr_task_manager.drx_sl_get_mechanic_task
+function axr_task_manager.drx_sl_get_mechanic_task(npc, skip, is_sim)
+	local task_id = old_generate_mechanic_tasks(npc, skip, is_sim)
+	local igi_tasks = get_valid_quests_for_npc(npc)
+	return igi_tasks[math.random(#igi_tasks + 1)] or task_id
+end
+
+function npc_has_quest(npc_name, quest)
+    local npc_tags = NPC_TAGS[npc_name]
+    for _, quest_tags in pairs(quest.quest_givers or {}) do
+        if is_subset(quest_tags, npc_tags) then
+            return true
+        end
+    end
+	trace_dbg("No quest: ", npc_name, quest)
+    return false
+end
+
+function inject_tasks(npc)
+	trace_dbg("Injecting tasks! Before: ", axr_task_manager.available_tasks[npc:id()])
+    local available_tasks = axr_task_manager.available_tasks[npc:id()]
+    for _, quest_id in pairs(get_valid_quests_for_npc(npc)) do
+        available_tasks[#available_tasks+1] = quest_id
+    end
+	trace_dbg("Injecting tasks! After: ", axr_task_manager.available_tasks[npc:id()])
+end
+
+--[[ function inject_finished_tasks(tg_id)
+	local finished = axr_task_manager.finished_tasks[tg_id]
+	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
+		if cache.task_giver_id == tg_id
+				and cache.status ~= igi_subtask.TASK_STATUSES.RUNNING then
+			finished[#finished+1] = task_id
+		end
+	end
+end
+
+old_generate_finished_tasks = axr_task_manager.generate_finished_tasks
+function axr_task_manager.generate_finished_tasks(npc,is_sim)
+	old_generate_finished_tasks(npc, is_sim)
+	inject_finished_tasks(npc:id())
+end ]]
+
+function first_finished_igi_task(tg_id)
+	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
+		if cache.task_giver_id == tg_id
+				and cache.status ~= igi_subtask.TASK_STATUSES.RUNNING then
+			return task_id
+		end
+	end
+end
+
+old_get_first_finished_task = axr_task_manager.get_first_finished_task
+function axr_task_manager.get_first_finished_task(npc,is_sim)
+	local task_id = old_get_first_finished_task(npc, is_sim)
+	if not task_id then
+		task_id = first_finished_igi_task(npc:id())
+	end
+	return task_id
+end
+
+old_drx_sl_text_mechanic_has_ordered_task_to_give = dialogs.drx_sl_text_mechanic_has_ordered_task_to_give
+function dialogs.drx_sl_text_mechanic_has_ordered_task_to_give( a, b )
+	local npc = dialogs.who_is_npc(a, b)
+	local task_id = axr_task_manager.drx_sl_get_mechanic_task(npc)
+	local CACHE = igi_generic_task.TASK_SETUP[task_id]
+
+	if CACHE then
+		dialogs.last_task_id = task_id
+		igi_generic_task.igi_task_generic_setup(nil,nil,{task_id})
+		return igi_description.get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+	end
+
+	return old_drx_sl_text_mechanic_has_ordered_task_to_give(a, b)
+end
+
+IgiTask = {
+	loaded = false,
+	stage			= 0,
+	title			= "TITLE_DOESNT_EXIST",
+	descr			= "DESCR_DOESNT_EXIST",
+	target			= "",
+	icon			= "ui_pda2_mtask_overlay",
+	prior			= 2000,
+	storyline		=  "",
+	repeat_timeout	= 16200,
+	condlist = {},
+
+	--' ������ ������, ����� ����: "normal", "selected", "completed", "fail", "reversed"
+	status = "normal",
+	spot = "secondary_task_location",
+	dont_send_update_news = false,
+
+	new = function (id)
+		local task_table = igi_generic_task.TASK_SETUP[id]
+		local t = {
+			id				= id,
+			icon			= task_table.icon,
+			storyline		= task_table.storyline,
+			repeat_timeout	= task_table.repeat_timeout,
+			type			= "igi"
+		}
+
+		t.current_title = igi_generic_task.igi_task_generic_text(t.id, "title", t.title,t)
+		t.current_descr = igi_generic_task.igi_task_generic_text(t.id, "descr", t.descr,t)
+		t.spot = t.storyline and "storyline_task_location" or "secondary_task_location"
+		t.current_target = igi_generic_task.igi_task_generic_target(t.id, "target", t.target,t)
+		return setmetatable(t, IgiTask._mt)
+	end,
+
+	get_title = function (self)
+		return self.title
+	end,
+
+	get_icon_name = function (self)
+		return self.icon
+	end,
+
+	give_task = function (self)
+		local t = db.actor and db.actor:get_task(self.id, true) or CGameTask()
+		t:set_id(self.id)
+		t:set_type(self.storyline and task.storyline or task.additional)
+		t:set_title(self.current_title)
+		t:set_description(self.current_descr)
+		t:set_priority(self.prior)
+		t:set_icon_name(self.icon)
+		t:add_complete_func("task_manager.task_complete")
+		t:add_fail_func("task_manager.task_fail")
+		
+		if self.current_target ~= nil then
+			t:set_map_location(self.spot)
+			t:set_map_object_id(self.current_target)
+
+			local spot = self.storyline and "ui_storyline_task_blink" or "ui_secondary_task_blink"
+			level.map_add_object_spot(self.current_target, spot, "")
+		end
+		--' ������� � task_info
+		self.status = "selected"
+		self.inited_time = game.get_game_time()
+
+		db.actor:give_task(t, 0, false, 0)
+		self.t = t
+		self.stage = 0
+		self.forced_status = nil
+	end,
+
+	check_task = function (self)
+		self.t = self.t or db.actor and db.actor:get_task(self.id,true)
+		if (self.t == nil) then -- task is most likely in timeout
+			return
+		end
+
+		local task_updated = false
+
+		local t_title = igi_generic_task.igi_task_generic_text(self.id, "title", self.title, self)
+		if self.current_title ~= t_title then
+			task_updated = true
+			self.current_title = t_title
+			self.t:set_title(game.translate_string(t_title))
+		end
+
+		local t_descr = igi_generic_task.igi_task_generic_text(self.id, "descr", self.descr, self)
+		if self.current_descr ~= t_descr then
+			task_updated = true
+			self.current_descr = t_descr
+			self.t:set_description(game.translate_string(t_descr))
+		end
+
+		local t_target = igi_generic_task.igi_task_generic_target(self.id, "target", self.target, self)
+		if (self.current_target ~= t_target) then
+			task_updated = true
+			if (t_target == nil) then
+				self.t:remove_map_locations(false)
+			else
+				self.t:change_map_location(self.spot, t_target)
+				local mark = self.storyline and "ui_storyline_task_blink" or "ui_secondary_task_blink"
+				level.map_add_object_spot(t_target, mark, "")
+			end
+			self.current_target = t_target
+		end
+
+		if task_updated and not self.dont_send_update_news then
+			news_manager.send_task(db.actor, "updated", self.t)
+		end
+
+		-- status functor
+		local t = igi_generic_task.igi_task_generic_status(self, self.id)
+		if t == "complete" or t == "fail" or t == "reversed" then
+			self.last_check_task = t
+		end
+	end,
+
+	deactivate_task = function (self, tsk)
+		self.check_time = nil
+		self.last_check_task = nil
+		self.status = "normal"
+
+		if self.last_check_task == "fail" then
+			igi_generic_task.igi_task_generic_finish(nil, nil, {self.id})
+			news_manager.send_task(db.actor, "fail", tsk)
+		end
+	end,
+
+	save_state = function (self)
+		--utils_data.debug_write(strformat("CGeneralTask:save_state %s BEFORE",self.id))
+		if (self.t == nil) then
+			if (self.repeat_timeout == nil or self.timeout == nil) then
+				return
+			end
+			if (game.get_game_time():diffSec(self.timeout) > self.repeat_timeout) then
+				return
+			end
+		end
+
+		local t = dup_table(self)
+		t.t = nil
+		return t
+	end,
+
+	give_reward = function (self)
+		igi_generic_task.igi_task_generic_finish(nil, nil, {self.id})
+	end,
+
+	save = function () end,
+	load = function () end,
+}
+IgiTask._mt = {__index = IgiTask}
+
+function task_manager.save_state(m_data)
+	--utils_data.debug_write("task_manager.save_state")
+	m_data.task_info = {}
+	m_data.igi_task_objects = {}
+
+	local tm = task_manager.get_task_manager()
+
+	for k,v in pairs(tm.task_info) do
+		if (v.type == "igi") then
+			m_data.igi_task_objects[k] = v:save_state(m_data)
+		else
+			m_data.task_info[k] = true
+			tm.task_info[k]:save_state(m_data)
+		end
+	end
+end
+
+function task_manager.load_state(m_data)
+	local tm = task_manager.get_task_manager()
+
+	for task_id in pairs(m_data.task_info or {}) do
+		local obj = task_objects.CGeneralTask(task_id)
+		if (obj:load_state(m_data) == true) then
+			tm.task_info[task_id] = obj
+		end
+	end
+
+	for task_id, tbl in pairs(m_data.igi_task_objects or {}) do
+		tm.task_info[task_id] = setmetatable(tbl, IgiTask._mt)
+	end
+
+	m_data.task_info = nil
+	m_data.igi_task_objects = nil
+end
+
+old_give_task = task_manager.CRandomTask.give_task
+function task_manager.CRandomTask.give_task(self, task_id,task_giver_id)
+	if igi_generic_task.TASK_SETUP[task_id] then
+		local task = IgiTask.new(task_id)
+		self.task_info[task_id] = task
+		task:give_task()
+	else
+		old_give_task(self, task_id, task_giver_id)
+	end
+end
+
+old_trigger_job_func = axr_task_manager.trigger_job_func
+function axr_task_manager.trigger_job_func(task_id)
+	trace_dbg("task id", task_id)
+	if igi_generic_task.TASK_SETUP[task_id] then
+		igi_generic_task.igi_task_generic_setup(nil,nil,{task_id})
+	else
+		old_trigger_job_func(task_id)
+	end
+end
+
+old_trigger_fetch_func = axr_task_manager.trigger_fetch_func
+function axr_task_manager.trigger_fetch_func(task_id)
+	if igi_generic_task.TASK_SETUP[task_id] then return end
+	old_trigger_fetch_func(task_id)
+end
