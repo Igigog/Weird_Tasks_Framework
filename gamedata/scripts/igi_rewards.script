@@ -93,6 +93,23 @@ REWARD_TYPES.money = {
 	end,
 }
 
+REWARD_TYPES.item = {
+	merge = function (self, other)
+		for section, amount in pairs(other) do
+			self[section] = (self[section] or 0) + amount
+		end
+	end,
+
+	give = function (self)
+		for section, quantity in pairs(self) do
+			for _=1,quantity do
+				alife_create_item(section, db.actor)
+			end
+			news_manager.relocate_item(db.actor, "in", section, quantity)
+		end
+	end,
+}
+
 function has_material_rewards(CACHE)
 	local static_rewards = CACHE.rewards and CACHE.rewards.COMPLETED
 	if static_rewards and static_rewards.money then
