@@ -1,5 +1,5 @@
 # Weird Tasks Framework
-## Made for WTF v3h1
+## Made for WTF v3h1 (aka terribly OUTDATED)
 ### Special thanks to GhenTuong
 
 This is my addon for S.T.A.L.K.E.R. Anomaly based on GhenTuong Tasks. 
