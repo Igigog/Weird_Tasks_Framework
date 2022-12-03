@@ -1,6 +1,7 @@
 local set = igi_utils.Set.from_list
 local is_subset = igi_utils.Set.is_subset
 local trace_dbg = igi_helper.trace_dbg
+local get_task_text = igi_description.get_task_text
 
 NPC_TAGS = {
 	-- Agroprom
@@ -106,7 +107,7 @@ function get_valid_quests_for_npc(npc)
 	for _, quest_id in pairs(get_all_quests_for_npc(npc)) do
 		local task_data = igi_taskdata.get_task_data(quest_id)
 		local task_id = quest_id[1]..quest_id[2]..npc:id()
-		if igi_generic_task.validate_generic_task(task_id, task_data, npc:id()) then
+		if igi_generic_task.try_prepare_quest(task_id, task_data, npc:id()) then
 			quest_list[#quest_list+1] = task_id
 		end
 	end
@@ -133,7 +134,6 @@ function npc_has_quest(npc_name, quest)
             return true
         end
     end
-	trace_dbg("No quest: ", npc_name, quest)
     return false
 end
 
@@ -145,22 +145,6 @@ function inject_tasks(npc)
     end
 	trace_dbg("Injecting tasks! After: ", axr_task_manager.available_tasks[npc:id()])
 end
-
---[[ function inject_finished_tasks(tg_id)
-	local finished = axr_task_manager.finished_tasks[tg_id]
-	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
-		if cache.task_giver_id == tg_id
-				and cache.status ~= igi_subtask.TASK_STATUSES.RUNNING then
-			finished[#finished+1] = task_id
-		end
-	end
-end
-
-old_generate_finished_tasks = axr_task_manager.generate_finished_tasks
-function axr_task_manager.generate_finished_tasks(npc,is_sim)
-	old_generate_finished_tasks(npc, is_sim)
-	inject_finished_tasks(npc:id())
-end ]]
 
 function first_finished_igi_task(tg_id)
 	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
@@ -188,26 +172,21 @@ function dialogs.drx_sl_text_mechanic_has_ordered_task_to_give( a, b )
 
 	if CACHE then
 		dialogs.last_task_id = task_id
-		igi_generic_task.igi_task_generic_setup(nil,nil,{task_id})
-		return igi_description.get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		igi_generic_task.setup_quest(task_id)
+		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
 	end
 
 	return old_drx_sl_text_mechanic_has_ordered_task_to_give(a, b)
 end
 
 IgiTask = {
-	loaded = false,
 	stage			= 0,
 	title			= "TITLE_DOESNT_EXIST",
 	descr			= "DESCR_DOESNT_EXIST",
-	target			= "",
 	icon			= "ui_pda2_mtask_overlay",
 	prior			= 2000,
-	storyline		=  "",
 	repeat_timeout	= 16200,
 	condlist = {},
-
-	--' ������ ������, ����� ����: "normal", "selected", "completed", "fail", "reversed"
 	status = "normal",
 	spot = "secondary_task_location",
 	dont_send_update_news = false,
@@ -215,17 +194,15 @@ IgiTask = {
 	new = function (id)
 		local task_table = igi_generic_task.TASK_SETUP[id]
 		local t = {
+			type			= "igi",
 			id				= id,
 			icon			= task_table.icon,
 			storyline		= task_table.storyline,
 			repeat_timeout	= task_table.repeat_timeout,
-			type			= "igi"
 		}
-
-		t.current_title = igi_generic_task.igi_task_generic_text(t.id, "title", t.title,t)
-		t.current_descr = igi_generic_task.igi_task_generic_text(t.id, "descr", t.descr,t)
-		t.spot = t.storyline and "storyline_task_location" or "secondary_task_location"
-		t.current_target = igi_generic_task.igi_task_generic_target(t.id, "target", t.target,t)
+		if task_table.storyline then
+			t.spot = "storyline_task_location"
+		end
 		return setmetatable(t, IgiTask._mt)
 	end,
 
@@ -238,7 +215,14 @@ IgiTask = {
 	end,
 
 	give_task = function (self)
-		local t = db.actor and db.actor:get_task(self.id, true) or CGameTask()
+		igi_generic_task.initialise_CACHE(self.id)
+		igi_generic_task.quest_status(self.id) -- run once to setup current target
+		self.current_title = igi_generic_task.quest_text(self.id, "title")
+		self.current_descr = igi_generic_task.quest_text(self.id, "descr")
+		self.current_target = igi_generic_task.quest_target(self.id)
+		self.status = "selected"
+
+		local t = CGameTask()
 		t:set_id(self.id)
 		t:set_type(self.storyline and task.storyline or task.additional)
 		t:set_title(self.current_title)
@@ -247,55 +231,44 @@ IgiTask = {
 		t:set_icon_name(self.icon)
 		t:add_complete_func("task_manager.task_complete")
 		t:add_fail_func("task_manager.task_fail")
-		
+
 		if self.current_target ~= nil then
 			t:set_map_location(self.spot)
 			t:set_map_object_id(self.current_target)
-
-			local spot = self.storyline and "ui_storyline_task_blink" or "ui_secondary_task_blink"
-			level.map_add_object_spot(self.current_target, spot, "")
 		end
-		--' ������� � task_info
-		self.status = "selected"
-		self.inited_time = game.get_game_time()
-
 		db.actor:give_task(t, 0, false, 0)
 		self.t = t
-		self.stage = 0
-		self.forced_status = nil
 	end,
 
 	check_task = function (self)
-		self.t = self.t or db.actor and db.actor:get_task(self.id,true)
+		self.t = self.t or db.actor:get_task(self.id,true)
 		if (self.t == nil) then -- task is most likely in timeout
 			return
 		end
 
 		local task_updated = false
 
-		local t_title = igi_generic_task.igi_task_generic_text(self.id, "title", self.title, self)
+		local t_title = igi_generic_task.quest_text(self.id, "title")
 		if self.current_title ~= t_title then
 			task_updated = true
 			self.current_title = t_title
-			self.t:set_title(game.translate_string(t_title))
+			self.t:set_title(t_title)
 		end
 
-		local t_descr = igi_generic_task.igi_task_generic_text(self.id, "descr", self.descr, self)
+		local t_descr = igi_generic_task.quest_text(self.id, "descr")
 		if self.current_descr ~= t_descr then
 			task_updated = true
 			self.current_descr = t_descr
-			self.t:set_description(game.translate_string(t_descr))
+			self.t:set_description(t_descr)
 		end
 
-		local t_target = igi_generic_task.igi_task_generic_target(self.id, "target", self.target, self)
+		local t_target = igi_generic_task.quest_target(self.id)
 		if (self.current_target ~= t_target) then
 			task_updated = true
-			if (t_target == nil) then
+			if not t_target then
 				self.t:remove_map_locations(false)
 			else
 				self.t:change_map_location(self.spot, t_target)
-				local mark = self.storyline and "ui_storyline_task_blink" or "ui_secondary_task_blink"
-				level.map_add_object_spot(t_target, mark, "")
 			end
 			self.current_target = t_target
 		end
@@ -305,7 +278,7 @@ IgiTask = {
 		end
 
 		-- status functor
-		local t = igi_generic_task.igi_task_generic_status(self, self.id)
+		local t = igi_generic_task.quest_status(self.id)
 		if t == "complete" or t == "fail" or t == "reversed" then
 			self.last_check_task = t
 		end
@@ -317,7 +290,7 @@ IgiTask = {
 		self.status = "normal"
 
 		if self.last_check_task == "fail" then
-			igi_generic_task.igi_task_generic_finish(nil, nil, {self.id})
+			igi_generic_task.finish_quest(self.id)
 			news_manager.send_task(db.actor, "fail", tsk)
 		end
 	end,
@@ -339,7 +312,7 @@ IgiTask = {
 	end,
 
 	give_reward = function (self)
-		igi_generic_task.igi_task_generic_finish(nil, nil, {self.id})
+		igi_generic_task.finish_quest(self.id)
 	end,
 
 	save = function () end,
@@ -348,7 +321,6 @@ IgiTask = {
 IgiTask._mt = {__index = IgiTask}
 
 function task_manager.save_state(m_data)
-	--utils_data.debug_write("task_manager.save_state")
 	m_data.task_info = {}
 	m_data.igi_task_objects = {}
 
@@ -393,41 +365,23 @@ function task_manager.CRandomTask.give_task(self, task_id,task_giver_id)
 	end
 end
 
-old_trigger_job_func = axr_task_manager.trigger_job_func
-function axr_task_manager.trigger_job_func(task_id)
-	trace_dbg("task id", task_id)
-	if igi_generic_task.TASK_SETUP[task_id] then
-		igi_generic_task.igi_task_generic_setup(nil,nil,{task_id})
-	else
-		old_trigger_job_func(task_id)
-	end
-end
-
-old_trigger_fetch_func = axr_task_manager.trigger_fetch_func
-function axr_task_manager.trigger_fetch_func(task_id)
-	if igi_generic_task.TASK_SETUP[task_id] then return end
-	old_trigger_fetch_func(task_id)
-end
-
-local get_task_text = igi_description.get_task_text
-
 old_get_task_complete_text = axr_task_manager.get_task_complete_text
 function axr_task_manager.get_task_complete_text(task_id)
 	local CACHE = igi_generic_task.TASKS_CACHE[task_id]
-
 	if CACHE then
 		return get_task_text(CACHE.description_key, "finish", CACHE.task_giver_id)
 	end
+
 	return old_get_task_complete_text(task_id)
 end
 
 old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
 	local CACHE = igi_generic_task.TASKS_CACHE[task_id]
-
 	if CACHE then
 		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
 	end
+
 	return old_get_task_job_description(task_id)
 end
 
