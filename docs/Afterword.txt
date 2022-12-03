@@ -1,7 +1,0 @@
-Well... That's it ._.
-Haven't documented many things, but I'm alone here, hello, write docs yourself.
-As you can see framework is no magic and it won't do everything for you, but some things
-it will indeed do.
-I'll give support in discord to task makers, join me.
-Also since this thing is complicated piece of shit, it may randomly bug or do
-unintended things and error checking is not implemented. Good luck making your tasks.

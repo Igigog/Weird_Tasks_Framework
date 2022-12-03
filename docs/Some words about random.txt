@@ -1,6 +1,0 @@
-Random is not random.
-
-It's defined by unique playthrough key, in-game date and id of task.
-
-That means you'll get new task setups every day, but they won't change until 0:00
-no matter what you do.
