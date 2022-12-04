@@ -35,3 +35,39 @@ function entity_on_complete(entity)
         axr_companions.dismiss_special_squad(squad)
     end
 end
+
+function test(CACHE)
+	if not CACHE then
+		return true -- test completed
+	end
+
+	local trace_assert = igi_helper.trace_assert
+	local entity = CACHE.entities[1]
+	local se_squad = igi_entities.get_binded_object(entity)
+	for member in se_squad:squad_members() do
+		local se_npc = igi_world_state.WorldState.objects[member.id]
+		trace_assert(
+			se_load_var(se_npc.id, se_npc:name(), "companion"), "Not in actor's squad")
+	end
+	trace_assert(entity.status == "READY_TO_FINISH", "Quest did not complete")
+	igi_tests.finish_test(CACHE.task_id)
+	return true
+end
+igi_tests.register_test("test_target_escort", test, {
+	entities = {
+		{
+			entity_type = "squad",
+			faction = "&Faction(friend of actor and friend of taskgiver)&",
+			section_name = "[this.faction]_sim_squad_novice",
+			to_create = true,
+			where = "[location_1_1.id]",
+			target = "escort"
+		},
+
+		{
+			entity_type = "location",
+			search_for = "smart",
+			where = "0,0"
+		}
+	}
+})

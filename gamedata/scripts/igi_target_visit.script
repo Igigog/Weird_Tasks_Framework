@@ -70,3 +70,34 @@ end
 function get_completed_goodwill(entity)
 	return 10
 end
+
+function test(CACHE)
+	if not CACHE then
+		return true -- test completed
+	end
+
+	local trace_assert = igi_helper.trace_assert
+	local WorldState = igi_world_state.WorldState
+	local entity = CACHE.entities[1]
+	if not entity._test_stage then
+		entity._test_stage = -1
+		local se_obj = igi_entities.get_binded_object(entity)
+		trace_assert(se_obj, "Entity does not exist")
+		db.actor:set_actor_position(se_obj.position)
+
+	elseif entity._test_stage == -1 then
+		trace_assert(entity.status == "COMPLETED", "Quest did not complete")
+		igi_tests.finish_test(CACHE.task_id)
+		return true
+	end
+end
+igi_tests.register_test("test_target_visit", test, {
+	entities = {
+		{
+			entity_type = "location",
+			search_for =  "smart",
+			where = "0,0",
+			target = "visit",
+		}
+	}
+})
