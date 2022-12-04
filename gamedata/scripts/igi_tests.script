@@ -51,6 +51,7 @@ end
 function run_all_tests()
     tests_running = true
     local actor_position = db.actor:position()
+    xrs_debug_tools.debug_invis = true
     CreateTimeEvent("igi_tests", "all_tests", 0, function ()
         if CURRENT_TEST then return end
         db.actor:set_actor_position(actor_position)

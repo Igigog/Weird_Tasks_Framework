@@ -40,6 +40,7 @@ local function create_callback_function(squad_id, target_ids, weapon, ammo_type)
     local function f(npc, shit)
         igi_helper.trace_dbg("shoot: callback: id", npc:id())
         if not target_ids[npc:id()] then return end
+        if shit.draftsman:id() ~= 0 then return end
 
         local wpn = igi_helper.level_object(shit.weapon_id)
         if weapon and (wpn:section() ~= weapon) then return end
@@ -144,3 +145,58 @@ function finish_subtask(obj_data)
     end
     is_shotted[obj_data.id] = nil
 end
+
+function test(CACHE)
+	if not CACHE then return true end -- test completed
+    CACHE._test_stage = (CACHE._test_stage or 0) + 1
+
+	local trace_assert = igi_helper.trace_assert
+    local WorldState = igi_world_state.WorldState
+	local entity = CACHE.entities[1]
+	if CACHE._test_stage == 1 then
+		local se_obj = igi_entities.get_binded_object(entity)
+		trace_assert(se_obj, "Entity does not exist")
+		db.actor:set_actor_position(se_obj.position)
+        local se_obj = alife_create_item("wpn_mp133", WorldState.objects[0])
+        CACHE._test_wpn_id = se_obj.id
+
+    elseif CACHE._test_stage == 2 then
+        local obj = igi_helper.level_object(CACHE._test_wpn_id)
+		db.actor:make_item_active(obj)
+
+        local se_squad = igi_entities.get_binded_object(entity)
+        alife():teleport_object(se_squad:commander_id(),db.actor:game_vertex_id(),db.actor:level_vertex_id(),db.actor:position())
+
+	elseif CACHE._test_stage == 4 then
+		local se_squad = igi_entities.get_binded_object(entity)
+        local npc = igi_helper.level_object(se_squad:commander_id())
+        local dir = npc:position():sub(db.actor:position())
+        db.actor:set_actor_direction(-dir:getH())
+        level.press_action(DIK_keys.MOUSE_1)
+        level.release_action(DIK_keys.MOUSE_1)
+		
+    elseif CACHE._test_stage == 5 then
+		trace_assert(CACHE.status == "READY_TO_FINISH", "Quest did not complete")
+        alife():release(WorldState.objects[CACHE._test_wpn_id])
+		igi_tests.finish_test(CACHE.task_id)
+		return true
+	end
+end
+igi_tests.register_test("test_target_shoot", test, {
+	entities = {
+		{
+			entity_type = "squad",
+			faction = "&Faction(enemy of actor and enemy of taskgiver)&",
+			section_name = "[this.faction]_sim_squad_novice",
+			to_create = true,
+			where = "[location_1_1.id]",
+			target = "shoot"
+		},
+
+		{
+			entity_type = "location",
+			search_for = "smart",
+			where = "0,0"
+		}
+	}
+})
