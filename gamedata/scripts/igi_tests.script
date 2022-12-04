@@ -1,0 +1,93 @@
+local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
+
+function on_game_start()
+    RegisterScriptCallback("save_state", save_state)
+    RegisterScriptCallback("load_state", load_state)
+    RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+    RegisterScriptCallback("on_key_press", on_key_press)
+end
+
+local tests_running
+local last_test
+TESTS = {}
+CURRENT_TEST = nil
+
+function on_key_press(key)
+    if not igi_mcm.get_options_value("debug") then return end
+    if key ~= DIK_keys.DIK_K then return end
+    if tests_running then return end
+    run_all_tests()
+end
+
+function save_state(m_data)
+    m_data.igi_current_test = CURRENT_TEST
+    m_data.igi_tests_running = tests_running
+    m_data.igi_last_test = last_test
+end
+
+function load_state(m_data)
+    CURRENT_TEST = m_data.igi_current_test
+    tests_running = m_data.igi_tests_running
+    last_test = m_data.igi_last_test
+end
+
+function actor_on_first_update()
+    if not CURRENT_TEST then return end
+    local id = CURRENT_TEST[1]
+    CreateTimeEvent("igi_tests", id, 0, continue_test, id)
+end
+
+function prepare_mock_quest(cache, id)
+    local tg_id = get_story_se_object("bar_visitors_barman_stalker_trader").id
+    trace_assert(igi_generic_task.try_prepare_quest(id, cache, tg_id), "Can't prepare quest")
+end
+
+function register_test(id, f, cache)
+    cache.update_delay = 0
+    TESTS[id] = {id, f, cache}
+end
+
+function run_all_tests()
+    tests_running = true
+    local actor_position = db.actor:position()
+    CreateTimeEvent("igi_tests", "all_tests", 0, function ()
+        if CURRENT_TEST then return end
+        db.actor:set_actor_position(actor_position)
+        local id, next_test = next(TESTS, last_test)
+        last_test = id
+        if not id then
+            tests_running = nil
+            return true
+        end
+        start_test(id, next_test[2], next_test[3])
+    end)
+end
+
+function start_test(id, f, cache)
+    trace_assert(not CURRENT_TEST, "Already running a test!")
+    trace_dbg("Running test: "..id, cache)
+    CURRENT_TEST = TESTS[id]
+
+    prepare_mock_quest(cache, id)
+    task_manager.get_task_manager():give_task(id)
+    CreateTimeEvent("igi_tests", id, 0, continue_test, id)
+end
+
+function finish_test(id)
+    trace_assert(CURRENT_TEST[1] == id, "Test id does not pass: given, actual", id, CURRENT_TEST[1])
+    trace_dbg("Test completed successfully! "..id)
+    CURRENT_TEST = nil
+    task_manager.get_task_manager():set_task_completed(id)
+end
+
+function continue_test(id)
+    trace_assert(CURRENT_TEST[1] == id, "Test id does not pass: given, actual", id, CURRENT_TEST[1])
+    trace_dbg("continuing test "..id, igi_generic_task.TASKS_CACHE[id])
+    local finished = CURRENT_TEST[2](igi_generic_task.TASKS_CACHE[id])
+    if not finished then
+        trace_dbg("not finished "..id)
+        ResetTimeEvent("igi_tests", id, 1)
+    end
+    return finished
+end

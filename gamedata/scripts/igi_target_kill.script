@@ -3,6 +3,7 @@ PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local WorldState = igi_world_state.WorldState
+local trace_assert = igi_helper.trace_assert
 
 function is_completed(obj_data)
 	local se_obj = WorldState.objects[obj_data.id]
@@ -78,11 +79,8 @@ function get_money_reward(entity)
 end
 
 function get_goodwill_reward(entity)
-	local npc_count = 0
 	local se_squad = WorldState.objects[entity.id]
-	for _ in se_squad:squad_members() do
-		npc_count = npc_count + 1
-	end
+	local npc_count = se_squad:npc_count()
 
 	return 50 - (40/npc_count)
 end
@@ -90,3 +88,49 @@ end
 function get_rewards(entity)
 	return entity.rewards
 end
+
+function test(CACHE)
+	if not CACHE then
+		return true -- test completed
+	end
+
+	local entity = CACHE.entities[1]
+	if not CACHE._test_stage then
+		CACHE._test_stage = 1
+		local se_obj = igi_entities.get_binded_object(entity)
+		trace_assert(se_obj, "Kill entity does not exist")
+		trace_assert(se_obj:squad_members(), "Kill entity is not a squad")
+		db.actor:set_actor_position(se_obj.position)
+
+	elseif CACHE._test_stage == 1 then
+		CACHE._test_stage = 2
+		local se_obj = igi_entities.get_binded_object(entity)
+		for se_npc in se_obj:squad_members() do
+			local npc = igi_helper.level_object(se_npc.id)
+			npc:kill(db.actor)
+		end
+
+	elseif CACHE._test_stage == 2 then
+		trace_assert(CACHE.status == "COMPLETED", "Quest did not complete after killing")
+		igi_tests.finish_test(CACHE.task_id)
+		return true
+	end
+end
+igi_tests.register_test("test_target_kill", test, {
+	entities = {
+		{
+			entity_type = "squad",
+			faction = "&Faction(enemy of actor and enemy of taskgiver)&",
+			section_name = "[this.faction]_sim_squad_novice",
+			to_create = true,
+			where = "[location_1_1.id]",
+			target = "kill"
+		},
+
+		{
+			entity_type = "location",
+			search_for = "smart",
+			where = "0,0"
+		}
+	}
+})

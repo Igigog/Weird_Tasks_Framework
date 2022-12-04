@@ -3,23 +3,9 @@ local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local Set = igi_utils.Set
 
-function on_game_start()
-	igi_callbacks.add_callback("on_get_taskdata", set_task_giver)
-end
-
 current_tg_faction = nil
-function set_task_giver(CACHE, task_id)
-	local npc = mob_trade.GetTalkingNpc()
-	local story_id = npc:section() ~= "m_trader" and npc:section() or npc:name()
-	trace_dbg(story_id)
-	local se_obj = get_story_se_object(story_id)
-	if se_obj then
-		current_tg_faction = igi_helper.get_community_by_id(se_obj.id)
-	else
-		trace_dbg("no story object")
-		-- warfare
-		current_tg_faction = story_id:match("sim_default_(.*)_.*") or "stalker"
-	end
+function set_task_giver(tg_id)
+	current_tg_faction = igi_helper.get_community_by_id(tg_id)
 end
 
 function resolve(macro)
@@ -123,6 +109,7 @@ local function get_viable_factions()
 end
 
 local function convert_to_faction_set(faction)
+	trace_dbg("convert to faction", faction)
 	if type(faction) == 'string' then
 		return {[get_faction(faction)] = true}
 	end

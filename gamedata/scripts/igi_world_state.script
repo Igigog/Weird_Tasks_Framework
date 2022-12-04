@@ -39,15 +39,6 @@ function release_entity(entity)
 	end
 end
 
-function release_targets_in_world(CACHE)
-	for _, entity in pairs(CACHE.entities) do
-		if entity.id and entity.section_name then
-			igi_helper.trace_dbg("WTF: Release from world: "..entity.section_name.." with id: "..entity.id)
-			release_entity(entity)
-		end
-	end
-end
-
 WorldState = {
 	objects_by_name = igi_utils.defaultdict(function () return {} end),
 	levels_by_distance = igi_utils.defaultdict(function () return {} end),

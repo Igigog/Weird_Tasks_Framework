@@ -11,6 +11,7 @@ ENTITY_STATES = {
 function initialise_quest(task_data, task_id, tg_id)
 	trace_dbg("setup "..task_id, task_data)
 	igi_random.set_seed(task_id)
+	igi_macros.set_task_giver(tg_id)
 
 	local CACHE = dup_table(task_data)
 	igi_taskdata.finalize_task_cache(CACHE, task_id)

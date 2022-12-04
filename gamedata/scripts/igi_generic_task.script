@@ -79,6 +79,7 @@ function initialise_CACHE(task_id)
 	local CACHE = get_cache(task_id)
 	igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
 
+	igi_macros.set_task_giver(CACHE.task_giver_id)
 	igi_entities.create_entities(CACHE)
 	igi_subtask.initialise_subtasks(CACHE)
 	igi_actions.initialise_actions(CACHE)
@@ -96,7 +97,7 @@ function quest_status(task_id)
 	if (tg < CACHE.__actions_time) then
 		return
 	end
-	CACHE.__actions_time = tg+3000
+	CACHE.__actions_time = tg + (CACHE.update_delay or 3000)
 
 	---------------------------<ACTIONS>---------------------
 	igi_map_marks.update_marks(CACHE)
@@ -123,14 +124,14 @@ function quest_target(task_id)
 	local CACHE = get_cache(task_id)
 
 	-- trace target in debug mode
-	local target_id = CACHE.current_target_id
+	--[[ local target_id = CACHE.current_target_id
 	if target_id and igi_mcm.get_options_value("debug") then
 		local se_obj = WorldState.objects[target_id]
 		if se_obj then
 			local sec = se_obj and se_obj:section_name() or "nil"
 			trace_dbg("target "..tostring(target_id).." is "..sec)
 		end
-	end
+	end ]]
 
 	return CACHE.current_target_id
 end
@@ -154,7 +155,6 @@ function finish_quest(task_id)
 
 	igi_callbacks.invoke_callbacks("on_complete", CACHE)
 	igi_subtask.finish_all_subtasks(CACHE)
-	igi_world_state.release_targets_in_world(CACHE)	-- Needed? Works? Idk
 	igi_map_marks.unmark_all(CACHE)
 	igi_rewards.collect_and_give_rewards(CACHE)
 
