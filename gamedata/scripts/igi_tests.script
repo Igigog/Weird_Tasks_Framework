@@ -85,7 +85,7 @@ end
 
 function assert_test(successful, reason)
     if successful then return successful end
-    news_manager.send_tip(db.actor, "WTF: test "..CURRENT_TEST[1].." failed: "..reason, nil, nil, 30000)
+    actor_menu.set_fade_msg("WTF: test "..CURRENT_TEST[1].." failed: "..reason, 10, {G = 10, B = 10})
     finish_test(CURRENT_TEST[1])
 end
 

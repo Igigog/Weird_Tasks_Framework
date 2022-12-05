@@ -67,13 +67,15 @@ end
 local function redirect_to_smart(entity)
 	local smart_id = WorldState.objects[entity.id].current_target_id
 	igi_helper.trace_dbg("smart id", smart_id)
-	local smart_entity = igi_entities.Entity.new("location")
-	smart_entity._state = igi_entities.ENTITY_STATES.INITIALISED
+	local smart_entity = {
+		target = "assault",
+		status = igi_subtask.TASK_STATUSES.RUNNING,
+		order = entity.order or 1,
+		group_id = 1000,
+		_state = igi_entities.ENTITY_STATES.INITIALISED,
+	}
 	igi_entities.bind_to_se_obj(smart_entity, smart_id)
-	smart_entity.target = "assault"
-	smart_entity.status = igi_subtask.TASK_STATUSES.RUNNING
-	smart_entity.order = entity.order or 1
-	smart_entity.group_id = 1000
+
 	add_target_squads(smart_entity)
 	return smart_entity
 end
@@ -125,3 +127,48 @@ function get_status(entity)
 	if is_completed(entity) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
 end
+
+function test(CACHE)
+	if not CACHE then return end
+	CACHE._test_stage = (CACHE._test_stage or 0) + 1
+
+	local entity = CACHE.entities[1]
+	local assert_test = igi_tests.assert_test
+	if CACHE._test_stage == 1 then
+		local se_obj = igi_entities.get_binded_object(entity)
+		assert_test(se_obj, "Entity does not exist")
+		db.actor:set_actor_position(se_obj.position)
+	elseif CACHE._test_stage == 2 then
+		for _, sq_id in pairs(entity.squads) do
+			local se_squad = WorldState.objects[sq_id]
+			if se_squad then
+				for se_npc in se_squad:squad_members() do
+					local npc = igi_helper.level_object(se_npc.id)
+					npc:kill(db.actor)
+				end
+			end
+		end
+	elseif CACHE._test_stage == 4 then
+		assert_test(entity.status == "COMPLETED", "Quest did not complete after killing")
+		igi_tests.finish_test(CACHE.task_id)
+		return true
+	end
+end
+igi_tests.register_test("test_target_assault", test, {
+	entities = {
+		{
+			entity_type = "location",
+			search_for = "smart",
+			where = "0,0",
+			target = "assault"
+		},
+
+		{
+			entity_type = "squad",
+			faction = "&Faction(enemy of actor and enemy of taskgiver)&",
+			section_name = "[this.faction]_sim_squad_novice",
+			to_create = true,
+			where = "[location_1_1.id]"
+		}
+	}
+})
