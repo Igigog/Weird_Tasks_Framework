@@ -189,14 +189,9 @@ function on_completed(entity)
 	news_manager.relocate_item(db.actor, "out", entity.section_name, entity.amount)
 end
 
-function test(CACHE)
-	if not CACHE then
-		return true -- test completed
-	end
-
+function test(entity)
 	local assert_test = igi_tests.assert_test
 	local WorldState = igi_world_state.WorldState
-	local entity = CACHE.entities[1]
 	if not entity._test_stage then
 		entity._test_stage = -1
 		local se_actor = WorldState.objects[0]
@@ -206,11 +201,10 @@ function test(CACHE)
 
 	elseif entity._test_stage == -1 then
 		assert_test(entity.status == "READY_TO_FINISH", "Quest did not complete")
-		igi_tests.finish_test(CACHE.task_id)
 		return true
 	end
 end
-igi_tests.register_test("test_target_fetch", test, {
+igi_tests.register_subtask_test("test_target_fetch", {
 	entities = {
 		{
 			entity_type = "item",

@@ -89,12 +89,10 @@ function get_rewards(entity)
 	return entity.rewards
 end
 
-function test(CACHE)
-	if not CACHE then return true end -- test completed
-
+function test(entity)
 	local assert_test = igi_tests.assert_test
-	local entity = CACHE.entities[1]
 	entity._test_stage = (entity._test_stage or 0) + 1
+
 	if entity._test_stage == 1 then
 		local se_obj = igi_entities.get_binded_object(entity)
 		assert_test(se_obj, "Kill entity does not exist")
@@ -110,11 +108,10 @@ function test(CACHE)
 
 	elseif entity._test_stage == 3 then
 		assert_test(entity.status == "COMPLETED", "Quest did not complete after killing")
-		igi_tests.finish_test(CACHE.task_id)
 		return true
 	end
 end
-igi_tests.register_test("test_target_kill", test, {
+igi_tests.register_subtask_test("test_target_kill", {
 	entities = {
 		{
 			entity_type = "squad",

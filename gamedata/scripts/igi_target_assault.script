@@ -128,17 +128,15 @@ function get_status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
-function test(CACHE)
-	if not CACHE then return end
-	CACHE._test_stage = (CACHE._test_stage or 0) + 1
-
-	local entity = CACHE.entities[1]
+function test(entity)
 	local assert_test = igi_tests.assert_test
-	if CACHE._test_stage == 1 then
+	entity._test_stage = (entity._test_stage or 0) + 1
+
+	if entity._test_stage == 1 then
 		local se_obj = igi_entities.get_binded_object(entity)
 		assert_test(se_obj, "Entity does not exist")
 		db.actor:set_actor_position(se_obj.position)
-	elseif CACHE._test_stage == 2 then
+	elseif entity._test_stage == 2 then
 		for _, sq_id in pairs(entity.squads) do
 			local se_squad = WorldState.objects[sq_id]
 			if se_squad then
@@ -148,13 +146,12 @@ function test(CACHE)
 				end
 			end
 		end
-	elseif CACHE._test_stage == 4 then
+	elseif entity._test_stage == 4 then
 		assert_test(entity.status == "COMPLETED", "Quest did not complete after killing")
-		igi_tests.finish_test(CACHE.task_id)
 		return true
 	end
 end
-igi_tests.register_test("test_target_assault", test, {
+igi_tests.register_subtask_test("test_target_assault", {
 	entities = {
 		{
 			entity_type = "location",

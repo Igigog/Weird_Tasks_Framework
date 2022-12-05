@@ -11,6 +11,7 @@ end
 local tests_running
 local last_test
 TESTS = {}
+SUBTASK_TESTS = {}
 CURRENT_TEST = nil
 
 function on_key_press(key)
@@ -34,13 +35,19 @@ end
 
 function actor_on_first_update()
     if not CURRENT_TEST then return end
-    local id = CURRENT_TEST[1]
+    local id = CURRENT_TEST
     CreateTimeEvent("igi_tests", id, 0, continue_test, id)
 end
 
 function prepare_mock_quest(cache, id)
     local tg_id = get_story_se_object("bar_visitors_barman_stalker_trader").id
     trace_assert(igi_generic_task.try_prepare_quest(id, cache, tg_id), "Can't prepare quest")
+end
+
+function register_subtask_test(id, cache)
+    trace_assert(not SUBTASK_TESTS[id], "Subtask test already registered: "..id)
+    cache.update_delay = 0
+    SUBTASK_TESTS[id] = cache
 end
 
 function register_test(id, f, cache)
@@ -55,47 +62,72 @@ function run_all_tests()
     CreateTimeEvent("igi_tests", "all_tests", 0, function ()
         if CURRENT_TEST then return end
         db.actor:set_actor_position(actor_position)
-        local id, next_test = next(TESTS, last_test)
+        local id, next_cache = next(SUBTASK_TESTS, last_test)
         last_test = id
         if not id then
             tests_running = nil
             return true
         end
-        start_test(id, next_test[2], next_test[3])
+        start_test(id, next_cache)
     end)
 end
 
-function start_test(id, f, cache)
+function start_test(id, cache)
     trace_assert(not CURRENT_TEST, "Already running a test!")
     trace_dbg("Running test: "..id, cache)
-    CURRENT_TEST = TESTS[id]
+    CURRENT_TEST = id
 
     prepare_mock_quest(cache, id)
     task_manager.get_task_manager():give_task(id)
     CreateTimeEvent("igi_tests", id, 0, continue_test, id)
 end
 
-function finish_test(id)
+local function choose_entity(CACHE)
+    trace_dbg("choose entity", CACHE)
+    if not CACHE._test_entity_id then
+        local k, entity = next(CACHE.entities, nil)
+        CACHE._test_entity_id = k
+    end
+
+    local entity = CACHE.entities[CACHE._test_entity_id]
+    while entity.status ~= "RUNNING" or not entity.target do
+        local k, entity = next(CACHE.entities, CACHE._test_entity_id)
+        CACHE._test_entity_id = k
+        if not k then
+            trace_dbg("chosen: ", "nil")
+            return nil
+        end
+    end
+    trace_dbg("chosen: ", CACHE._test_entity_id)
+    return entity
+end
+
+function continue_test(id)
+    trace_dbg("continuing test "..id, igi_generic_task.TASKS_CACHE[id])
+    local CACHE = igi_generic_task.TASKS_CACHE[id]
+    local entity = choose_entity(CACHE)
+    if not entity then
+        assert_test(CACHE.status == "COMPLETED" or CACHE.status == "READY_TO_FINISH", "Quest was not completed")
+        finish_test()
+        return true
+    end
+
+    local target_tbl = igi_taskdata.get_target_table(entity.target)
+    trace_assert(target_tbl.test, "Test is not implemented for target "..entity.target)
+
+    target_tbl.test(entity)
+    ResetTimeEvent("igi_tests", id, 1)
+end
+
+function finish_test()
     if not CURRENT_TEST then return end
-    trace_assert(CURRENT_TEST[1] == id, "Test id does not pass: given, actual", id, CURRENT_TEST[1])
-    trace_dbg("Test completed successfully! "..id)
+    trace_dbg("Test concluded! "..CURRENT_TEST)
+    task_manager.get_task_manager():set_task_completed(CURRENT_TEST)
     CURRENT_TEST = nil
-    task_manager.get_task_manager():set_task_completed(id)
 end
 
 function assert_test(successful, reason)
     if successful then return successful end
-    actor_menu.set_fade_msg("WTF: test "..CURRENT_TEST[1].." failed: "..reason, 10, {G = 10, B = 10})
-    finish_test(CURRENT_TEST[1])
-end
-
-function continue_test(id)
-    trace_assert(CURRENT_TEST[1] == id, "Test id does not pass: given, actual", id, CURRENT_TEST[1])
-    trace_dbg("continuing test "..id, igi_generic_task.TASKS_CACHE[id])
-    local finished = CURRENT_TEST[2](igi_generic_task.TASKS_CACHE[id])
-    if not finished then
-        trace_dbg("not finished "..id)
-        ResetTimeEvent("igi_tests", id, 1)
-    end
-    return finished
+    actor_menu.set_fade_msg("WTF: test "..CURRENT_TEST.." failed: "..reason, 10, {G = 10, B = 10})
+    finish_test()
 end
