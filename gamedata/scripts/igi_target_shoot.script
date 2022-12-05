@@ -150,12 +150,12 @@ function test(CACHE)
 	if not CACHE then return true end -- test completed
     CACHE._test_stage = (CACHE._test_stage or 0) + 1
 
-	local trace_assert = igi_helper.trace_assert
+    local assert_test = igi_tests.assert_test
     local WorldState = igi_world_state.WorldState
 	local entity = CACHE.entities[1]
 	if CACHE._test_stage == 1 then
 		local se_obj = igi_entities.get_binded_object(entity)
-		trace_assert(se_obj, "Entity does not exist")
+		assert_test(se_obj, "Entity does not exist")
 		db.actor:set_actor_position(se_obj.position)
         local se_obj = alife_create_item("wpn_mp133", WorldState.objects[0])
         CACHE._test_wpn_id = se_obj.id
@@ -176,7 +176,7 @@ function test(CACHE)
         level.release_action(DIK_keys.MOUSE_1)
 		
     elseif CACHE._test_stage == 5 then
-		trace_assert(CACHE.status == "READY_TO_FINISH", "Quest did not complete")
+		assert_test(CACHE.status == "READY_TO_FINISH", "Quest did not complete")
         alife():release(WorldState.objects[CACHE._test_wpn_id])
 		igi_tests.finish_test(CACHE.task_id)
 		return true

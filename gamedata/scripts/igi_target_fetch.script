@@ -194,7 +194,7 @@ function test(CACHE)
 		return true -- test completed
 	end
 
-	local trace_assert = igi_helper.trace_assert
+	local assert_test = igi_tests.assert_test
 	local WorldState = igi_world_state.WorldState
 	local entity = CACHE.entities[1]
 	if not entity._test_stage then
@@ -205,7 +205,7 @@ function test(CACHE)
 		end
 
 	elseif entity._test_stage == -1 then
-		trace_assert(entity.status == "READY_TO_FINISH", "Quest did not complete")
+		assert_test(entity.status == "READY_TO_FINISH", "Quest did not complete")
 		igi_tests.finish_test(CACHE.task_id)
 		return true
 	end

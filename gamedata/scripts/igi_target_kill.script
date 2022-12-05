@@ -92,12 +92,13 @@ end
 function test(CACHE)
 	if not CACHE then return true end -- test completed
 
+	local assert_test = igi_tests.assert_test
 	local entity = CACHE.entities[1]
 	entity._test_stage = (entity._test_stage or 0) + 1
 	if entity._test_stage == 1 then
 		local se_obj = igi_entities.get_binded_object(entity)
-		trace_assert(se_obj, "Kill entity does not exist")
-		trace_assert(se_obj:squad_members(), "Kill entity is not a squad")
+		assert_test(se_obj, "Kill entity does not exist")
+		assert_test(se_obj:squad_members(), "Kill entity is not a squad")
 		db.actor:set_actor_position(se_obj.position)
 
 	elseif entity._test_stage == 2 then
@@ -108,7 +109,7 @@ function test(CACHE)
 		end
 
 	elseif entity._test_stage == 3 then
-		trace_assert(entity.status == "COMPLETED", "Quest did not complete after killing")
+		assert_test(entity.status == "COMPLETED", "Quest did not complete after killing")
 		igi_tests.finish_test(CACHE.task_id)
 		return true
 	end

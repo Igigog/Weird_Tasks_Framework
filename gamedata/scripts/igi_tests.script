@@ -76,10 +76,17 @@ function start_test(id, f, cache)
 end
 
 function finish_test(id)
+    if not CURRENT_TEST then return end
     trace_assert(CURRENT_TEST[1] == id, "Test id does not pass: given, actual", id, CURRENT_TEST[1])
     trace_dbg("Test completed successfully! "..id)
     CURRENT_TEST = nil
     task_manager.get_task_manager():set_task_completed(id)
+end
+
+function assert_test(successful, reason)
+    if successful then return successful end
+    news_manager.send_tip(db.actor, "WTF: test "..CURRENT_TEST[1].." failed: "..reason, nil, nil, 30000)
+    finish_test(CURRENT_TEST[1])
 end
 
 function continue_test(id)

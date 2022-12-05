@@ -2,13 +2,11 @@ TARGET_NAME = "escort"
 PATTERN = "basic"
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
 
 function entity_on_after_target_creation(entity)
 	local squad = WorldState.objects[entity.id]
-	trace_assert(squad, "escort: no squad")
 
 	axr_companions.companion_squads[squad.id] = squad
 	for k in squad:squad_members() do
@@ -28,23 +26,21 @@ end
 
 function entity_on_complete(entity)
     local se_squad = igi_entities.get_binded_object(entity)
-	igi_helper.trace_dbg("compation 1")
     axr_companions.dismiss_special_squad(se_squad)
-	igi_helper.trace_dbg("compation 2")
 end
 
 function test(CACHE)
 	if not CACHE then return true end -- test completed
 
-	local trace_assert = igi_helper.trace_assert
+	local assert_test = igi_tests.assert_test
 	local entity = CACHE.entities[1]
 	local se_squad = igi_entities.get_binded_object(entity)
 	for member in se_squad:squad_members() do
 		local se_npc = igi_world_state.WorldState.objects[member.id]
-		trace_assert(
+		assert_test(
 			se_load_var(se_npc.id, se_npc:name(), "companion"), "Not in actor's squad")
 	end
-	trace_assert(entity.status == "READY_TO_FINISH", "Quest did not complete")
+	assert_test(entity.status == "READY_TO_FINISH", "Quest did not complete")
 	igi_tests.finish_test(CACHE.task_id)
 	return true
 end
