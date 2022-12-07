@@ -55,7 +55,7 @@ local function force_parent_online(se_obj)
 end
 
 local function get_coords(str)
-	trace_assert(type(str) == "string")
+	trace_assert(type(str) == "string", "not a string")
 	local lvl, x, y, z = str:match("(.*),(.*),(.*),(.*)")
 	x, y, z = tonumber(x), tonumber(y), tonumber(z)
 	lvl = igi_db.LtxView("map_config.ltx").map_names[lvl]
@@ -165,6 +165,8 @@ function setup_squad(entity)
 	end
 
 	local ids = igi_finder.get_squads_by_args(entity, enemy_factions)
+	trace_dbg("ids", ids)
+	if not next(ids) then return nil end
 	return ids_to_entities(entity, ids)
 end
 
@@ -177,6 +179,9 @@ function setup_item(entity)
 	trace_assert(entity.item_list, "No item list given")
 	local sections = igi_db.ini_tables[entity.item_list]:as_table()
 	local ids = igi_finder.get_objects_by_args(sections, entity)
+	trace_dbg("ids", ids)
+
+	if not next(ids) then return nil end
 	return ids_to_entities(entity, ids)
 end
 

@@ -159,8 +159,9 @@ function resolve_in_str(str)
 	while changes do
 		changes = false
 		for macro_str in macro_iterator(str) do
-			trace_dbg("resolve macro", macro_str)
-			local resolved = str_to_macro(macro_str):resolve()
+			local macro = str_to_macro(macro_str)
+			trace_dbg("resolve macro", macro_str, macro)
+			local resolved = macro:resolve()
 			str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
 			changes = true
 			has_changed = true

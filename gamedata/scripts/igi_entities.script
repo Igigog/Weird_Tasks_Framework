@@ -16,7 +16,9 @@ function initialise_quest(task_data, task_id, tg_id)
 	local CACHE = dup_table(task_data)
 	igi_taskdata.finalize_task_cache(CACHE, task_id)
 	CACHE.task_giver_id = tg_id
-	initialise_entities(CACHE)
+	if not initialise_entities(CACHE) then
+		return nil
+	end
 
 	trace_dbg("CACHE after setup "..task_id, CACHE)
 	return CACHE
@@ -44,6 +46,7 @@ function initialise_entities(CACHE)
 	for _, entity in pairs(new) do
 		entities[#entities+1] = entity
 	end
+	return true
 end
 
 function create_entities(CACHE)

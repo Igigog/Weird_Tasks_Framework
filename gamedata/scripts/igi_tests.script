@@ -16,32 +16,40 @@ CURRENT_TEST = nil
 
 function on_key_press(key)
     if not igi_mcm.get_options_value("debug") then return end
-    if key ~= DIK_keys.DIK_K then return end
     if tests_running then return end
-    run_all_tests()
+    if key == DIK_keys.DIK_K then 
+        xrs_debug_tools.debug_invis = true
+        start_tests("entity", SUBTASK_TESTS)
+    elseif key == DIK_keys.DIK_H then
+        xrs_debug_tools.debug_invis = true
+        start_tests("quest", flat_quests())
+    end
+    
 end
 
 function save_state(m_data)
     m_data.igi_current_test = CURRENT_TEST
-    m_data.igi_tests_running = tests_running
+    m_data.tests_running = tests_running
     m_data.igi_last_test = last_test
 end
 
 function load_state(m_data)
     CURRENT_TEST = m_data.igi_current_test
-    tests_running = m_data.igi_tests_running
+    tests_running = m_data.tests_running
     last_test = m_data.igi_last_test
 end
 
 function actor_on_first_update()
     if not CURRENT_TEST then return end
+    local caches = tests_running == "entity" and SUBTASK_TESTS or flat_quests()
+    start_tests(tests_running, caches)
     local id = CURRENT_TEST
-    CreateTimeEvent("igi_tests", id, 0, continue_test, id)
+    CreateTimeEvent("igi_tests", id, 2, continue_test, id)
 end
 
 function prepare_mock_quest(cache, id)
     local tg_id = get_story_se_object("bar_visitors_barman_stalker_trader").id
-    trace_assert(igi_generic_task.try_prepare_quest(id, cache, tg_id), "Can't prepare quest")
+    return igi_generic_task.try_prepare_quest(id, cache, tg_id)
 end
 
 function register_subtask_test(id, cache)
@@ -55,21 +63,32 @@ function register_test(id, f, cache)
     TESTS[id] = {id, f, cache}
 end
 
-function run_all_tests()
-    tests_running = true
-    local actor_position = db.actor:position()
-    xrs_debug_tools.debug_invis = true
-    CreateTimeEvent("igi_tests", "all_tests", 0, function ()
-        if CURRENT_TEST then return end
-        db.actor:set_actor_position(actor_position)
-        local id, next_cache = next(SUBTASK_TESTS, last_test)
-        last_test = id
-        if not id then
-            tests_running = nil
-            return true
+local flatenned_quests = {}
+function flat_quests()
+    if not next(flatenned_quests) then
+        for prefix, quests in pairs(igi_taskdata.get_all_quests()) do
+            for quest_name, cache in pairs(quests) do
+                flatenned_quests[prefix..quest_name] = cache
+            end
         end
-        start_test(id, next_cache)
-    end)
+    end
+    return flatenned_quests
+end
+
+function run_tests(caches)
+    if CURRENT_TEST then return end
+    local id, next_cache = next(caches, last_test)
+    last_test = id
+    if not id then
+        tests_running = nil
+        return true
+    end
+    start_test(id, next_cache)
+end
+
+function start_tests(test_type, caches)
+    tests_running = test_type
+    CreateTimeEvent("igi_tests", test_type, 2, run_tests, caches)
 end
 
 function start_test(id, cache)
@@ -77,9 +96,12 @@ function start_test(id, cache)
     trace_dbg("Running test: "..id, cache)
     CURRENT_TEST = id
 
-    prepare_mock_quest(cache, id)
-    task_manager.get_task_manager():give_task(id)
-    CreateTimeEvent("igi_tests", id, 0, continue_test, id)
+    if prepare_mock_quest(cache, id) then
+        task_manager.get_task_manager():give_task(id)
+        CreateTimeEvent("igi_tests", id, 0, continue_test, id)
+    else
+        assert_test(nil, "Can't prepare quest")
+    end
 end
 
 local function choose_entity(CACHE)
@@ -115,7 +137,11 @@ function continue_test(id)
     local target_tbl = igi_taskdata.get_target_table(entity.target)
     trace_assert(target_tbl.test, "Test is not implemented for target "..entity.target)
 
-    target_tbl.test(entity)
+    local finished = target_tbl.test(entity)
+    if finished then
+        finish_test()
+        return true
+    end
     ResetTimeEvent("igi_tests", id, 1)
 end
 
@@ -130,4 +156,17 @@ function assert_test(successful, reason)
     if successful then return successful end
     actor_menu.set_fade_msg("WTF: test "..CURRENT_TEST.." failed: "..reason, 10, {G = 10, B = 10})
     finish_test()
+end
+
+local function get_level_id(se_obj)
+	local WorldState = igi_world_state.WorldState
+    return WorldState.gg:vertex(se_obj.m_game_vertex_id):level_id()
+end
+
+function travel_to_se_obj(se_obj)
+    if get_level_id(se_obj) == get_level_id(alife():object(0)) then
+		db.actor:set_actor_position(se_obj.position)
+	else
+		ChangeLevel(se_obj.position, se_obj.m_level_vertex_id, se_obj.m_game_vertex_id, VEC_ZERO, false)
+	end
 end

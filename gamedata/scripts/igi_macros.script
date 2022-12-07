@@ -37,7 +37,11 @@ end
 
 function Macro.TableValueRandom(args)
 	local tbl = igi_db.ini_tables[args[1]]:as_table()
-	return igi_utils.random_table_element(tbl)
+	local elem = igi_utils.random_table_element(tbl)
+	if type(elem) == "table" then
+		return table.concat(igi_utils.random_table_element(tbl), ",")
+	end
+	return elem
 end
 
 function Macro.TableValueByKey(args)

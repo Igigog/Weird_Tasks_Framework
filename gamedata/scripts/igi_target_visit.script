@@ -19,6 +19,7 @@ local function explode_path(entity)
 	local names = str_explode(entity.path, ",")
 	entity.name = names[1]
 	entity.path = nil
+	entity.order = entity.order or 1
 
 	local clones = {}
 	for i=2, #names do

@@ -123,7 +123,7 @@ function reset_all_custom_tables()
 	end
 end
 
-IGI_QUESTS = {}
+local IGI_QUESTS = {}
 function get_all_quests()
 	if not next(IGI_QUESTS) then
 		local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
