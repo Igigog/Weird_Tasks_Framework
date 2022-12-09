@@ -69,6 +69,7 @@ local function redirect_to_smart(entity)
 	igi_helper.trace_dbg("smart id", smart_id)
 	local smart_entity = {
 		target = "assault",
+		entity_type = "location",
 		status = igi_subtask.TASK_STATUSES.RUNNING,
 		order = entity.order or 1,
 		group_id = 1000,
