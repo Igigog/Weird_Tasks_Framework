@@ -3,6 +3,11 @@ local is_subset = igi_utils.Set.is_subset
 local trace_dbg = igi_helper.trace_dbg
 local get_task_text = igi_description.get_task_text
 
+function on_game_start()
+	RegisterScriptCallback("load_state", load_state)
+	RegisterScriptCallback("save_state", save_state)
+end
+
 NPC_TAGS = {
 	-- Agroprom
 	agr_smart_terrain_1_6_army_mechanic_stalker = set{"Mechanic", "Agroprom", "Army"},
@@ -84,6 +89,9 @@ NPC_TAGS = {
 	zat_stancia_trader_merc = set{"Trader", "Mercenary", "Zaton"},
 }
 
+REPEAT_TIMEOUT = 16200
+FINISHED_QUESTS = {}
+
 NPC_QUESTS = {}
 function get_all_quests_for_npc(npc)
 	local npc_name = npc:section() ~= "m_trader" and npc:section() or npc:name()
@@ -107,8 +115,13 @@ function get_valid_quests_for_npc(npc)
 	for _, quest_id in pairs(get_all_quests_for_npc(npc)) do
 		local task_data = igi_taskdata.get_task_data(quest_id)
 		local task_id = quest_id[1]..quest_id[2]..npc:id()
-		if igi_generic_task.try_prepare_quest(task_id, task_data, npc:id()) then
-			quest_list[#quest_list+1] = task_id
+		local last_finish = FINISHED_QUESTS[task_id]
+		local timeout = task_data.repeat_timeout or REPEAT_TIMEOUT
+		if (not last_finish) or game.get_game_time():diffSec(last_finish) > REPEAT_TIMEOUT then
+			FINISHED_QUESTS[task_id] = nil
+			if igi_generic_task.try_prepare_quest(task_id, task_data, npc:id()) then
+				quest_list[#quest_list+1] = task_id
+			end
 		end
 	end
 	return quest_list
@@ -185,7 +198,6 @@ IgiTask = {
 	descr			= "DESCR_DOESNT_EXIST",
 	icon			= "ui_pda2_mtask_overlay",
 	prior			= 2000,
-	repeat_timeout	= 16200,
 	condlist = {},
 	status = "normal",
 	spot = "secondary_task_location",
@@ -198,7 +210,6 @@ IgiTask = {
 			id				= id,
 			icon			= task_table.icon,
 			storyline		= task_table.storyline,
-			repeat_timeout	= task_table.repeat_timeout,
 		}
 		if task_table.storyline then
 			t.spot = "storyline_task_location"
@@ -313,6 +324,7 @@ IgiTask = {
 
 	give_reward = function (self)
 		igi_generic_task.finish_quest(self.id)
+		FINISHED_QUESTS[self.id] = game.get_game_time()
 	end,
 
 	save = function () end,
@@ -397,3 +409,13 @@ function dialogs.text_npc_has_task(a,b)
 
 	return old_text_npc_has_task(a, b)
 end
+
+function save_state(m_data)
+	m_data.igi_finished_quests = FINISHED_QUESTS
+end
+
+function load_state(m_data)
+	FINISHED_QUESTS = m_data.igi_finished_quests or FINISHED_QUESTS
+end
+
+
