@@ -123,13 +123,13 @@ function has_material_rewards(CACHE)
 	for _, entity in pairs(CACHE.entities) do
 		if entity.target then
 			local static_rewards = CACHE.rewards and CACHE.rewards.COMPLETED
-			if static_rewards and static_rewards.money then
+			if static_rewards and static_rewards.money and static_rewards.money.value ~= 0 then
 				return true
 			end
 			if not (static_rewards and static_rewards.blocked) then
 				local target_tbl = igi_taskdata.get_target_table(entity.target)
 				local dynamic_rewards = target_tbl.get_rewards(entity, CACHE.task_giver_id)
-				if dynamic_rewards.money then
+				if dynamic_rewards.money and dynamic_rewards.money.value ~= 0 then
 					return true
 				end
 			end
