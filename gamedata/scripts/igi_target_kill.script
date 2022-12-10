@@ -17,15 +17,12 @@ function get_status(entity)
 end
 
 function entity_on_first_run(entity, CACHE)
-	local tg_faction = igi_helper.get_community_by_id(CACHE.task_giver_id)
 	entity.rewards = {
 		money = {
 			value = get_money_reward(entity)
 		},
 		goodwill = {
-			values = {
-				[tg_faction] = get_goodwill_reward(entity)
-			}
+			value = get_goodwill_reward(entity)
 		}
 	}
 end

@@ -247,25 +247,20 @@ function quest_target(entity)
 	return entity.id
 end
 
-function get_rewards(entity, task_giver_id)
-	local tg_faction = igi_helper.get_community_by_id(task_giver_id)
+function get_rewards(entity)
 	if entity.status == TASK_STATUSES.COMPLETED then
 		return {
 			money = {
 				value = 3000
 			},
 			goodwill = {
-				values = {
-					[tg_faction] = 25
-				}
+				value = 25
 			}
 		}
 	elseif entity.status == TASK_STATUSES.FAILED then
 		return {
 			goodwill = {
-				values = {
-					[tg_faction] = -25
-				}
+				value = -25
 			}
 		}
 	end

@@ -8,6 +8,10 @@ REWARD_TYPES = {}
 function collect_and_give_rewards(CACHE)
 	local rewards = dup_table(CACHE.rewards and CACHE.rewards[CACHE.status] or {})
 	merge_rewards_from_subtasks(rewards, CACHE.entities, CACHE.status, CACHE.task_giver_id)
+	if rewards.goodwill then
+		rewards.goodwill.faction = rewards.goodwill.faction
+			or igi_helper.get_community_by_id(CACHE.task_giver_id)
+	end
 	igi_callbacks.invoke_callbacks("on_before_rewarding", rewards)
 	give_rewards(rewards)
 end
@@ -63,27 +67,25 @@ end
 
 REWARD_TYPES.goodwill = {
 	merge = function (self, other)
-		for faction, goodwill in pairs(other.values) do
-			self.values[faction] = self.values[faction] + goodwill
-		end
+		self.value = self.value + other.value * (other.multiplier or 1)
+			+  (other.additional or 0)
 	end,
 
 	give = function (self)
-		for faction, value in pairs(self.values) do
-			if value ~= 0 then
-				xr_effects.complete_task_inc_goodwill(nil, nil, {value, faction})
-			end
-		end
+		local value = self.value * (self.multiplier or 1) + (self.additional or 0)
+		if self.value == 0 then return end
+		xr_effects.complete_task_inc_goodwill(nil, nil, {self.value, self.faction})
 	end,
 }
 
 REWARD_TYPES.money = {
 	merge = function (self, other)
-		self.value = self.value + other.value
+		self.value = self.value + other.value * (other.multiplier or 1)
+			+ (other.additional or 0)
 	end,
 
 	give = function (self)
-		local money = self.value
+		local money = self.value * (self.multiplier or 1) + (self.additional or 0)
 		money = money*igi_mcm.get_options_value("money_reward_coeff")
 		if money ~= 0 then
 			local min = money*igi_mcm.get_options_value("reward_spread_min")
