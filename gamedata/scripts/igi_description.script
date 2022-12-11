@@ -36,6 +36,7 @@ function get_task_text_function(CACHE)
 	local icon = CACHE.icon or "ui_iconsTotal_mutant"
 
 	return function ()
+		trace_dbg("Give talk message", title, text, icon)
 		db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
 		return true
 	end

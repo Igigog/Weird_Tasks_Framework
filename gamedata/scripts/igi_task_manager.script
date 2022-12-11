@@ -415,6 +415,7 @@ function dialogs.text_npc_has_task(a,b)
 	local CACHE = igi_generic_task.TASK_SETUP[task_id]
 
 	if CACHE then
+		igi_generic_task.setup_quest(task_id)
 		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
 	end
 
