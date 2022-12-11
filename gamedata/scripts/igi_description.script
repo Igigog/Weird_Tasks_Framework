@@ -95,10 +95,11 @@ function get_task_text(desc_key, field, tg_id)
 	if text ~= text_id then return text end
 
 	-- fallback to basic field for this task type
-	text_id = igi_db.TEXT_HEADER..desc_key.."_"..field
-	text = game.translate_string(text_id)
-	if text ~= text_id then return text end
+	local basic_text_id = igi_db.TEXT_HEADER..desc_key.."_"..field
+	text = game.translate_string(basic_text_id)
+	if text ~= basic_text_id then return text end
 
 	-- fallback to basic field
+	trace_dbg("No description for key: "..desc_key, text_id, basic_text_id)
 	return game.translate_string(igi_db.TEXT_HEADER..field)
 end
