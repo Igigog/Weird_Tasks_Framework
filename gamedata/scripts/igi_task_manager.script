@@ -151,6 +151,7 @@ function axr_task_manager.drx_sl_get_mechanic_task(npc, skip, is_sim)
 end
 
 function npc_has_quest(npc_name, quest)
+	if not NPC_TAGS[npc_name] then return false end
     local npc_tags = NPC_TAGS[npc_name]
     for _, quest_tags in pairs(quest.quest_givers or {}) do
         if is_subset(quest_tags, npc_tags) then
