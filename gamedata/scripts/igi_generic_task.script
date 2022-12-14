@@ -83,7 +83,6 @@ function initialise_CACHE(task_id)
 	igi_entities.create_entities(CACHE)
 	igi_subtask.initialise_subtasks(CACHE)
 	igi_actions.initialise_actions(CACHE)
-	CACHE.__actions_time = 0
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 end
@@ -91,14 +90,6 @@ end
 --< Status >--------------------------------------------------
 function quest_status(task_id)
 	local CACHE = get_cache(task_id)
-
-	-- Timer for less pressure (totally stolen from tasks_assault.script)
-	local tg = time_global()
-	if (tg < CACHE.__actions_time) then
-		return
-	end
-	CACHE.__actions_time = tg + (CACHE.update_delay or 3000)
-
 	---------------------------<ACTIONS>---------------------
 	igi_map_marks.update_marks(CACHE)
 	igi_actions.update_actions(CACHE)

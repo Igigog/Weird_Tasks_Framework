@@ -209,6 +209,8 @@ IgiTask = {
 	descr			= "DESCR_DOESNT_EXIST",
 	icon			= "ui_pda2_mtask_overlay",
 	prior			= 2000,
+	update_delay	= 3000,
+	last_update_time = 0,
 	condlist = {},
 	status = "normal",
 	spot = "secondary_task_location",
@@ -221,6 +223,7 @@ IgiTask = {
 			id				= id,
 			icon			= task_table.icon,
 			storyline		= task_table.storyline,
+			update_delay	= task_table.update_delay,
 		}
 		if task_table.storyline then
 			t.spot = "storyline_task_location"
@@ -263,6 +266,13 @@ IgiTask = {
 	end,
 
 	check_task = function (self)
+		-- Timer for less pressure
+		local tg = time_global()
+		if (tg < self.last_update_time) then
+			return
+		end
+		self.last_update_time = tg + self.update_delay
+
 		self.t = self.t or db.actor:get_task(self.id,true)
 		if (self.t == nil) then -- task is most likely in timeout
 			return
@@ -330,6 +340,7 @@ IgiTask = {
 
 		local t = dup_table(self)
 		t.t = nil
+		t.last_update_time = nil
 		return t
 	end,
 
