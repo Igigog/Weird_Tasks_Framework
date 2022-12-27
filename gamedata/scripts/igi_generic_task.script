@@ -137,8 +137,8 @@ function quest_text(task_id,field)
 
 	local text = igi_description.get_task_text(CACHE.description_key, field, CACHE.task_giver_id)
 	local desc = field ~= "title" and ("\\n "..igi_description.get_description(CACHE)) or ""
-
-	return "[WTF] "..text..desc
+	local mark = igi_mcm.get_options_value("wtf_task_mark") and "[WTF] " or ""
+	return mark..text..desc
 end
 --< Reward >--------------------------------------------------
 function finish_quest(task_id)

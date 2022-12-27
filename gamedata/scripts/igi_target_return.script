@@ -21,7 +21,7 @@ function get_status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
-function on_completed(obj_data)
+function entity_on_complete(obj_data)
 	local obj = WorldState.objects[obj_data.id]
 	alife_release(obj)
 	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)

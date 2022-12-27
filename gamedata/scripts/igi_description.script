@@ -31,7 +31,8 @@ function get_description(CACHE)
 end
 
 function get_task_text_function(CACHE)
-	local title = "[WTF] "..get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
+	local mark = igi_mcm.get_options_value("wtf_task_mark") and "[WTF] " or ""
+	local title = mark..get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
 	local text = get_description(CACHE)
 	local icon = CACHE.icon or "ui_iconsTotal_mutant"
 

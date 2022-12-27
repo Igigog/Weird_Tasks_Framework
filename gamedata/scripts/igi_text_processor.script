@@ -144,7 +144,7 @@ function resolve_macros(tbl)
 		elseif type(v) == 'string' then
 			local str, changes = resolve_in_str(v)
 			if changes then
-				tbl[k] = str
+				tbl[k] = convert_type(str)
 				has_changed = true
 			end
 			

@@ -13,6 +13,18 @@
 	<string id="ui_mcm_igi_tasks_Options_realistic_assassinations">
 		<text>(Arszi's) Реалистичные убийства</text>
 	</string>
+	<string id="ui_mcm_igi_tasks_Options_wtf_task_mark">
+		<text>Помечать WTF квесты</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_utjan_fetch_thing">
+		<text>(Utjan's) Хренька для описания заданий сбора</text>
+	</string>
+	<string id="igi_tasks_utjan_fetch_done">
+		<text>(У тебя уже есть достаточно)</text>
+	</string>
+	<string id="igi_tasks_utjan_fetch_need">
+		<text>(Тебе нужно еще %s)</text>
+	</string>
 	<string id="ui_mcm_igi_tasks_Options_autosave_before">
 		<text>Сохранение при взятии задания</text>
 	</string>
