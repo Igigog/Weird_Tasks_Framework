@@ -72,8 +72,7 @@ end
 
 function reset_all_tasks(task, prefix)
 	for task_id in pairs(igi_generic_task.TASKS_CACHE) do
-		local task_prefix, task_name = igi_helper.get_task_name(task_id)
-		if task_prefix == prefix and task_name == task then
+		if string.find(task_id, prefix..task) then
 			task_manager.get_task_manager():set_task_completed(task_id)
 		end
 	end
@@ -100,8 +99,8 @@ end
 local function create_cancel_widgets(task, prefix)
 	local check = Checkbox.new("cancel_all")
 		:hint("igi_tasks_cancel_all")
-		:current_value({task_table_value, task, prefix, {"disabled"}})
-		:callback({set_config_value, task, prefix, {"disabled"}})
+		:current_value({function() return false end})
+		:callback({reset_all_tasks, task, prefix})
 	return Page.new(''):add(check)
 end
 
