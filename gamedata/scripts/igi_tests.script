@@ -127,6 +127,10 @@ end
 function continue_test(id)
     trace_dbg("continuing test "..id, igi_generic_task.TASKS_CACHE[id])
     local CACHE = igi_generic_task.TASKS_CACHE[id]
+    if not CACHE then
+        finish_test()
+        return true
+    end
     local entity = choose_entity(CACHE)
     if not entity then
         assert_test(CACHE.status == "COMPLETED" or CACHE.status == "READY_TO_FINISH", "Quest was not completed")

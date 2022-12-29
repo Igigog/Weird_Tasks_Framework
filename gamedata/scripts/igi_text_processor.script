@@ -51,7 +51,7 @@ function try_str_to_link(str, this_entity)
 end
 
 function resolve_free_dependencies(entities, current_entity, tbl)
-	trace_dbg("resolve before ", tbl)
+	-- trace_dbg("resolve before ", tbl)
 	local has_changes = false
 	for k,v in pairs(tbl) do
 		if type(v) == "table" then
@@ -67,7 +67,7 @@ function resolve_free_dependencies(entities, current_entity, tbl)
 			end
 		end
 	end
-	trace_dbg("resolve after ", tbl, has_changes)
+	-- trace_dbg("resolve after ", tbl, has_changes)
 	return has_changes
 end
 

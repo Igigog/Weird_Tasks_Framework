@@ -3,7 +3,7 @@ set shell := ["powershell.exe", "-c"]
 run:
     ..\..\ModOrganizer.exe "moshortcut://:Anomaly (DX11-AVX)"
 
-modorg:
+mo2:
     ..\..\ModOrganizer.exe
 
 pack:

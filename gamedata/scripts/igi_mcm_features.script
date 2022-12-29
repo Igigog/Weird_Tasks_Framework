@@ -48,7 +48,7 @@ end
 
 function autocomplete(CACHE)
     if not enabled_in_mcm("autocomplete") then return end
-    if CACHE.status ~= "COMPLETED" and CACHE.status ~= "READY_TO_FINISH" then return end
+    if CACHE.status ~= "COMPLETED" then return end
     task_manager.get_task_manager():set_task_completed(CACHE.task_id)
 end
 

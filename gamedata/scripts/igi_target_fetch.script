@@ -12,7 +12,6 @@ function ready_to_finish(obj_data)
 end
 
 function get_fetched_items(obj_data)
-	trace_dbg("fetch obj_data", obj_data)
 	local section = obj_data.section_name
 	local amount = obj_data.amount or 1
 	local ids = {}

@@ -44,8 +44,7 @@ igi_tests.register_subtask_test("test_target_escort", {
 	entities = {
 		{
 			entity_type = "squad",
-			faction = "&Faction(friend of actor and friend of taskgiver)&",
-			section_name = "[this.faction]_sim_squad_novice",
+			section_name = "army_sim_squad_novice",
 			to_create = true,
 			where = "[location_1_1.id]",
 			target = "escort"

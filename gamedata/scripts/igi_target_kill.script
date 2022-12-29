@@ -113,8 +113,7 @@ igi_tests.register_subtask_test("test_target_kill", {
 	entities = {
 		{
 			entity_type = "squad",
-			faction = "&Faction(enemy of actor and enemy of taskgiver)&",
-			section_name = "[this.faction]_sim_squad_novice",
+			section_name = "army_sim_squad_novice",
 			to_create = true,
 			where = "[location_1_1.id]",
 			target = "kill"
