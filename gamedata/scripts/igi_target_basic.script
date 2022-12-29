@@ -105,7 +105,7 @@ function get_description(entity)
 
 	local desc = {}
 	if entity.entity_type == "squad" then
-		desc.factions = {entity.faction}
+		desc.factions = {entity.faction or ini_sys:r_string_ex(entity.section_name, "faction")}
 		desc.locations = {entity.where}
 	elseif entity.entity_type == "item" then
 		desc.targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
