@@ -164,7 +164,7 @@ end
 
 local function build_task_page(task, prefix)
 	local page = Page.new(task):text("igi_task_text_"..prefix.."_"..task.."_title")
-	page:add(Title.new("ui_mcm_task_pack_general_title"))
+	page:add(Title.new(task):text("igi_task_text_"..prefix.."_"..task.."_title"))
 	page:merge(create_disable_widgets(task, prefix))
 	page:merge(create_cancel_widgets(task, prefix))
 	page:add(Line.new())
