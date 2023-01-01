@@ -67,25 +67,25 @@ end
 
 REWARD_TYPES.goodwill = {
 	merge = function (self, other)
-		self.value = self.value + other.value * (other.multiplier or 1)
+		self.value = (self.value or 0) + other.value * (other.multiplier or 1)
 			+  (other.additional or 0)
 	end,
 
 	give = function (self)
-		local value = self.value * (self.multiplier or 1) + (self.additional or 0)
-		if self.value == 0 then return end
-		xr_effects.complete_task_inc_goodwill(nil, nil, {self.value, self.faction})
+		local value = (self.value or 0) * (self.multiplier or 1) + (self.additional or 0)
+		if value == 0 then return end
+		xr_effects.complete_task_inc_goodwill(nil, nil, {value, self.faction})
 	end,
 }
 
 REWARD_TYPES.money = {
 	merge = function (self, other)
-		self.value = self.value + other.value * (other.multiplier or 1)
+		self.value = (self.value or 0) + other.value * (other.multiplier or 1)
 			+ (other.additional or 0)
 	end,
 
 	give = function (self)
-		local money = self.value * (self.multiplier or 1) + (self.additional or 0)
+		local money = (self.value or 0) * (self.multiplier or 1) + (self.additional or 0)
 		money = money*igi_mcm.get_options_value("money_reward_coeff")
 		if money ~= 0 then
 			local min = money*igi_mcm.get_options_value("reward_spread_min")
