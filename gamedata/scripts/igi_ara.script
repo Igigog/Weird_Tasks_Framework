@@ -46,7 +46,7 @@ function add_squad_to_tables(squad_id, object_data)
 end
 
 local function is_in_actor_squad(se_obj)
-	if se_obj == db.actor then return true end
+	if se_obj.id == 0 then return true end
 	return se_load_var(se_obj.id, se_obj:name(), "companion")
 end
 
@@ -102,15 +102,12 @@ end
 
 
 function is_not_killed_by_player(subtask_data)
-	if subtask_data.ara_to_kill then
-		-- false if at least one target from ara_to_kill was hit by player
-		for id in pairs(subtask_data.ara_to_kill) do
-			if killed_by_player[id] then return false end
-		end
-		return true
+	if not subtask_data.ara_to_kill then return false end
+	-- false if at least one target from ara_to_kill was hit by player
+	for id in pairs(subtask_data.ara_to_kill) do
+		if killed_by_player[id] then return false end
 	end
-
-	return false
+	return true
 end
 
 
