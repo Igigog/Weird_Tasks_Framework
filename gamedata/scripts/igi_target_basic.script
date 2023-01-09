@@ -73,6 +73,9 @@ function get_location_description(entity)
 	local se_obj = WorldState.objects[entity.id]
 	if SIMBOARD.smarts[entity.id] then
 		return "st_"..se_obj:name().."_name"
+	elseif SIMBOARD.smarts[entity.where] then
+		local smart = WorldState.objects[entity.where]
+		return "st_"..smart:name().."_name"
 	end
 	return dynamic_news_helper.GetPointDescription(se_obj)
 end

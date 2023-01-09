@@ -66,6 +66,7 @@ end
 
 local function redirect_to_smart(entity)
 	local smart_id = WorldState.objects[entity.id].current_target_id
+	entity.where = smart_id
 	igi_helper.trace_dbg("smart id", smart_id)
 	local smart_entity = {
 		target = "assault",
