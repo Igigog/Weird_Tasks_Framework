@@ -262,8 +262,8 @@ IgiTask = {
 			t:set_map_location(self.spot)
 			t:set_map_object_id(self.current_target)
 		end
-		db.actor:give_task(t, 0, false, 0)
 		self.t = t
+		db.actor:give_task(t, 0, false, 0)
 	end,
 
 	check_task = function (self)
