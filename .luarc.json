@@ -438,6 +438,7 @@
         "igi_tests",
         "ChangeLevel",
         "VEC_ZERO",
-        "get_object_by_id"
+        "get_object_by_id",
+        "tmrs_tasks"
     ]
 }

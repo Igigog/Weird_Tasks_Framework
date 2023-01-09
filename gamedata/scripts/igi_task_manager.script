@@ -320,6 +320,10 @@ IgiTask = {
 		self.check_time = nil
 		self.last_check_task = nil
 		self.status = "normal"
+		
+		if tmrs_tasks then	-- xcvb's task timers
+			tmrs_tasks.active_tasks[self.id] = nil
+		end
 
 		if self.last_check_task == "fail" then
 			igi_generic_task.finish_quest(self.id)
@@ -347,6 +351,9 @@ IgiTask = {
 	give_reward = function (self)
 		igi_generic_task.finish_quest(self.id)
 		FINISHED_QUESTS[self.id] = game.get_game_time()
+		if tmrs_tasks then	-- xcvb's task timers
+			tmrs_tasks.active_tasks[self.id] = nil
+		end
 	end,
 
 	save = function () end,
