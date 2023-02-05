@@ -141,6 +141,10 @@ function get_community_by_id(id)
 		se_obj = WorldState.objects[se_obj:commander_id()]
 	end
 
+	if se_obj:section_name() == "m_trader" then
+		return "stalker"	-- Sid, Forester
+	end
+
 	local community = alife_character_community(se_obj)
 	if community:find("trader") then
 		return igi_db.get_value("misc.ltx", "trader_faction", se_obj:section_name())
