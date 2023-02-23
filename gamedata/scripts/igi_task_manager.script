@@ -428,6 +428,22 @@ function axr_task_manager.get_task_job_description( task_id )
 	return old_get_task_job_description(task_id)
 end
 
+old_trigger_fetch_func = axr_task_manager.trigger_fetch_func
+function axr_task_manager.trigger_fetch_func( task_id )
+	local CACHE = igi_generic_task.TASK_SETUP[task_id]
+	if CACHE then return end
+
+	return old_trigger_fetch_func(task_id)
+end
+
+old_trigger_job_func = axr_task_manager.trigger_job_func
+function axr_task_manager.trigger_job_func( task_id )
+	local CACHE = igi_generic_task.TASK_SETUP[task_id]
+	if CACHE then return end
+
+	return old_trigger_job_func(task_id)
+end
+
 old_text_npc_has_task = dialogs.text_npc_has_task
 function dialogs.text_npc_has_task(a,b)
 	local npc = dialogs.who_is_npc(a, b)
