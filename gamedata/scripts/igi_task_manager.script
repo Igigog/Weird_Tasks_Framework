@@ -143,12 +143,6 @@ function axr_task_manager.generate_available_tasks(npc,is_sim)
 	inject_tasks(npc)
 end
 
-old_generate_mechanic_tasks = axr_task_manager.drx_sl_get_mechanic_task
-function axr_task_manager.drx_sl_get_mechanic_task(npc, skip, is_sim)
-	local task_id = old_generate_mechanic_tasks(npc, skip, is_sim)
-	local igi_tasks = get_valid_quests_for_npc(npc)
-	return igi_tasks[math.random(#igi_tasks + 1)] or task_id
-end
 
 function npc_has_quest(npc_name, quest)
 	if not NPC_TAGS[npc_name] then return false end
@@ -192,10 +186,14 @@ end
 old_drx_sl_text_mechanic_has_ordered_task_to_give = dialogs.drx_sl_text_mechanic_has_ordered_task_to_give
 function dialogs.drx_sl_text_mechanic_has_ordered_task_to_give( a, b )
 	local npc = dialogs.who_is_npc(a, b)
-	local task_id = axr_task_manager.drx_sl_get_mechanic_task(npc)
-	local CACHE = igi_generic_task.TASK_SETUP[task_id]
+	local igi_tasks = get_valid_quests_for_npc(npc)
 
-	if CACHE then
+	-- randomly sets task_id to nil when vanilla task exists to avoid only giving igi tasks
+	local vanilla_task_chance = axr_task_manager.drx_sl_get_mechanic_task(npc) and 1 or 0
+	local task_id = igi_tasks[math.random(#igi_tasks + vanilla_task_chance)]
+
+	if task_id then
+		local CACHE = igi_generic_task.TASK_SETUP[task_id]
 		dialogs.last_task_id = task_id
 		igi_generic_task.setup_quest(task_id)
 		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
