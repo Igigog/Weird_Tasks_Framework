@@ -167,8 +167,8 @@ end
 function first_finished_igi_task(tg_id)
 	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
 		if cache.task_giver_id == tg_id
-				and cache.status == igi_subtask.TASK_STATUSES.READY_TO_FINISH
-				or cache.status == igi_subtask.TASK_STATUSES.COMPLETED then
+				and (cache.status == igi_subtask.TASK_STATUSES.READY_TO_FINISH
+				or cache.status == igi_subtask.TASK_STATUSES.COMPLETED) then
 			return task_id
 		end
 	end
