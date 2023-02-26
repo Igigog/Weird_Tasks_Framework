@@ -418,7 +418,7 @@ end
 
 old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
-	local CACHE = igi_generic_task.TASKS_CACHE[task_id]
+	local CACHE = igi_generic_task.TASKS_CACHE[task_id] or igi_generic_task.TASK_SETUP[task_id]
 	if CACHE then
 		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
 	end
