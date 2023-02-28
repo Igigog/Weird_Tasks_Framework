@@ -79,6 +79,10 @@ local function set_callback(squad_id, weapon, ammo_type, only_commander)
     callback_is_set[squad_id] = f
 end
 
+function is_failed(obj_data)
+    return (not is_shotted[obj_data.id]) and not igi_entities.get_binded_object(obj_data)
+end
+
 function ready_to_finish(obj_data)
     if not is_shotted[obj_data.id] and not callback_is_set[obj_data.id] then
         igi_helper.trace_dbg("shoot: obj_data", obj_data)
@@ -88,6 +92,7 @@ function ready_to_finish(obj_data)
 end
 
 function get_status(entity)
+    if is_failed(entity) then return TASK_STATUSES.FAILED end
     if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
     return TASK_STATUSES.RUNNING
 end
