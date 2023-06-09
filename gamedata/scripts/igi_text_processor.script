@@ -35,19 +35,18 @@ end
 
 function try_str_to_link(str, this_entity)
 	-- Won't work with dependencies with macros
-	local typ, group_id, entity_id, field = str:match("%[([a-zA-Z]+)_?(%d*)_?(%d*)%.([a-zA-Z_]+)%]")
+	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
 
-	if typ == "this" then
-		typ = this_entity.entity_type
-		group_id = this_entity.group_id
-		entity_id = this_entity.entity_id
+    if link_id == "this" then
+		this_entity.link_id = this_entity.link_id or math.random()
+		link_id = this_entity.link_id
 	end
 
-	if not (typ and tonumber(group_id) and tonumber(entity_id) and field) then
+	if not (link_id and field) then
 		return nil
 	end
 
-	return igi_linker.Link.new(typ, group_id, entity_id, field)
+	return igi_linker.Link.new(link_id, field)
 end
 
 function resolve_free_dependencies(entities, current_entity, tbl)
@@ -88,7 +87,7 @@ function link_entity(str, entity)
 	for dep in link_iterator(str) do
 		local link = str_to_link(dep)
 		if link:is_pointed_to(entity) then
-			str = str:gsub(igi_utils.escape_pattern(dep), igi_linker.resolve_field(link, entity))
+			str = str:gsub(igi_utils.escape_pattern(dep), link:resolve_field(entity))
 		end
 	end
 	return convert_type(str)

@@ -1,30 +1,10 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
-function resolve_link(link, entities)
-	local entity = get_linked_entity(entities, link)
-	local out = resolve_field(link, entity)
-	return out and tostring(out) or nil
-end
-
-function get_linked_entity(entities, link)
-	for _, entity in pairs(entities) do
-		if link:is_pointed_to(entity) then
-			return entity
-		end
-	end
-end
-
-function resolve_field(link, entity)
-	return entity[link.field]
-end
-
 Link = {
-	new = function (typ, group_id, entity_id, field)
+	new = function (link_id, field)
 		local t = {
-			entity_type = typ,
-			group_id = tonumber(group_id),
-			entity_id = tonumber(entity_id),
+			link_id = link_id,
 			field = field,
 		}
 
@@ -32,12 +12,26 @@ Link = {
 	end,
 
 	is_pointed_to = function (self, entity)
-		return (self.entity_type == entity.entity_type) and
-			(self.group_id == entity.group_id) and
-			(self.entity_id == (entity.entity_id or 1))
+		return self.link_id == entity.link_id
 	end,
 
-	resolve = resolve_link, -- for convenience
+    resolve = function(self, entities)
+		local entity = self:get_linked_entity(entities)
+		local out = self:resolve_field(entity)
+		return out and tostring(out) or nil
+	end,
+
+	resolve_field = function(self, entity)
+		return entity[self.field]
+    end,
+
+	get_linked_entity = function(self, entities)
+        for _, entity in pairs(entities) do
+            if self:is_pointed_to(entity) then
+                return entity
+            end
+        end
+	end,
 }
 
 function broadcast_entity(entities, entity)
@@ -48,28 +42,4 @@ function broadcast_entity(entities, entity)
 			broadcast_entity(v, entity)
 		end
 	end
-end
-
-function set_missing_group_ids(entities)
-	local counters = count_entity_types(entities)
-	for _, entity in pairs(entities) do
-		if not entity.group_id then
-			counters[entity.entity_type] = counters[entity.entity_type] + 1
-			entity.group_id = counters[entity.entity_type]
-		end
-		if not entity.entity_id then
-			entity.entity_id = 1
-		end
-	end
-end
-
-function count_entity_types(entities)
-	local counters = igi_utils.defaultdict(0)
-	for _, entity in pairs(entities) do
-		local counter = counters[entity.entity_type]
-		if entity.group_id and (entity.group_id > counter) then
-			counters[entity.entity_type] = entity.group_id
-		end
-	end
-	return counters
 end
