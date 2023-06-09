@@ -38,7 +38,7 @@ function try_str_to_link(str, this_entity)
 	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
 
     if link_id == "this" then
-		this_entity.link_id = this_entity.link_id or math.random()
+		this_entity.link_id = this_entity.link_id or tostring(math.random())
 		link_id = this_entity.link_id
 	end
 
