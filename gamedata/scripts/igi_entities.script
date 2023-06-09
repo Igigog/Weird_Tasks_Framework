@@ -3,11 +3,6 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-ENTITY_STATES = {
-	INITIALISED = "INITIALISED",
-	CREATED = "CREATED",
-}
-
 function initialise_quest(task_data, task_id, tg_id)
 	trace_dbg("setup "..task_id, task_data)
 	igi_random.set_seed(task_id)
@@ -28,24 +23,24 @@ function initialise_entities(CACHE)
 	local entities = CACHE.entities
 	local new = {}
 	for _, entity in pairs(entities) do
-		if not entity._state then
-			trace_dbg('setup group '..tostring(_), entity)
+		if not entity.tags.INIT then
+            trace_dbg('setup group ' .. tostring(_), entity)
 			local new_entities = initialise(entity)
 			if not new_entities then
 				return trace_dbg("entity failed", entity)
 			end
-			trace_dbg('group_data, new entities', entity, new_entities)
-
-			for i, new_entity in ipairs(new_entities) do
-				new_entity.entity_id = i + entity.entity_id
-				new[#new+1] = new_entity
-			end
+            trace_dbg('group_data, new entities', entity, new_entities)
+			
+			new[#new+1] = new_entities
 		end
 	end
 
-	for _, entity in pairs(new) do
-		entities[#entities+1] = entity
+	for _, new_entities in pairs(new) do
+		for _, entity in pairs(new_entities) do
+            entities[#entities + 1] = entity
+		end
 	end
+	
 	return true
 end
 
@@ -54,7 +49,7 @@ function create_entities(CACHE)
 	-- if it's not ready after n^2 tries, it won't be ready
 	for _=1, size_table(entities) do
 		for _,entity in pairs(entities) do
-			if entity._state ~= ENTITY_STATES.CREATED and igi_text_processor.has_no_outer_links(entity, entity) then
+			if (not entity.tags.CREATED) and igi_text_processor.has_no_outer_links(entity, entity) then
 				trace_dbg("entity_setup", entity)
 				create(entity)
 				igi_linker.broadcast_entity(entities, entity)
@@ -66,7 +61,7 @@ function create_entities(CACHE)
 	end
 
 	for _,entity in pairs(entities) do
-		if entity._state ~= ENTITY_STATES.CREATED then
+		if not entity.tags.CREATED then
 			trace_dbg("Creation failed", entities)
 			trace_assert(nil, "Entity not created")
 		end
@@ -76,16 +71,16 @@ function create_entities(CACHE)
 end
 
 function initialise(entity)
-	assert(not entity._state, "Not a raw entity")
-	entity._state = ENTITY_STATES.INITIALISED
+	assert(not entity.tags.INIT, "Already initialized")
+	entity.tags.INIT = true
 
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
 	return target_tbl["setup_"..entity.entity_type](entity)
 end
 
 function create(entity)
-	trace_assert(entity._state == ENTITY_STATES.INITIALISED, "Not an initialised entity")
-	entity._state = ENTITY_STATES.CREATED
+	trace_assert(entity.tags.INIT, "Not an initialised entity")
+	entity.tags.CREATED = true
 
 	igi_text_processor.resolve_macros(entity)
 	trace_dbg("processed entity", entity)
@@ -97,17 +92,18 @@ function create(entity)
 end
 
 function bind_to_se_obj(entity, id)
+	trace_assert(not entity.tags.BINDED, "Entity is already binded: remove the tag manually is it's intended", entity)
 	local se_obj = igi_world_state.WorldState.objects[id]
 	trace_assert(se_obj, "Server object does not exist")
 	entity.id = se_obj.id
-	entity.section_name = se_obj:section_name()
+    entity.section_name = se_obj:section_name()
+	entity.tags.BINDED = true
 	return entity
 end
 
 function get_binded_object(entity)
-	if not entity.id then return end
+	trace_assert(entity.tags.BINDED and entity.id, "Entity is not binded or id was removed", entity)
 	local se_obj = WorldState.objects[entity.id]
-	if not se_obj then return end
-	if se_obj:section_name() ~= entity.section_name then return end
+	if (not se_obj) or se_obj:section_name() ~= entity.section_name then return end
 	return se_obj
 end

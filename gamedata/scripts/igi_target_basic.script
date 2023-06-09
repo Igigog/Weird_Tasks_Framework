@@ -122,7 +122,8 @@ end
 ------------------------------------------------
 
 function setup_location(entity)
-	--trace_assert(entity.where or entity.coords, "location has no info")
+	entity.tags.LOCATION = true
+	
 	if entity.coords then
 		return unwrap_entity_amount(entity)
 	end
@@ -153,6 +154,8 @@ function setup_location(entity)
 end
 
 function setup_squad(entity)
+	entity.tags.SQUAD = true
+
 	if entity.to_create then
 		assert_has_valid_section(entity)
 		return unwrap_entity_amount(entity)
@@ -174,6 +177,8 @@ function setup_squad(entity)
 end
 
 function setup_item(entity)
+    entity.tags.ITEM = true
+
 	if entity.to_create then
 		assert_has_valid_section(entity)
 		return unwrap_entity_amount(entity)
@@ -194,14 +199,17 @@ end
 ------------------------------------------------
 
 function create_location(entity)
+	trace_assert(entity.tags.LOCATION, "Entity is not a location", entity)
 	if entity.location_type == 'stash' then
 		treasure_manager.set_random_stash(nil, nil, nil, entity.id)
 	end
 end
 
 function create_squad(entity)
-	local se_obj = igi_entities.get_binded_object(entity)
-	if se_obj then
+	trace_assert(entity.tags.SQUAD, "Entity is not a squad", entity)
+
+    if entity.tags.BINDED then
+		local se_obj = igi_entities.get_binded_object(entity)
 		se_obj.stay_time = game.get_game_time()
 		se_obj.force_online = true
 		return
@@ -216,12 +224,15 @@ function create_squad(entity)
 end
 
 function create_item(entity)
-	local se_obj = igi_entities.get_binded_object(entity)
-	if se_obj then
+	trace_assert(entity.tags.ITEM, "Entity is not an item", entity)
+
+    if entity.tags.BINDED then
+		local se_obj = igi_entities.get_binded_object(entity)
 		force_parent_online(se_obj)
 		return
 	end
 
+	local se_obj
 	if SIMBOARD.smarts[entity.where] then -- TODO: distinction with flag
 		local smart = SIMBOARD.smarts[entity.where].smrt
 		local location = vector():set(

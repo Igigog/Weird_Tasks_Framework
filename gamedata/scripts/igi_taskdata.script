@@ -164,7 +164,10 @@ function finalize_task_cache(CACHE, task_id)
 	CACHE.preconditions = nil	-- not needed
 	CACHE.task_id = task_id
 
-	igi_text_processor.resolve_macros_and_link_variables(CACHE.entities)
+    igi_text_processor.resolve_macros_and_link_variables(CACHE.entities)
+	for _, entity in pairs(CACHE.entities) do
+		entity.tags = entity.tags or {}
+	end
 
 	trace_dbg("finalized CACHE", CACHE)
 end
