@@ -4,12 +4,7 @@ update_mark = function (entity)
 	local object_in_world = igi_world_state.is_entity_in_world(entity)
 
 	if object_in_world and not has_spot then
-		level.map_add_object_spot(
-			entity.id,
-			entity.mark,
-			game.translate_string(entity.mark)
-		)
-
+		level.map_add_object_spot(entity.id, entity.mark, game.translate_string(entity.mark))
 	elseif (not object_in_world) and has_spot then
 		level.map_remove_object_spot(entity.id, entity.mark)
 	end
