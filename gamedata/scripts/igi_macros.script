@@ -8,24 +8,21 @@ function set_task_giver(tg_id)
 	current_tg_faction = igi_helper.get_community_by_id(tg_id)
 end
 
-function resolve(macro)
-	return Macro[macro.type](macro.args)
-end
-
 Macro = {
-    new = function (typ, args)
-		trace_assert(Macro[typ], args)
-		local t = {
-			type = typ,
-			args = args
-		}
+    new = function(str)
+		local f = loadstring(str)
+    	trace_assert(f, "Macro fucked up and catched fire", str)
+    	setfenv(f, Macro)
+		local t = {f}
 		return setmetatable(t, {__index = Macro})
 	end,
 
 	resolve = function(self)
-		return Macro[self.type](self.args)
+		return self[1]()
 	end
 }
+
+setmetatable(Macro, {__index = _G})
 
 function Macro.ScaleToPlayer(args)
 	return igi_helper.scale_to_player(unpack(args))

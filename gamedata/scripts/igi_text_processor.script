@@ -121,19 +121,8 @@ function str_to_macro(str)
 end
 
 function try_str_to_macro(str)
-	local typ, args = string.match(str, "%&(.-)%((.*)%)%&")
-
-	if not (typ and args) then
-		return nil
-	end
-
-	local arg_table = {}
-	for arg in args:gmatch("([^,]+)") do
-		local despaced = arg:gsub('^%s?(.*)%s?$', '%1')
-		arg_table[#arg_table + 1] = convert_type(despaced)
-	end
-
-	return igi_macros.Macro.new(typ, arg_table)
+	local macro = string.match(str, "%&(.-)%&")
+	return macro and igi_macros.Macro.new(macro)
 end
 
 function resolve_macros(tbl)
