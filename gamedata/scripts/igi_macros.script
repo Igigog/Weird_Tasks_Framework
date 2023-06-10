@@ -26,17 +26,34 @@ Macro = {
 
 setmetatable(Macro, {__index = _G})
 
-function Macro.ScaleToPlayer(...)
-	return igi_helper.scale_to_player(...)
+function Macro.ScaleToPlayera(a, b)
+	-- will return integer from a to b (or from 1 to a) based
+	-- on player rank
+	local endgame_rank = 8000	-- TODO: move to settings
+	local rank = db.actor:character_rank()
+
+	local function s(section, total_sections)
+		if section == 1 then return 0 end
+		local koeff = (section/total_sections)^2
+		return endgame_rank*koeff
+	end
+
+	local total_sections = b and (b-a+1) or a
+	local offset = b and a-1 or 0
+	for section=total_sections,1,-1 do
+		if rank > s(section, total_sections) then
+			return section + offset
+		end
+	end
+	return b and a or 1
 end
 
-function Macro.Random(...)
-	return igi_random.rand(...)
+function Macro.Random(b, a)
+	return igi_random.rand(b, a)
 end
 
-function Macro.TableValueRandom(...)
-	local args = {...}
-	local tbl = igi_db.ini_tables[args[1]]:as_table()
+function Macro.TableValueRandom(table)
+	local tbl = igi_db.ini_tables[table]:as_table()
 	local elem = igi_utils.random_table_element(tbl)
 	if type(elem) == "table" then
 		return table.concat(igi_utils.random_table_element(tbl), ",")
@@ -44,32 +61,22 @@ function Macro.TableValueRandom(...)
 	return elem
 end
 
-function Macro.TableValueByKey(...)
-	local args = {...}
-	trace_assert(#args == 2)
-	local tbl = igi_db.ini_tables[args[1]]
-	return tbl[args[2]]
+function Macro.TableValueByKey(table, key)
+	trace_assert(table and key)
+	local tbl = igi_db.ini_tables[table]
+	return tbl[key]
 end
 
 function Macro.ChooseOne(...)
 	return igi_utils.random_table_element({...})
 end
 
-function Macro.If(args)
-	if args[1] then
-		return args[2]
-	else
-		return args[3]
-	end
-end
-
 local constant_functions = {
 	actor_level = level.name,
 	player_level = level.name,
 }
-function Macro.Constant(...)
-	local args = {...}
-	return constant_functions[args[1]]()
+function Macro.Constant(key)
+	return constant_functions[key]()
 end
 
 local function get_faction(keyword)
@@ -83,10 +90,8 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Macro.Faction(...)
-	local args = {...}
+function Macro.Faction(args_str)
 	-- args checker needed
-	local args_str = args[1]
 	local tokens = tokenize(args_str)
 	local factions = evaluate(tokens, 1, #tokens)
 	if type(factions) == 'table' then
