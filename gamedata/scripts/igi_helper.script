@@ -127,9 +127,10 @@ function trace_assert_no_crash(val, ...)
 	return val
 end
 
-function trace_assert(val, err)
+function trace_assert(val, err, ...)
 	if not val then
 		callstack()
+		trace_dbg("Assertion failed! ", err, ...)
 		assert(nil, "WTF: "..err)
 	end
 	return val

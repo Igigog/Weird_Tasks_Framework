@@ -10,7 +10,7 @@ end
 
 Macro = {
     new = function(str)
-		local f = loadstring(str)
+		local f = assert(loadstring("return "..str))
     	trace_assert(f, "Macro fucked up and catched fire", str)
     	setfenv(f, Macro)
 		local t = {f}
@@ -18,21 +18,24 @@ Macro = {
 	end,
 
 	resolve = function(self)
-		return self[1]()
+		local v = self[1]()
+		trace_dbg("resolved", tostring(v))
+		return v
 	end
 }
 
 setmetatable(Macro, {__index = _G})
 
-function Macro.ScaleToPlayer(args)
-	return igi_helper.scale_to_player(unpack(args))
+function Macro.ScaleToPlayer(...)
+	return igi_helper.scale_to_player(...)
 end
 
-function Macro.Random(args)
-	return igi_random.rand(unpack(args))
+function Macro.Random(...)
+	return igi_random.rand(...)
 end
 
-function Macro.TableValueRandom(args)
+function Macro.TableValueRandom(...)
+	local args = {...}
 	local tbl = igi_db.ini_tables[args[1]]:as_table()
 	local elem = igi_utils.random_table_element(tbl)
 	if type(elem) == "table" then
@@ -41,14 +44,15 @@ function Macro.TableValueRandom(args)
 	return elem
 end
 
-function Macro.TableValueByKey(args)
+function Macro.TableValueByKey(...)
+	local args = {...}
 	trace_assert(#args == 2)
 	local tbl = igi_db.ini_tables[args[1]]
 	return tbl[args[2]]
 end
 
-function Macro.ChooseOne(args)
-	return igi_utils.random_table_element(args)
+function Macro.ChooseOne(...)
+	return igi_utils.random_table_element({...})
 end
 
 function Macro.If(args)
@@ -63,7 +67,8 @@ local constant_functions = {
 	actor_level = level.name,
 	player_level = level.name,
 }
-function Macro.Constant(args)
+function Macro.Constant(...)
+	local args = {...}
 	return constant_functions[args[1]]()
 end
 
@@ -78,7 +83,8 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Macro.Faction(args)
+function Macro.Faction(...)
+	local args = {...}
 	-- args checker needed
 	local args_str = args[1]
 	local tokens = tokenize(args_str)

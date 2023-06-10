@@ -73,7 +73,6 @@ local function redirect_to_smart(entity)
 		entity_type = "location",
 		status = igi_subtask.TASK_STATUSES.RUNNING,
 		order = entity.order or 1,
-		group_id = 1000,
 		_state = igi_entities.ENTITY_STATES.INITIALISED,
 	}
 	igi_entities.bind_to_se_obj(smart_entity, smart_id)
@@ -89,7 +88,7 @@ function setup_squad(entity)
 
 	if not entity.to_create then
 		local new_smarts = {}
-		igi_helper.trace_dbg("ASSAULT: redirect to smart "..entity.group_id..","..entity.entity_id, entity)
+		igi_helper.trace_dbg("ASSAULT: redirect to smart "..tostring(entity.link_id), entity)
 		new_smarts[#new_smarts+1] = redirect_to_smart(entity)
 		for _, new_entity in pairs(new_entities) do
 			new_smarts[#new_smarts+1] = redirect_to_smart(new_entity)

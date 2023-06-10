@@ -17,6 +17,7 @@ Link = {
 
     resolve = function(self, entities)
 		local entity = self:get_linked_entity(entities)
+		trace_assert(entity, "Linker can't find entity for link:", self)
 		local out = self:resolve_field(entity)
 		return out and tostring(out) or nil
 	end,

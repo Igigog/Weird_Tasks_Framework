@@ -54,8 +54,7 @@ function create_entities(CACHE)
 				create(entity)
 				igi_linker.broadcast_entity(entities, entity)
 				trace_dbg(
-					"After broadcasting "..entity.entity_type..entity.group_id
-					..":"..entity.entity_id, entities)
+					"After broadcasting "..tostring(entity.link_id), entities)
 			end
 		end
 	end
