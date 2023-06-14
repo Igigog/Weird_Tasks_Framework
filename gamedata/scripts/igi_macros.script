@@ -26,7 +26,7 @@ Macro = {
 
 setmetatable(Macro, {__index = _G})
 
-function Macro.ScaleToPlayera(a, b)
+function Macro.ScaleToPlayer(a, b)
 	-- will return integer from a to b (or from 1 to a) based
 	-- on player rank
 	local endgame_rank = 8000	-- TODO: move to settings
