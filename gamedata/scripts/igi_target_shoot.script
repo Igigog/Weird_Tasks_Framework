@@ -97,6 +97,9 @@ function get_status(entity)
     return TASK_STATUSES.RUNNING
 end
 
+setup_squad = igi_target_basic.setup_squad
+create_squad = igi_target_basic.create_squad
+
 function finish_subtask(obj_data)
     local callback = callback_is_set[obj_data.id]
     if callback then
@@ -146,14 +149,15 @@ igi_tests.register_subtask_test("test_target_shoot", {
 			entity_type = "squad",
 			section_name = "army_sim_squad_novice",
 			to_create = true,
-			where = "[location_1_1.id]",
+			where = "[smart.id]",
 			target = "shoot"
 		},
 
 		{
 			entity_type = "location",
 			search_for = "smart",
-			where = "0,0"
+			where = "0,0",
+			link_id = "smart",
 		}
 	}
 })

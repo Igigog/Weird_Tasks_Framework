@@ -45,7 +45,7 @@ end
 
 function get_object_level_id(se_obj)
 	if not se_obj then return nil end
-	
+
 	local lvl_info_obj
 	if se_obj.parent_id == 65535 then
 		lvl_info_obj = se_obj

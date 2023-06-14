@@ -73,7 +73,13 @@ local function redirect_to_smart(entity)
 		entity_type = "location",
 		status = igi_subtask.TASK_STATUSES.RUNNING,
 		order = entity.order or 1,
-		_state = igi_entities.ENTITY_STATES.INITIALISED,
+		tags = {INIT = true, LOCATION = true},
+		functors = {
+			setup = {"igi_target_assault.setup_location"},
+			create = {"igi_target_assault.create_location"},
+			status = "igi_target_assault.get_status",
+			cleanup = {},
+		}
 	}
 	igi_entities.bind_to_se_obj(smart_entity, smart_id)
 
@@ -100,6 +106,10 @@ function setup_squad(entity)
 	end
 	return new_entities
 end
+
+setup_location = igi_target_basic.setup_location
+create_location = igi_target_basic.create_location
+create_squad = igi_target_basic.create_squad
 
 function entity_on_after_target_creation(entity)
 	add_target_squads(entity)
@@ -158,14 +168,15 @@ igi_tests.register_subtask_test("test_target_assault", {
 			entity_type = "location",
 			search_for = "smart",
 			where = "0,0",
-			target = "assault"
+			target = "assault",
+			link_id = "smart",
 		},
 
 		{
 			entity_type = "squad",
 			section_name = "army_sim_squad_novice",
 			to_create = true,
-			where = "[location_1_1.id]"
+			where = "[smart.id]"
 		}
 	}
 })

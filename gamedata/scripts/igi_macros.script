@@ -52,8 +52,8 @@ function Macro.Random(b, a)
 	return igi_random.rand(b, a)
 end
 
-function Macro.TableValueRandom(table)
-	local tbl = igi_db.ini_tables[table]:as_table()
+function Macro.TableValueRandom(tbl_name)
+	local tbl = igi_db.ini_tables[tbl_name]:as_table()
 	local elem = igi_utils.random_table_element(tbl)
 	if type(elem) == "table" then
 		return table.concat(igi_utils.random_table_element(tbl), ",")
@@ -61,9 +61,9 @@ function Macro.TableValueRandom(table)
 	return elem
 end
 
-function Macro.TableValueByKey(table, key)
-	trace_assert(table and key)
-	local tbl = igi_db.ini_tables[table]
+function Macro.TableValueByKey(tbl_name, key)
+	trace_assert(tbl_name and key)
+	local tbl = igi_db.ini_tables[tbl_name]
 	return tbl[key]
 end
 

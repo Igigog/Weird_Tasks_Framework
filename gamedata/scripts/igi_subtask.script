@@ -91,7 +91,8 @@ function get_task_status(entities)
 end
 
 function update_entity_status(entity)
-	local new_status = igi_taskdata.get_target_table(entity.target).get_status(entity)
+	local f = igi_utils.lookup_path(entity.functors.status, _G)
+	local new_status = f(entity)
 	if new_status == entity.status then return end
 	entity.status = new_status
 	igi_callbacks.invoke_callbacks("on_subtask_status_change", entity)

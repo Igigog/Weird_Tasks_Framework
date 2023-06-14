@@ -76,6 +76,9 @@ function get_money_reward(entity)
 	return reward
 end
 
+setup_squad = igi_target_basic.setup_squad
+create_squad = igi_target_basic.create_squad
+
 function get_goodwill_reward(entity)
 	local se_squad = WorldState.objects[entity.id]
 	local npc_count = se_squad:npc_count()
@@ -115,14 +118,15 @@ igi_tests.register_subtask_test("test_target_kill", {
 			entity_type = "squad",
 			section_name = "army_sim_squad_novice",
 			to_create = true,
-			where = "[location_1_1.id]",
+			where = "[smart.id]",
 			target = "kill"
 		},
 
 		{
 			entity_type = "location",
 			search_for = "smart",
-			where = "0,0"
+			where = "0,0",
+			link_id = "smart",
 		}
 	}
 })

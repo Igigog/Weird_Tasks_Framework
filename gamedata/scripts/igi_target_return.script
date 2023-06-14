@@ -42,6 +42,9 @@ function get_item_cost(entity)
 	return config_cost
 end
 
+setup_item = igi_target_basic.setup_item
+create_item = igi_target_basic.create_item
+
 function get_item_weight(entity)
 	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
 end
@@ -84,13 +87,14 @@ igi_tests.register_subtask_test("test_target_return", {
 			section_name = "itm_drugkit",
 			target = "return",
 			to_create =  true,
-			where =  "[location_1_1.id]",
+			where =  "[smart.id]",
 		},
 
 		{
 			entity_type = "location",
 			search_for =  "smart",
 			where = "0,0",
+			link_id = "smart",
 		}
 	}
 })

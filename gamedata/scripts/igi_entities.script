@@ -73,8 +73,12 @@ function initialise(entity)
 	assert(not entity.tags.INIT, "Already initialized")
 	entity.tags.INIT = true
 
-	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
-	return target_tbl["setup_"..entity.entity_type](entity)
+	for _, functor_name in pairs(entity.functors.setup) do
+		local f = igi_utils.lookup_path(functor_name, _G) --! only one functor right now
+		local new_entities = f(entity)
+		trace_dbg("group_data, new entities", entity, new_entities)
+		return new_entities
+	end
 end
 
 function create(entity)
@@ -84,10 +88,10 @@ function create(entity)
 	igi_text_processor.resolve_macros(entity)
 	trace_dbg("processed entity", entity)
 
-	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
-	local new_entities = target_tbl["create_"..entity.entity_type](entity)
-	trace_dbg("group_data, new entities", entity, new_entities)
-	return new_entities
+	for _, functor_name in pairs(entity.functors.create) do
+		igi_utils.lookup_path(functor_name, _G)(entity)
+		trace_dbg("create after functor", functor_name, entity)
+	end
 end
 
 function bind_to_se_obj(entity, id)

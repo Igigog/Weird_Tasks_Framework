@@ -20,6 +20,9 @@ function entity_on_after_target_creation(entity)
 	sim_offline_combat.task_squads[squad.id] = true
 end
 
+setup_squad = igi_target_basic.setup_squad
+create_squad = igi_target_basic.create_squad
+
 function get_status(entity)
     return TASK_STATUSES.READY_TO_FINISH
 end
@@ -46,14 +49,15 @@ igi_tests.register_subtask_test("test_target_escort", {
 			entity_type = "squad",
 			section_name = "army_sim_squad_novice",
 			to_create = true,
-			where = "[location_1_1.id]",
+			where = "[smart.id]",
 			target = "escort"
 		},
 
 		{
 			entity_type = "location",
 			search_for = "smart",
-			where = "0,0"
+			where = "0,0",
+			link_id = "smart",
 		}
 	}
 })
