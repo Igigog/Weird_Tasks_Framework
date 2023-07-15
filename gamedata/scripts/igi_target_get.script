@@ -1,5 +1,11 @@
 TARGET_NAME = "get"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {"igi_target_basic.setup_item"},
+	create = {"igi_target_basic.create_item"},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local WorldState = igi_world_state.WorldState
@@ -14,10 +20,8 @@ function is_failed(se_obj, section_name)
 	if se_obj:section_name() ~= section_name then return true end
 end
 
-setup_item = igi_target_basic.setup_item
-create_item = igi_target_basic.create_item
 
-function get_status(entity)
+function status(entity)
 	local se_obj = WorldState.objects[entity.id]
 	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
 	if is_completed(se_obj) then return TASK_STATUSES.COMPLETED end

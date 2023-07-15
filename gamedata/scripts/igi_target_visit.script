@@ -1,5 +1,11 @@
 TARGET_NAME = "visit"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {script_name()..".setup"},
+	create = {"igi_target_basic.create_location"},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 local WorldState = igi_world_state.WorldState
 local trace_dbg = igi_helper.trace_dbg
@@ -31,7 +37,7 @@ local function explode_path(entity)
 	return clones
 end
 
-function setup_location(entity)
+function setup(entity)
 	if not entity.path then
 		return igi_target_basic.setup_location(entity)
 	end
@@ -59,7 +65,7 @@ function is_complete(obj_data)
 	return distance(target.position, actor.position) < MAX_DISTANCE_SQR
 end
 
-function get_status(subtask)
+function status(subtask)
     if is_complete(subtask) then return igi_subtask.TASK_STATUSES.COMPLETED end
     return igi_subtask.TASK_STATUSES.RUNNING
 end

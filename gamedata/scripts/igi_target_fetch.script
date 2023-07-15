@@ -1,5 +1,11 @@
 TARGET_NAME = "fetch"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {script_name()..".setup"},
+	create = {},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
@@ -36,7 +42,7 @@ function get_fetched_items(obj_data)
 	return ids, amount
 end
 
-function get_status(entity)
+function status(entity)
 	if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
 	return TASK_STATUSES.RUNNING
 end
@@ -45,7 +51,7 @@ function quest_target(entity)
 	return -1
 end
 
-function setup_item(entity)
+function setup(entity)
 	trace_assert(ini_sys:section_exist(entity.section_name or "nil"),
 		"Section does not exist")
 	entity.amount = entity.amount or 1
@@ -66,9 +72,6 @@ function get_description(entity)
 	return {
 		targets = {str}
 	}
-end
-
-function create_item(entity)
 end
 
 local function get_item_base_cost(section)

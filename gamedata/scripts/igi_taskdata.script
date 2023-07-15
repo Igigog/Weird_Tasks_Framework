@@ -167,12 +167,13 @@ function finalize_task_cache(CACHE, task_id)
     igi_text_processor.resolve_macros_and_link_variables(CACHE.entities)
 	for _, entity in pairs(CACHE.entities) do
 		entity.tags = entity.tags or {}
-		entity.functors = {
-			setup = {"igi_target_"..(entity.target or "basic")..".setup_"..entity.entity_type},
-			create = {"igi_target_"..(entity.target or "basic")..".create_"..entity.entity_type},
-			status = "igi_target_"..(entity.target or "basic")..".get_status",
-			cleanup = {},
-		}
+		entity.functors = entity.functors 
+			or get_target_table(entity.target or "basic").FUNCTORS
+			or {
+				setup = {"igi_target_basic.setup_"..entity.entity_type},
+				create = {"igi_target_basic.create_"..entity.entity_type},
+				cleanup = {},
+			}
 	end
 
 	trace_dbg("finalized CACHE", CACHE)

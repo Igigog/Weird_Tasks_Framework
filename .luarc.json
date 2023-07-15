@@ -439,6 +439,7 @@
         "ChangeLevel",
         "VEC_ZERO",
         "get_object_by_id",
-        "tmrs_tasks"
+        "tmrs_tasks",
+        "script_name"
     ]
 }

@@ -1,5 +1,11 @@
 TARGET_NAME = "shoot"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {"igi_target_basic.setup_squad"},
+	create = {"igi_target_basic.create_squad"},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 ----------------- Consistency -------------
 entity_types = {
@@ -91,14 +97,11 @@ function ready_to_finish(obj_data)
     return is_shotted[obj_data.id]
 end
 
-function get_status(entity)
+function status(entity)
     if is_failed(entity) then return TASK_STATUSES.FAILED end
     if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
     return TASK_STATUSES.RUNNING
 end
-
-setup_squad = igi_target_basic.setup_squad
-create_squad = igi_target_basic.create_squad
 
 function finish_subtask(obj_data)
     local callback = callback_is_set[obj_data.id]

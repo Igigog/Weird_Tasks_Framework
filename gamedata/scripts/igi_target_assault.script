@@ -1,5 +1,11 @@
 TARGET_NAME = "assault"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {script_name()..".setup_squad"},
+	create = {script_name()..".create"},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
@@ -109,7 +115,7 @@ end
 
 setup_location = igi_target_basic.setup_location
 create_location = igi_target_basic.create_location
-create_squad = igi_target_basic.create_squad
+create = igi_target_basic.create_squad
 
 function entity_on_after_target_creation(entity)
 	add_target_squads(entity)
@@ -133,7 +139,7 @@ local function mark_distant_squads(entity)
 	end
 end
 
-function get_status(entity)
+function status(entity)
 	mark_distant_squads(entity)
 	if is_completed(entity) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
@@ -170,6 +176,11 @@ igi_tests.register_subtask_test("test_target_assault", {
 			where = "0,0",
 			target = "assault",
 			link_id = "smart",
+			functors = {
+				setup = {script_name()..".setup_location"},
+				create = {script_name()..".create_location"},
+				status = {script_name()..".status"},
+			}
 		},
 
 		{

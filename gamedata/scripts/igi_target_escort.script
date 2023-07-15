@@ -1,11 +1,17 @@
 TARGET_NAME = "escort"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {"igi_target_basic.setup_squad"},
+	create = {"igi_target_basic.create_squad", script_name()..".make_companion"},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local WorldState = igi_world_state.WorldState
 
 
-function entity_on_after_target_creation(entity)
+function make_companion(entity)
 	local squad = WorldState.objects[entity.id]
 
 	axr_companions.companion_squads[squad.id] = squad
@@ -20,10 +26,8 @@ function entity_on_after_target_creation(entity)
 	sim_offline_combat.task_squads[squad.id] = true
 end
 
-setup_squad = igi_target_basic.setup_squad
-create_squad = igi_target_basic.create_squad
 
-function get_status(entity)
+function status(entity)
     return TASK_STATUSES.READY_TO_FINISH
 end
 

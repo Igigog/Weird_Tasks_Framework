@@ -1,5 +1,11 @@
 TARGET_NAME = "kill"
 PATTERN = "basic"
+FUNCTORS = {
+	setup = {"igi_target_basic.setup_squad"},
+	create = {"igi_target_basic.create_squad", script_name()..".setup_rewards"},
+	status = {script_name()..".status"},
+	cleanup = {},
+}
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local WorldState = igi_world_state.WorldState
@@ -11,12 +17,12 @@ function is_completed(obj_data)
 	if se_obj:section_name() ~= obj_data.section_name then return true end
 end
 
-function get_status(entity)
+function status(entity)
 	if is_completed(entity) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
 end
 
-function entity_on_first_run(entity, CACHE)
+function setup_rewards(entity)
 	entity.rewards = {
 		money = {
 			value = get_money_reward(entity)
@@ -75,9 +81,6 @@ function get_money_reward(entity)
 
 	return reward
 end
-
-setup_squad = igi_target_basic.setup_squad
-create_squad = igi_target_basic.create_squad
 
 function get_goodwill_reward(entity)
 	local se_squad = WorldState.objects[entity.id]
