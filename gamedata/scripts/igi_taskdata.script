@@ -137,7 +137,6 @@ function get_all_quests()
 			1+4+8)
 
 			for i=0, files:Size()-1 do
-				trace_dbg("i", i)
 				local quest_name = files:GetAt(i)
 				IGI_QUESTS[prefix][quest_name] = get_task_table(quest_name, prefix)
 			end

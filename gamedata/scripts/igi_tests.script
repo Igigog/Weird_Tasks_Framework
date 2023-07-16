@@ -13,6 +13,7 @@ STATE = {
     current_test = nil,
     last_test = nil,
     current_test_state = nil,
+    tests_history = nil,
 }
 
 TESTS = {}
@@ -62,7 +63,7 @@ function register_subtask_test(id, cache)
 end
 
 function register_test(id, f, state)
-    TESTS[id] = {id, f, state}
+    TESTS[id] = {f, state}
 end
 
 local flatenned_quests = {}
@@ -70,16 +71,28 @@ function flat_quests()
     if not next(flatenned_quests) then
         for prefix, quests in pairs(igi_taskdata.get_all_quests()) do
             for quest_name, cache in pairs(quests) do
-                flatenned_quests[prefix..quest_name] = cache
+                flatenned_quests[prefix..":"..quest_name] = cache
             end
         end
     end
     return flatenned_quests
 end
 
+local function report_tests_history()
+    news_manager.send_tip(db.actor, "Tests finished. Report:", nil, nil, 30000)
+    local report = {}
+    for test_case, success in pairs(STATE.tests_history) do
+        report[#report+1] = test_case..": "..(success and "%c[d_green]success%c[0,255,255,255]" or "%c[d_red]fail%c[0,255,255,255]")
+    end
+
+    news_manager.send_tip(db.actor, table.concat(report, "\\n \\n"), nil, nil, 30000)
+    trace_dbg("Test report:", STATE.tests_history)
+end
+
 function start_integration_tests(test_type)
     xrs_debug_tools.debug_invis = true
     STATE.current_tests_name = test_type
+    STATE.tests_history = {}
     CreateTimeEvent("igi_tests", "tests", 2, integration_tests_worker)
 end
 
@@ -94,6 +107,7 @@ function integration_tests_worker()
     end
 
     STATE.current_tests_name = nil
+    report_tests_history()
     return true
 end
 
@@ -160,13 +174,22 @@ end
 function finish_test()
     if not STATE.current_test then return end
     trace_dbg("Test concluded! "..STATE.current_test)
-    task_manager.get_task_manager():set_task_completed(STATE.current_test)
+    if (STATE.current_tests_name ~= "normal") then
+        task_manager.get_task_manager():set_task_completed(STATE.current_test)
+    end
+
+    if STATE.tests_history[STATE.current_test] ~= false then
+        STATE.tests_history[STATE.current_test] = true
+    end
+
     STATE.current_test = nil
 end
 
-function assert_test(successful, reason)
+function assert_test(successful, reason, ...)
     if successful then return successful end
     actor_menu.set_fade_msg("WTF: test "..STATE.current_test.." failed: "..reason, 10, {G = 10, B = 10})
+    trace_dbg("Test unsuccessful! ", STATE.current_test, reason, ...)
+    STATE.tests_history[STATE.current_test] = false
     finish_test()
 end
 
@@ -186,6 +209,7 @@ end
 function start_normal_tests()
     xrs_debug_tools.debug_invis = true
     STATE.current_tests_name = "normal"
+    STATE.tests_history = {}
     CreateTimeEvent("igi_tests", "tests", 1, normal_tests_worker)
 end
 
@@ -195,17 +219,27 @@ function normal_tests_worker()
     STATE.last_test = id
     if not id then
         STATE.current_tests_name = nil
+        report_tests_history()
         return true
     end
 
     trace_dbg("Running test: "..id, data)
+    news_manager.send_tip(db.actor, "Test started: "..id, nil, nil, 2000)
     STATE.current_test = id
     STATE.current_test_state = dup_table(data[2])
     CreateTimeEvent("igi_tests", "current_test", 1, continue_normal_test_worker)
 end
 
-function continue_normal_test_worker(id)
+function continue_normal_test_worker()
+    if not STATE.current_test then return true end
     ResetTimeEvent("igi_tests", "current_test", 1)
+    local id = STATE.current_test
     trace_dbg("continuing test "..id, STATE.current_test_state)
-    return TESTS[id][1](STATE.current_test_state)
+    local run_again = TESTS[id][1](STATE.current_test_state)
+
+    -- in case it failed current test is reset
+    if not run_again and STATE.current_test then
+        finish_test()
+        return true
+    end
 end

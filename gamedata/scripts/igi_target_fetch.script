@@ -187,6 +187,7 @@ function test(entity)
 		return true
 	end
 end
+
 igi_tests.register_subtask_test("test_target_fetch", {
 	entities = {
 		{
@@ -195,4 +196,26 @@ igi_tests.register_subtask_test("test_target_fetch", {
 			section_name = "mutant_part_crow_beak",
 		}
 	}
+})
+
+igi_tests.register_test("fetch_setup_works", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(setup, state)
+	assert_test(ok, "Fetch did not end successfully", out)
+	assert_test(state.amount == 1, "Fetch did not set amount")
+	assert_test(type(out) == "table" and not next(out), "Malformed fetch setup output", out)
+end, {
+	entity_type = "item",
+	target = "fetch",
+	section_name = "mutant_part_crow_beak",
+})
+
+igi_tests.register_test("fetch_setup_should_crash", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(setup, state)
+	assert_test(not ok, "Fetch should have crashed", state)
+end, {
+	entity_type = "item",
+	target = "fetch",
+	section_name = "very_broken_section_name",
 })

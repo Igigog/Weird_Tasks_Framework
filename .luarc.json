@@ -440,6 +440,9 @@
         "VEC_ZERO",
         "get_object_by_id",
         "tmrs_tasks",
-        "script_name"
+        "script_name",
+        "TestsPopupMessages",
+        "igi_tests_ui",
+        "ui_popup_messages"
     ]
 }
