@@ -41,7 +41,7 @@ end
 function get_task_table_config(task_name, prefix)
 	local task_path = get_task_path(task_name, prefix)
 	local content = get_file_content(configured_tasks_path..task_path)
-	if not content then return end
+	if not content then return {} end
 
 	trace_dbg("raw task config: ", content)
     return json.decode(content)
