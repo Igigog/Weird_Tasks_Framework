@@ -12,6 +12,7 @@ STATE = {
     current_tests_name = nil,
     current_test = nil,
     last_test = nil,
+    current_test_state = nil,
 }
 
 TESTS = {}
@@ -21,13 +22,12 @@ function on_key_press(key)
     if not igi_mcm.get_options_value("debug") then return end
     if STATE.current_tests_name then return end
     if key == DIK_keys.DIK_K then 
-        xrs_debug_tools.debug_invis = true
-        start_integration_tests("entity", SUBTASK_TESTS)
+        start_integration_tests("entity")
     elseif key == DIK_keys.DIK_H then
-        xrs_debug_tools.debug_invis = true
-        start_integration_tests("quest", flat_quests())
+        start_integration_tests("quest")
+    elseif key == DIK_keys.DIK_E then
+        start_normal_tests()
     end
-    
 end
 
 function save_state(m_data)
@@ -39,11 +39,14 @@ function load_state(m_data)
 end
 
 function actor_on_first_update()
-    if not STATE.current_test then return end
-    
-    local caches = STATE.current_tests_name == "entity" and SUBTASK_TESTS or flat_quests()
-    start_integration_tests(STATE.current_tests_name, caches)
-    CreateTimeEvent("igi_tests", STATE.current_test, 2, continue_test, STATE.current_test)
+    if not STATE.current_tests_name then return end
+    if STATE.current_tests_name == "normal" then
+        CreateTimeEvent("igi_tests", "tests", 2, normal_tests_worker)
+        CreateTimeEvent("igi_tests", "current_test", 2, continue_test_worker)
+    else
+        CreateTimeEvent("igi_tests", "tests", 2, integration_tests_worker)
+        CreateTimeEvent("igi_tests", "current_test", 2, continue_test_worker)
+    end
 end
 
 function prepare_mock_quest(cache, id)
@@ -58,9 +61,8 @@ function register_subtask_test(id, cache)
     SUBTASK_TESTS[id] = cache
 end
 
-function register_test(id, f, cache)
-    cache.update_delay = 0
-    TESTS[id] = {id, f, cache}
+function register_test(id, f, state)
+    TESTS[id] = {id, f, state}
 end
 
 local flatenned_quests = {}
@@ -75,20 +77,24 @@ function flat_quests()
     return flatenned_quests
 end
 
-function run_integration_tests(caches)
-    if STATE.current_test then return end
-    local id, next_cache = next(caches, STATE.last_test)
-    STATE.last_test = id
-    if not id then
-        STATE.current_tests_name = nil
-        return true
-    end
-    start_integration_test(id, next_cache)
+function start_integration_tests(test_type)
+    xrs_debug_tools.debug_invis = true
+    STATE.current_tests_name = test_type
+    CreateTimeEvent("igi_tests", "tests", 2, integration_tests_worker)
 end
 
-function start_integration_tests(test_type, caches)
-    STATE.current_tests_name = test_type
-    CreateTimeEvent("igi_tests", test_type, 2, run_integration_tests, caches)
+function integration_tests_worker()
+    if STATE.current_test then return end
+    local caches = STATE.current_tests_name == "entity" and SUBTASK_TESTS or flat_quests()
+    local id, next_cache = next(caches, STATE.last_test)
+    STATE.last_test = id
+    if id then
+        start_integration_test(id, next_cache)
+        return
+    end
+
+    STATE.current_tests_name = nil
+    return true
 end
 
 function start_integration_test(id, cache)
@@ -98,7 +104,7 @@ function start_integration_test(id, cache)
 
     if prepare_mock_quest(cache, id) then
         task_manager.get_task_manager():give_task(id)
-        CreateTimeEvent("igi_tests", id, 0, continue_test, id)
+        CreateTimeEvent("igi_tests", "current_test", 0, continue_test_worker)
     else
         assert_test(nil, "Can't prepare quest")
     end
@@ -125,7 +131,8 @@ local function choose_entity(CACHE)
     return entity
 end
 
-function continue_test(id)
+function continue_test_worker()
+    local id = STATE.current_test
     trace_dbg("continuing test "..id, igi_generic_task.TASKS_CACHE[id])
     local CACHE = igi_generic_task.TASKS_CACHE[id]
     if not CACHE then
@@ -147,7 +154,7 @@ function continue_test(id)
         finish_test()
         return true
     end
-    ResetTimeEvent("igi_tests", id, 1)
+    ResetTimeEvent("igi_tests", "current_test", 1)
 end
 
 function finish_test()
@@ -174,4 +181,31 @@ function travel_to_se_obj(se_obj)
 	else
 		ChangeLevel(se_obj.position, se_obj.m_level_vertex_id, se_obj.m_game_vertex_id, VEC_ZERO, false)
 	end
+end
+
+function start_normal_tests()
+    xrs_debug_tools.debug_invis = true
+    STATE.current_tests_name = "normal"
+    CreateTimeEvent("igi_tests", "tests", 1, normal_tests_worker)
+end
+
+function normal_tests_worker()
+    if STATE.current_test then return end
+    local id, data = next(TESTS, STATE.last_test)
+    STATE.last_test = id
+    if not id then
+        STATE.current_tests_name = nil
+        return true
+    end
+
+    trace_dbg("Running test: "..id, data)
+    STATE.current_test = id
+    STATE.current_test_state = dup_table(data[2])
+    CreateTimeEvent("igi_tests", "current_test", 1, continue_normal_test_worker)
+end
+
+function continue_normal_test_worker(id)
+    ResetTimeEvent("igi_tests", "current_test", 1)
+    trace_dbg("continuing test "..id, STATE.current_test_state)
+    return TESTS[id][1](STATE.current_test_state)
 end
