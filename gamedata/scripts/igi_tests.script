@@ -8,43 +8,42 @@ function on_game_start()
     RegisterScriptCallback("on_key_press", on_key_press)
 end
 
-local tests_running
-local last_test
+STATE = {
+    current_tests_name = nil,
+    current_test = nil,
+    last_test = nil,
+}
+
 TESTS = {}
 SUBTASK_TESTS = {}
-CURRENT_TEST = nil
 
 function on_key_press(key)
     if not igi_mcm.get_options_value("debug") then return end
-    if tests_running then return end
+    if STATE.current_tests_name then return end
     if key == DIK_keys.DIK_K then 
         xrs_debug_tools.debug_invis = true
-        start_tests("entity", SUBTASK_TESTS)
+        start_integration_tests("entity", SUBTASK_TESTS)
     elseif key == DIK_keys.DIK_H then
         xrs_debug_tools.debug_invis = true
-        start_tests("quest", flat_quests())
+        start_integration_tests("quest", flat_quests())
     end
     
 end
 
 function save_state(m_data)
-    m_data.igi_current_test = CURRENT_TEST
-    m_data.tests_running = tests_running
-    m_data.igi_last_test = last_test
+    m_data.igi_tests_state = STATE
 end
 
 function load_state(m_data)
-    CURRENT_TEST = m_data.igi_current_test
-    tests_running = m_data.tests_running
-    last_test = m_data.igi_last_test
+    STATE = m_data.igi_tests_state or STATE
 end
 
 function actor_on_first_update()
-    if not CURRENT_TEST then return end
-    local caches = tests_running == "entity" and SUBTASK_TESTS or flat_quests()
-    start_tests(tests_running, caches)
-    local id = CURRENT_TEST
-    CreateTimeEvent("igi_tests", id, 2, continue_test, id)
+    if not STATE.current_test then return end
+    
+    local caches = STATE.current_tests_name == "entity" and SUBTASK_TESTS or flat_quests()
+    start_integration_tests(STATE.current_tests_name, caches)
+    CreateTimeEvent("igi_tests", STATE.current_test, 2, continue_test, STATE.current_test)
 end
 
 function prepare_mock_quest(cache, id)
@@ -76,26 +75,26 @@ function flat_quests()
     return flatenned_quests
 end
 
-function run_tests(caches)
-    if CURRENT_TEST then return end
-    local id, next_cache = next(caches, last_test)
-    last_test = id
+function run_integration_tests(caches)
+    if STATE.current_test then return end
+    local id, next_cache = next(caches, STATE.last_test)
+    STATE.last_test = id
     if not id then
-        tests_running = nil
+        STATE.current_tests_name = nil
         return true
     end
-    start_test(id, next_cache)
+    start_integration_test(id, next_cache)
 end
 
-function start_tests(test_type, caches)
-    tests_running = test_type
-    CreateTimeEvent("igi_tests", test_type, 2, run_tests, caches)
+function start_integration_tests(test_type, caches)
+    STATE.current_tests_name = test_type
+    CreateTimeEvent("igi_tests", test_type, 2, run_integration_tests, caches)
 end
 
-function start_test(id, cache)
-    trace_assert(not CURRENT_TEST, "Already running a test!")
+function start_integration_test(id, cache)
+    trace_assert(not STATE.current_test, "Already running a test!")
     trace_dbg("Running test: "..id, cache)
-    CURRENT_TEST = id
+    STATE.current_test = id
 
     if prepare_mock_quest(cache, id) then
         task_manager.get_task_manager():give_task(id)
@@ -151,15 +150,15 @@ function continue_test(id)
 end
 
 function finish_test()
-    if not CURRENT_TEST then return end
-    trace_dbg("Test concluded! "..CURRENT_TEST)
-    task_manager.get_task_manager():set_task_completed(CURRENT_TEST)
-    CURRENT_TEST = nil
+    if not STATE.current_test then return end
+    trace_dbg("Test concluded! "..STATE.current_test)
+    task_manager.get_task_manager():set_task_completed(STATE.current_test)
+    STATE.current_test = nil
 end
 
 function assert_test(successful, reason)
     if successful then return successful end
-    actor_menu.set_fade_msg("WTF: test "..CURRENT_TEST.." failed: "..reason, 10, {G = 10, B = 10})
+    actor_menu.set_fade_msg("WTF: test "..STATE.current_test.." failed: "..reason, 10, {G = 10, B = 10})
     finish_test()
 end
 
