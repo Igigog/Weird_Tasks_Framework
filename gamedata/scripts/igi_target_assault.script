@@ -1,8 +1,8 @@
 TARGET_NAME = "assault"
 PATTERN = "basic"
 FUNCTORS = {
-	setup = { script_name() .. ".setup_squad" },
-	create = { script_name() .. ".create" },
+	setup = { "igi_target_basic.setup_location" },
+	create = { "igi_target_basic.create_location" },
 	status = { script_name() .. ".status" },
 	cleanup = {},
 }
@@ -69,53 +69,6 @@ local function add_target_squads(entity)
 	end
 end
 
-local function redirect_to_smart(entity)
-	local smart_id = WorldState.objects[entity.id].current_target_id
-	entity.where = smart_id
-	igi_helper.trace_dbg("smart id", smart_id)
-	local smart_entity = {
-		target = "assault",
-		entity_type = "location",
-		status = igi_subtask.TASK_STATUSES.RUNNING,
-		order = entity.order or 1,
-		tags = { INIT = true, LOCATION = true },
-		functors = {
-			setup = { "igi_target_assault.setup_location" },
-			create = { "igi_target_assault.create_location" },
-			status = "igi_target_assault.get_status",
-			cleanup = {},
-		}
-	}
-	igi_entities.bind_to_se_obj(smart_entity, smart_id)
-
-	add_target_squads(smart_entity)
-	return smart_entity
-end
-
-function setup_squad(entity)
-	entity.target = nil
-	local new_entities = igi_target_basic.setup_squad(entity)
-	if not new_entities then return end
-
-	if not entity.to_create then
-		local new_smarts = {}
-		igi_helper.trace_dbg("ASSAULT: redirect to smart " .. tostring(entity.link_id), entity)
-		new_smarts[#new_smarts + 1] = redirect_to_smart(entity)
-		for _, new_entity in pairs(new_entities) do
-			new_smarts[#new_smarts + 1] = redirect_to_smart(new_entity)
-		end
-
-		for _, v in pairs(new_smarts) do
-			new_entities[#new_entities + 1] = v
-		end
-	end
-	return new_entities
-end
-
-setup_location = igi_target_basic.setup_location
-create_location = igi_target_basic.create_location
-create = igi_target_basic.create_squad
-
 function entity_on_after_target_creation(entity)
 	add_target_squads(entity)
 end
@@ -176,11 +129,6 @@ igi_tests.register_subtask_test("test_target_assault", {
 			where = "0,0",
 			target = "assault",
 			link_id = "smart",
-			functors = {
-				setup = { script_name() .. ".setup_location" },
-				create = { script_name() .. ".create_location" },
-				status = { script_name() .. ".status" },
-			}
 		},
 
 		{
@@ -198,12 +146,6 @@ igi_tests.register_subtask_test("test_target_assault_squad", {
 			entity_type = "location",
 			id = "[squad:current_target_id]",
 			target = "assault",
-			link_id = "smart",
-			functors = {
-				setup = { script_name() .. ".setup_location" },
-				create = { script_name() .. ".create_location" },
-				status = { script_name() .. ".status" },
-			}
 		},
 
 		{
