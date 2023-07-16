@@ -113,7 +113,8 @@ local function choose_entity(CACHE)
 
     local entity = CACHE.entities[CACHE._test_entity_id]
     while entity.status ~= "RUNNING" or not entity.target do
-        local k, entity = next(CACHE.entities, CACHE._test_entity_id)
+        local k
+        k, entity = next(CACHE.entities, CACHE._test_entity_id)
         CACHE._test_entity_id = k
         if not k then
             trace_dbg("chosen: ", "nil")
