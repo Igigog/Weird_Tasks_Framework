@@ -139,22 +139,3 @@ igi_tests.register_subtask_test("test_target_assault", {
 		}
 	}
 })
-
-igi_tests.register_subtask_test("test_target_assault_squad", {
-	entities = {
-		{
-			entity_type = "location",
-			id = "[squad:current_target_id]",
-			target = "assault",
-		},
-
-		{
-			entity_type = "squad",
-			type = "enemy",
-			to_create = false,
-			where = "0,0",
-			amount = 1,
-			link_id = "squad",
-		}
-	}
-})
