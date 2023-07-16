@@ -55,6 +55,7 @@ end
 function register_subtask_test(id, cache)
     trace_assert(not SUBTASK_TESTS[id], "Subtask test already registered: "..id)
     cache.update_delay = 0
+    igi_taskdata.finalize_task_cache(cache, id)
     SUBTASK_TESTS[id] = cache
 end
 

@@ -2,10 +2,11 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
 Link = {
-	new = function (link_id, field)
+	new = function (link_id, field, is_se_object_link)
 		local t = {
 			link_id = link_id,
 			field = field,
+			look_in_se_object = is_se_object_link,
 		}
 
 		return setmetatable(t, {__index = Link})
@@ -13,6 +14,10 @@ Link = {
 
 	is_pointed_to = function (self, entity)
 		return self.link_id == entity.link_id
+	end,
+
+	is_se_object_link = function (self)
+		return self.look_in_se_object
 	end,
 
     resolve = function(self, entities)
@@ -23,6 +28,12 @@ Link = {
 	end,
 
 	resolve_field = function(self, entity)
+		if self.look_in_se_object and not entity.tags.BINDED then
+			return nil
+		end
+		if (self.look_in_se_object) then
+			return igi_helper.find_in_game_object(entity, self.field)
+		end
 		return entity[self.field]
     end,
 
@@ -36,6 +47,7 @@ Link = {
 }
 
 function broadcast_entity(entities, entity)
+	if not entity.link_id then return end
 	for k,v in pairs(entities) do
 		if type(v) == 'string' then
 			entities[k] = igi_text_processor.link_entity(v, entity)

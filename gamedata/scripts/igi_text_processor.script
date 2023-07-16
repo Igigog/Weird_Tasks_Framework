@@ -35,7 +35,7 @@ end
 
 function try_str_to_link(str, this_entity)
 	-- Won't work with dependencies with macros
-	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
+	local link_id, sep, field = str:match("%[([^%.]+)([%.%:])(.+)%]")
 
     if link_id == "this" then
 		this_entity.link_id = this_entity.link_id or tostring(math.random())
@@ -46,7 +46,7 @@ function try_str_to_link(str, this_entity)
 		return nil
 	end
 
-	return igi_linker.Link.new(link_id, field)
+	return igi_linker.Link.new(link_id, field, sep == ":")
 end
 
 function resolve_free_dependencies(entities, current_entity, tbl)
@@ -87,7 +87,10 @@ function link_entity(str, entity)
 	for dep in link_iterator(str) do
 		local link = str_to_link(dep)
 		if link:is_pointed_to(entity) then
-			str = str:gsub(igi_utils.escape_pattern(dep), link:resolve_field(entity))
+			local val = link:resolve_field(entity)
+			if val ~= nil then
+				str = str:gsub(igi_utils.escape_pattern(dep), val)
+			end
 		end
 	end
 	return convert_type(str)
@@ -102,6 +105,22 @@ function has_no_outer_links(tbl, entity)
 				end
 			end
 		elseif type(v) == 'table' and not has_no_outer_links(v, entity) then
+			return false
+		end
+	end
+	return true
+end
+
+function has_no_se_obj_links(tbl, entity)
+	for k,v in pairs(tbl) do
+		if type(v) == 'string' then
+			for k2 in link_iterator(v) do
+				local link = str_to_link(k2, entity)
+				if link:is_se_object_link() then
+					return false
+				end
+			end
+		elseif type(v) == 'table' and not has_no_se_obj_links(v, entity) then
 			return false
 		end
 	end

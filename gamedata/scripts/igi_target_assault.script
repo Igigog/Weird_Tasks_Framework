@@ -1,9 +1,9 @@
 TARGET_NAME = "assault"
 PATTERN = "basic"
 FUNCTORS = {
-	setup = {script_name()..".setup_squad"},
-	create = {script_name()..".create"},
-	status = {script_name()..".status"},
+	setup = { script_name() .. ".setup_squad" },
+	create = { script_name() .. ".create" },
+	status = { script_name() .. ".status" },
 	cleanup = {},
 }
 
@@ -18,7 +18,6 @@ local function is_legit_squad(squad)
 end
 
 local function is_squad_at_smart(se_squad, smart_id)
-
 	local scripted_target = se_squad:get_script_target()
 	if scripted_target then
 		return scripted_target == smart_id
@@ -64,7 +63,7 @@ local function add_target_squads(entity)
 		local actor_faction = character_community(db.actor)
 		local sq_faction = se_squad:get_squad_community()
 		if is_squad_at_smart(se_squad, entity.id) and
-				game_relations.is_factions_enemies(actor_faction, sq_faction) then
+			game_relations.is_factions_enemies(actor_faction, sq_faction) then
 			table.insert(entity.squads, se_squad.id)
 		end
 	end
@@ -79,10 +78,10 @@ local function redirect_to_smart(entity)
 		entity_type = "location",
 		status = igi_subtask.TASK_STATUSES.RUNNING,
 		order = entity.order or 1,
-		tags = {INIT = true, LOCATION = true},
+		tags = { INIT = true, LOCATION = true },
 		functors = {
-			setup = {"igi_target_assault.setup_location"},
-			create = {"igi_target_assault.create_location"},
+			setup = { "igi_target_assault.setup_location" },
+			create = { "igi_target_assault.create_location" },
 			status = "igi_target_assault.get_status",
 			cleanup = {},
 		}
@@ -100,14 +99,14 @@ function setup_squad(entity)
 
 	if not entity.to_create then
 		local new_smarts = {}
-		igi_helper.trace_dbg("ASSAULT: redirect to smart "..tostring(entity.link_id), entity)
-		new_smarts[#new_smarts+1] = redirect_to_smart(entity)
+		igi_helper.trace_dbg("ASSAULT: redirect to smart " .. tostring(entity.link_id), entity)
+		new_smarts[#new_smarts + 1] = redirect_to_smart(entity)
 		for _, new_entity in pairs(new_entities) do
-			new_smarts[#new_smarts+1] = redirect_to_smart(new_entity)
+			new_smarts[#new_smarts + 1] = redirect_to_smart(new_entity)
 		end
 
 		for _, v in pairs(new_smarts) do
-			new_entities[#new_entities+1] = v
+			new_entities[#new_entities + 1] = v
 		end
 	end
 	return new_entities
@@ -127,7 +126,7 @@ local function mark_distant_squads(entity)
 	for _, sq_id in pairs(entity.squads) do
 		local se_squad = WorldState.objects[sq_id]
 		if se_squad then
-			local is_marked = level.map_has_object_spot(se_squad.id,"red_location") == 1
+			local is_marked = level.map_has_object_spot(se_squad.id, "red_location") == 1
 			local is_nearby = smart_position:distance_to_sqr(se_squad.position) < 2500
 
 			if not (is_nearby or is_marked) then
@@ -168,6 +167,7 @@ function test(entity)
 		return true
 	end
 end
+
 igi_tests.register_subtask_test("test_target_assault", {
 	entities = {
 		{
@@ -177,9 +177,9 @@ igi_tests.register_subtask_test("test_target_assault", {
 			target = "assault",
 			link_id = "smart",
 			functors = {
-				setup = {script_name()..".setup_location"},
-				create = {script_name()..".create_location"},
-				status = {script_name()..".status"},
+				setup = { script_name() .. ".setup_location" },
+				create = { script_name() .. ".create_location" },
+				status = { script_name() .. ".status" },
 			}
 		},
 
@@ -188,6 +188,31 @@ igi_tests.register_subtask_test("test_target_assault", {
 			section_name = "army_sim_squad_novice",
 			to_create = true,
 			where = "[smart.id]"
+		}
+	}
+})
+
+igi_tests.register_subtask_test("test_target_assault_squad", {
+	entities = {
+		{
+			entity_type = "location",
+			id = "[squad:current_target_id]",
+			target = "assault",
+			link_id = "smart",
+			functors = {
+				setup = { script_name() .. ".setup_location" },
+				create = { script_name() .. ".create_location" },
+				status = { script_name() .. ".status" },
+			}
+		},
+
+		{
+			entity_type = "squad",
+			type = "enemy",
+			to_create = false,
+			where = "0,0",
+			amount = 1,
+			link_id = "squad",
 		}
 	}
 })

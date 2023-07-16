@@ -23,12 +23,13 @@ function initialise_entities(CACHE)
 	local entities = CACHE.entities
 	local new = {}
 	for _, entity in pairs(entities) do
-		if not entity.tags.INIT then
+		if (not entity.tags.INIT) and igi_text_processor.has_no_se_obj_links(entity, entity) then
             trace_dbg('setup group ' .. tostring(_), entity)
 			local new_entities = initialise(entity)
 			if not new_entities then
 				return trace_dbg("entity failed", entity)
 			end
+			igi_linker.broadcast_entity(entities, entity)
             trace_dbg('group_data, new entities', entity, new_entities)
 			
 			new[#new+1] = new_entities
