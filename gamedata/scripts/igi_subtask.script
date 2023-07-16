@@ -91,7 +91,7 @@ function get_task_status(entities)
 end
 
 function update_entity_status(entity)
-	local f = igi_utils.lookup_path(entity.functors.status[1], _G)
+	local f = igi_helper.lookup_functor(entity.functors.status[1], _G)
 	local new_status = f(entity)
 	if new_status == entity.status then return end
 	entity.status = new_status

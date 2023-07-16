@@ -138,3 +138,11 @@ function find_in_game_object(entity, field)
 	end
 	return se_obj[field]
 end
+
+function lookup_functor(name, origin)
+	local f = igi_utils.lookup_path(name, origin)
+	if not f then
+		trace_assert(f, "Can't find functor! name: "..name)
+	end
+	return f
+end

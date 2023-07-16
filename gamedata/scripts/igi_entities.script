@@ -75,7 +75,7 @@ function initialise(entity)
 	entity.tags.INIT = true
 
 	for _, functor_name in pairs(entity.functors.setup) do
-		local f = igi_utils.lookup_path(functor_name, _G) --! only one functor right now
+		local f = igi_helper.lookup_functor(functor_name, _G) --! only one functor right now
 		local new_entities = f(entity)
 		trace_dbg("group_data, new entities", entity, new_entities)
 		return new_entities
@@ -90,7 +90,7 @@ function create(entity)
 	trace_dbg("processed entity", entity)
 
 	for _, functor_name in pairs(entity.functors.create) do
-		igi_utils.lookup_path(functor_name, _G)(entity)
+		igi_helper.lookup_functor(functor_name, _G)(entity)
 		trace_dbg("create after functor", functor_name, entity)
 	end
 end
