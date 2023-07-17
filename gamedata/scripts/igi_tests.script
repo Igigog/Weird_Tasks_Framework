@@ -227,7 +227,7 @@ function normal_tests_worker()
     news_manager.send_tip(db.actor, "Test started: "..id, nil, nil, 2000)
     STATE.current_test = id
     STATE.current_test_state = dup_table(data[2])
-    CreateTimeEvent("igi_tests", "current_test", 1, continue_normal_test_worker)
+    CreateTimeEvent("igi_tests", "current_test", 0, continue_normal_test_worker)
 end
 
 function continue_normal_test_worker()
@@ -235,9 +235,12 @@ function continue_normal_test_worker()
     ResetTimeEvent("igi_tests", "current_test", 1)
     local id = STATE.current_test
     trace_dbg("continuing test "..id, STATE.current_test_state)
-    local run_again = TESTS[id][1](STATE.current_test_state)
-
+    local ok, run_again = pcall(TESTS[id][1], STATE.current_test_state)
+    
     -- in case it failed current test is reset
+    if STATE.current_test then
+        assert_test(ok, "Test function crashed", run_again)
+    end
     if not run_again and STATE.current_test then
         finish_test()
         return true

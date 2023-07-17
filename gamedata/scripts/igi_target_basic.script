@@ -21,6 +21,7 @@ local function ids_to_entities(prototype, ids)
 	local new_entities = {}
 	for _, id in ipairs(ids) do
 		local t = dup_table(prototype)
+		t.tags.BINDED = nil -- is reset in bind_to_se_obj
 		igi_entities.bind_to_se_obj(t, id)
 		new_entities[#new_entities+1] = t
 	end
@@ -283,3 +284,80 @@ function get_rewards(entity)
 	end
 	return {}
 end
+
+------------------------------------------------
+-- TESTS
+-- Nyan! :3
+------------------------------------------------
+
+igi_tests.register_test("setup_squad_new", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_squad(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 5, "Bad handling of amount", new_entities)
+	new_entities[#new_entities+1] = state
+	for _, entity in pairs(new_entities or {}) do
+		assert_test(entity.tags.SQUAD, "Squad tag was not set for new entity")
+		assert_test(entity.section_name == "army_sim_squad_novice", "Section name was changed")
+	end
+end, {
+	to_create = true,
+	section_name = "army_sim_squad_novice",
+	amount = 6,
+	tags = {}
+})
+
+igi_tests.register_test("setup_squad_should_crash", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(setup_squad, state)
+	assert_test(ok == false, "Broken section did not crash", out)
+end, {
+	to_create = true,
+	section_name = "very_broken_section_name",
+	tags = {}
+})
+
+igi_tests.register_test("setup_squad_find_mutant", function (state)
+	state._test_stage = (state._test_stage or 0) + 1
+	local assert_test = igi_tests.assert_test
+
+	if state._test_stage == 1 then
+		local smart_name = next(WorldState.smarts_by_level[level.name()])
+		-- local next_smart_name = next(WorldState.smarts_by_level[level.name()], smart_name)
+		utils_obj.create_squad("simulation_flesh", smart_name)
+		utils_obj.create_squad("simulation_flesh", smart_name)
+		return true
+	end
+	
+
+	local new_entities = setup_squad(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 1, "Bad handling of amount", new_entities)
+	new_entities[#new_entities+1] = state
+	local mutants = {
+		monster = true,
+		monster_predatory_day = true,
+		monster_predatory_night = true,
+		monster_vegetarian = true,
+		monster_zombied_day = true,
+		monster_zombied_night = true,
+		monster_special = true,
+	}
+	local ids = {}
+	for _, entity in pairs(new_entities or {}) do
+		assert_test(entity.tags.SQUAD, "Squad tag was not set for new entity")
+		assert_test(entity.tags.BINDED, "binded tag was not set")
+		assert_test(entity.id, "Id was not set", state)
+		assert_test(not ids[entity.id], "Id was used already")
+		ids[entity.id] = true
+		local se_obj = WorldState.objects[entity.id]
+		assert_test(se_obj, "Se_obj does not exist!", entity)
+		assert_test(mutants[se_obj.player_id], "Se_obj is not a mutant", entity, se_obj.player_id)
+	end
+end, {
+	to_create = false,
+	type = "mutant",
+	search_distance = "0,0",
+	amount = 2,
+	tags = {}
+})

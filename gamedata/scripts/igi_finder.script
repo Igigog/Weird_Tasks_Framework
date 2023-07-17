@@ -42,6 +42,7 @@ local function get_object_level(se_obj)
 end
 
 local function get_distance_bounds(str)
+	if not str then trace_dbg("No search distance given! Assuming 0,0") end
 	if not str:find(",") then str = str..","..str end
 	local lower, higher = str:match("(%d+),%s?(%S+)")
 	if higher == "end" then higher = #WorldState.levels_by_distance end
@@ -242,7 +243,7 @@ function get_squads_by_args(args, factions)
 	if args.smart then
 		add_squads_of_smart(args.smart, args, factions, targets)
 	else
-		local smarts = get_smarts(args.where)
+		local smarts = get_smarts(args.search_distance)
 		trace_dbg('smarts', smarts)
 		for _, id in pairs(smarts) do
 			local smart_name = WorldState.objects[id]:name()
