@@ -9,6 +9,7 @@ local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 
 local function ids_to_entities(prototype, ids)
+	trace_dbg("ids to entities", ids)
 	if prototype.amount == 'all' then
 		prototype.amount = #ids
 	end
@@ -323,12 +324,10 @@ igi_tests.register_test("setup_squad_find_mutant", function (state)
 
 	if state._test_stage == 1 then
 		local smart_name = next(WorldState.smarts_by_level[level.name()])
-		-- local next_smart_name = next(WorldState.smarts_by_level[level.name()], smart_name)
 		utils_obj.create_squad("simulation_flesh", smart_name)
 		utils_obj.create_squad("simulation_flesh", smart_name)
 		return true
 	end
-	
 
 	local new_entities = setup_squad(state)
 	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
@@ -359,5 +358,149 @@ end, {
 	type = "mutant",
 	search_distance = "0,0",
 	amount = 2,
+	include_scripted = true,
+	tags = {}
+})
+
+igi_tests.register_test("setup_squad_find_stalker", function (state)
+	state._test_stage = (state._test_stage or 0) + 1
+	local assert_test = igi_tests.assert_test
+
+	if state._test_stage == 1 then
+		local smart_name = next(WorldState.smarts_by_level[level.name()])
+		utils_obj.create_squad("army_sim_squad_novice", smart_name)
+		return true
+	end
+
+	local new_entities = setup_squad(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 0, "Bad handling of amount", new_entities)
+	local entity = state
+	local enemy_factions = igi_helper.get_faction_enemies(character_community(db.actor))
+	assert_test(entity.tags.SQUAD, "Squad tag was not set for new entity")
+	assert_test(entity.tags.BINDED, "binded tag was not set")
+	assert_test(entity.id, "Id was not set", state)
+
+	local se_obj = WorldState.objects[entity.id]
+	assert_test(se_obj, "Se_obj does not exist!", entity)
+	assert_test(enemy_factions[se_obj.player_id], "Se_obj is not an enemy", entity, se_obj.player_id)
+end, {
+	to_create = false,
+	type = "enemy",
+	search_distance = "0,0",
+	amount = 1,
+	include_scripted = true,
+	tags = {}
+})
+
+igi_tests.register_test("setup_squad_find_factions", function (state)
+	state._test_stage = (state._test_stage or 0) + 1
+	local assert_test = igi_tests.assert_test
+
+	if state._test_stage == 1 then
+		local smart_name = next(WorldState.smarts_by_level[level.name()])
+		utils_obj.create_squad("freedom_sim_squad_novice", smart_name)
+		return true
+	end
+
+	local new_entities = setup_squad(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 0, "Bad handling of amount", new_entities)
+	assert_test(state.tags.SQUAD, "Squad tag was not set for new entity")
+	assert_test(state.tags.BINDED, "binded tag was not set")
+	assert_test(state.id, "Id was not set", state)
+
+	local se_obj = WorldState.objects[state.id]
+	assert_test(se_obj, "Se_obj does not exist!", state)
+	assert_test(se_obj.player_id == "freedom", "Wrong faction", state, se_obj.player_id)
+end, {
+	to_create = false,
+	factions = {
+		freedom = true,
+	},
+	include_scripted = true,
+	search_distance = "0,0",
+	amount = 1,
+	tags = {}
+})
+
+igi_tests.register_test("setup_location_id", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_location(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 0, "Bad handling of amount", new_entities)
+	assert_test(state.tags.LOCATION, "Location tag was not set for the entity")
+	assert_test(state.tags.BINDED, "Binded tag was not set for the entity")
+	assert_test(state.section_name == "actor", "Section name is wrong")
+end, {
+	id = 0,
+	amount = 1,
+	tags = {}
+})
+
+igi_tests.register_test("setup_location_name", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_location(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 0, "Bad handling of amount", new_entities)
+	assert_test(state.tags.LOCATION, "Location tag was not set for the entity")
+	assert_test(state.tags.BINDED, "Binded tag was not set for the entity")
+	assert_test(state.section_name == "smart_terrain", "Section name is wrong")
+	assert_test(SIMBOARD.smarts[state.id].smrt:name() == "mil_smart_terrain_2_6", "Name is wrong")
+end, {
+	name = "mil_smart_terrain_2_6",
+	amount = 1,
+	tags = {}
+})
+
+igi_tests.register_test("setup_location_name_should_crash", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(setup_location, state)
+	assert_test(ok == false, "Broken section did not crash", out)
+end, {
+	name = "very_broken_section_name",
+	amount = 1,
+	tags = {}
+})
+
+igi_tests.register_test("setup_location_find_smarts", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_location(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 1, "Bad handling of amount", new_entities)
+	new_entities[#new_entities+1] = state
+	local ids = {}
+	for _, entity in pairs(new_entities or {}) do
+		assert_test(entity.tags.LOCATION, "Squad tag was not set for new entity")
+		assert_test(entity.tags.BINDED, "binded tag was not set")
+		assert_test(entity.id, "Id was not set", state)
+		assert_test(not ids[entity.id], "Id was used already")
+		ids[entity.id] = true
+		local smart = SIMBOARD.smarts[entity.id]
+		assert_test(smart, "Smart does not exist!", entity)
+		local smart_name = smart.smrt:name()
+		assert_test(WorldState.smarts_by_level[level.name()][smart_name], "Smart is on a wrong level")
+	end
+end, {
+	search_for = "smart",
+	where = "0,0",
+	amount = 2,
+	tags = {}
+})
+
+igi_tests.register_test("setup_location_stash", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_location(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 0, "Bad handling of amount", new_entities)
+	assert_test(state.tags.LOCATION, "Location tag was not set for the entity")
+	assert_test(state.tags.BINDED, "Binded tag was not set for the entity")
+	assert_test(treasure_manager.caches[state.id] == false, "Not a stash")
+	local level = igi_helper.get_object_level(WorldState.objects[state.id])
+	assert_test(WorldState.distance_by_level[level] == 0, "Level is wrong")
+end, {
+	search_for = "stash",
+	search_distance = "0,0",
+	amount = 1,
 	tags = {}
 })

@@ -29,20 +29,11 @@ local function object_in_npc_inventory(se_obj)
 	return igi_helper.is_common_npc(se_obj.parent_id)
 end
 
-local function get_object_level_id(se_obj)
-	local lvl_info_obj = se_obj
-	if not object_in_world(se_obj) then
-		lvl_info_obj = WorldState.objects[se_obj.parent_id]
-	end
-	return WorldState.gg:vertex(lvl_info_obj.m_game_vertex_id):level_id()
-end
-
-local function get_object_level(se_obj)
-	return WorldState.sim:level_name(get_object_level_id(se_obj))
-end
-
 local function get_distance_bounds(str)
-	if not str then trace_dbg("No search distance given! Assuming 0,0") end
+	if not str then
+		trace_dbg("No search distance given! Assuming 0,0")
+		str = "0,0"
+	end
 	if not str:find(",") then str = str..","..str end
 	local lower, higher = str:match("(%d+),%s?(%S+)")
 	if higher == "end" then higher = #WorldState.levels_by_distance end
@@ -50,7 +41,7 @@ local function get_distance_bounds(str)
 end
 
 local function check_location(se_obj, args)
-	local obj_level = get_object_level(se_obj)
+	local obj_level = igi_helper.get_object_level(se_obj)
 	if blacklist[obj_level] then return false end
 
 	local dist = WorldState.distance_by_level[obj_level]
@@ -273,5 +264,6 @@ function get_stashes(args)
 			returned_stashes[#returned_stashes+1] = id
 		end
 	end
+	trace_dbg("Stashes: ", returned_stashes)
 	return returned_stashes
 end
