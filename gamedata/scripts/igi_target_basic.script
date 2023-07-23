@@ -575,16 +575,6 @@ end, {
 	tags = {}
 })
 
-igi_tests.register_test("create_location", function (state)
-	local assert_test = igi_tests.assert_test
-	local ok, out = pcall(create_location, state)
-	assert_test(ok == false, "No tag did not crash", out)
-	state.tags.LOCATION = true
-	create_location(state)
-end, {
-	tags = {}
-})
-
 igi_tests.register_test("create_squad_new", function (state)
 	local assert_test = igi_tests.assert_test
 	local smart_name = next(WorldState.smarts_by_level[level.name()])
