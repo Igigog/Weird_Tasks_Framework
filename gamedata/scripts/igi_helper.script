@@ -44,18 +44,13 @@ end
 
 
 function get_object_level_id(se_obj)
-	if not se_obj then return nil end
-
-	local lvl_info_obj
-	if se_obj.parent_id == 65535 then
-		lvl_info_obj = se_obj
-	elseif igi_helper.is_common_npc(se_obj.parent_id) then
-		lvl_info_obj = WorldState.objects[se_obj.parent_id]
+	trace_assert(se_obj, "No se_obj")
+	if se_obj.parent_id ~= 65535 then
+		-- inside inventory
+		se_obj = WorldState.objects[se_obj.parent_id]
 	end
-	
-	if not lvl_info_obj then return end
-	local obj_level_id = game_graph():vertex(lvl_info_obj.m_game_vertex_id):level_id()
-	return obj_level_id
+
+	return game_graph():vertex(se_obj.m_game_vertex_id):level_id()
 end
 
 function get_object_level(obj)

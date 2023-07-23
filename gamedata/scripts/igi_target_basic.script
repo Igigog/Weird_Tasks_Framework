@@ -504,3 +504,63 @@ end, {
 	amount = 1,
 	tags = {}
 })
+
+igi_tests.register_test("setup_item_new", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_item(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 5, "Bad handling of amount", new_entities)
+	new_entities[#new_entities+1] = state
+	for _, entity in pairs(new_entities or {}) do
+		assert_test(entity.tags.ITEM, "Squad tag was not set for new entity")
+		assert_test(entity.section_name == "itm_drugkit", "Section name was changed")
+	end
+end, {
+	to_create = true,
+	section_name = "itm_drugkit",
+	amount = 6,
+	tags = {}
+})
+
+igi_tests.register_test("setup_item_should_crash", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(setup_item, state)
+	assert_test(ok == false, "Broken section did not crash", out)
+end, {
+	to_create = true,
+	section_name = "very_broken_section_name",
+	tags = {}
+})
+
+igi_tests.register_test("setup_item_list", function (state)
+	local assert_test = igi_tests.assert_test
+	local new_entities = setup_item(state)
+	assert_test(type(new_entities) == "table", "New entities is not a table", new_entities)
+	assert_test(#new_entities == 0, "Bad handling of amount", new_entities)
+	assert_test(state.tags.ITEM, "Squad tag was not set for new entity")
+	assert_test(state.tags.BINDED, "Binded tag was not set for the entity")
+
+	local sections = {
+		["ammo_5.45x39_fmj"] = true,
+		["ammo_5.45x39_ap"] = true,
+		["ammo_5.56x45_fmj"] = true,
+		["ammo_5.56x45_ap"] = true,
+		["ammo_9x39_pab9"] = true,
+		["ammo_9x39_ap"] = true,
+		["ammo_7.62x39_fmj"]  = true,
+		["ammo_7.62x39_ap"]  = true,
+		["ammo_7.62x51_fmj"]  = true,
+		["ammo_7.62x51_ap"]  = true,
+		["ammo_7.62x54_7h1"]  = true,
+		["ammo_7.62x54_ap"] = true,
+		["ammo_12x70_buck"] = true,
+	}
+	local se_obj = WorldState.objects[state.id]
+	assert_test(sections[se_obj:section_name()], "Section name was changed in se_obj")
+	assert_test(sections[state.section_name], "Section name was changed")
+end, {
+	item_list = "test_list",
+	search_distance = "0,5",
+	amount = 1,
+	tags = {}
+})

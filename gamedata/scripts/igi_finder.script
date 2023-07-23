@@ -46,6 +46,7 @@ local function check_location(se_obj, args)
 
 	local dist = WorldState.distance_by_level[obj_level]
 	local lower_bound, higher_bound = get_distance_bounds(args.search_distance)
+	trace_dbg("Bounds", lower_bound, higher_bound, dist)
 	return dist >= lower_bound and dist <= higher_bound
 end
 
