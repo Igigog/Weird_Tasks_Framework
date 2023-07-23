@@ -79,13 +79,20 @@ function flat_quests()
 end
 
 local function report_tests_history()
-    news_manager.send_tip(db.actor, "Tests finished. Report:", nil, nil, 30000)
     local report = {}
+    local count_successful = 0
     for test_case, success in pairs(STATE.tests_history) do
-        report[#report+1] = test_case..": "..(success and "%c[d_green]success%c[0,255,255,255]" or "%c[d_red]fail%c[0,255,255,255]")
+        if success then
+            count_successful = count_successful + 1
+        else
+            report[#report+1] = test_case..": %c[d_red]fail%c[0,255,255,255]"
+        end
     end
 
-    news_manager.send_tip(db.actor, table.concat(report, "\\n \\n"), nil, nil, 30000)
+    news_manager.send_tip(db.actor,
+        "Tests finished. Report:\\n"
+        .."["..count_successful.."]: %c[d_green]success%c[0,255,255,255]\\n \\n"
+        ..table.concat(report, "\\n \\n"), nil, nil, 30000)
     trace_dbg("Test report:", STATE.tests_history)
 end
 

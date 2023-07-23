@@ -564,3 +564,40 @@ end, {
 	amount = 1,
 	tags = {}
 })
+
+igi_tests.register_test("create_location", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(create_location, state)
+	assert_test(ok == false, "No tag did not crash", out)
+	state.tags.LOCATION = true
+	create_location(state)
+end, {
+	tags = {}
+})
+
+igi_tests.register_test("create_location", function (state)
+	local assert_test = igi_tests.assert_test
+	local ok, out = pcall(create_location, state)
+	assert_test(ok == false, "No tag did not crash", out)
+	state.tags.LOCATION = true
+	create_location(state)
+end, {
+	tags = {}
+})
+
+igi_tests.register_test("create_squad_new", function (state)
+	local assert_test = igi_tests.assert_test
+	local smart_name = next(WorldState.smarts_by_level[level.name()])
+	state.where = SIMBOARD.smarts_by_names[smart_name].id
+	setup_squad(state)
+	create_squad(state)
+	assert_test(state.tags.BINDED, "Entity is not binded")
+	local se_obj = igi_entities.get_binded_object(state)
+	assert_test(se_obj, "No se_obj")
+	assert_test(se_obj.force_online == true, "Not forced online")
+	assert_test(se_obj.stay_time == game.get_game_time(), "Stay_time wrong")
+end, {
+	to_create = true,
+	section_name = "army_sim_squad_novice",
+	tags = {}
+})
