@@ -326,7 +326,7 @@ igi_tests.register_test("setup_squad_find_mutant", function (state)
 		local smart_name = next(WorldState.smarts_by_level[level.name()])
 		utils_obj.create_squad("simulation_flesh", smart_name)
 		utils_obj.create_squad("simulation_flesh", smart_name)
-		return true
+		return 0.2
 	end
 
 	local new_entities = setup_squad(state)
@@ -369,7 +369,7 @@ igi_tests.register_test("setup_squad_find_stalker", function (state)
 	if state._test_stage == 1 then
 		local smart_name = next(WorldState.smarts_by_level[level.name()])
 		utils_obj.create_squad("army_sim_squad_novice", smart_name)
-		return true
+		return 0.2
 	end
 
 	local new_entities = setup_squad(state)
@@ -400,7 +400,7 @@ igi_tests.register_test("setup_squad_find_factions", function (state)
 	if state._test_stage == 1 then
 		local smart_name = next(WorldState.smarts_by_level[level.name()])
 		utils_obj.create_squad("freedom_sim_squad_novice", smart_name)
-		return true
+		return 0.2
 	end
 
 	local new_entities = setup_squad(state)

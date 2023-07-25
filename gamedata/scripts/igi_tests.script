@@ -239,16 +239,16 @@ end
 
 function continue_normal_test_worker()
     if not STATE.current_test then return true end
-    ResetTimeEvent("igi_tests", "current_test", 1)
     local id = STATE.current_test
     trace_dbg("continuing test "..id, STATE.current_test_state)
-    local ok, run_again = pcall(TESTS[id][1], STATE.current_test_state)
-    
+    local ok, next_iteration = pcall(TESTS[id][1], STATE.current_test_state)
+    ResetTimeEvent("igi_tests", "current_test", type(next_iteration) == "number" and next_iteration or 1)
+
     -- in case it failed current test is reset
     if STATE.current_test then
-        assert_test(ok, "Test function crashed", run_again)
+        assert_test(ok, "Test function crashed", next_iteration)
     end
-    if not run_again and STATE.current_test then
+    if not next_iteration and STATE.current_test then
         finish_test()
         return true
     end
