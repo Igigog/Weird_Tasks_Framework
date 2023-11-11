@@ -122,7 +122,11 @@ function is_valid_quest(tg_id, task_data, task_id)
 	end
 	FINISHED_QUESTS[task_id] = nil
 
-	return igi_generic_task.try_prepare_quest(task_id, task_data, tg_id)
+	local ok, err = pcall(igi_generic_task.try_prepare_quest, task_id, task_data, tg_id)
+	if not ok then
+		on_task_crashed(err)
+	end
+	return ok
 end
 
 function get_valid_quests_for_npc(npc)
@@ -146,28 +150,28 @@ end
 
 function npc_has_quest(npc_name, quest)
 	if not NPC_TAGS[npc_name] then return false end
-    local npc_tags = NPC_TAGS[npc_name]
-    for _, quest_tags in pairs(quest.quest_givers or {}) do
-        if is_subset(quest_tags, npc_tags) then
-            return true
-        end
-    end
-    return false
+	local npc_tags = NPC_TAGS[npc_name]
+	for _, quest_tags in pairs(quest.quest_givers or {}) do
+		if is_subset(quest_tags, npc_tags) then
+			return true
+		end
+	end
+	return false
 end
 
 function inject_tasks(npc)
 	trace_dbg("Injecting tasks! Before: ", axr_task_manager.available_tasks[npc:id()])
-    local available_tasks = axr_task_manager.available_tasks[npc:id()]
-    for _, quest_id in pairs(get_valid_quests_for_npc(npc)) do
-        available_tasks[#available_tasks+1] = quest_id
-    end
+	local available_tasks = axr_task_manager.available_tasks[npc:id()]
+	for _, quest_id in pairs(get_valid_quests_for_npc(npc)) do
+		available_tasks[#available_tasks+1] = quest_id
+	end
 	trace_dbg("Injecting tasks! After: ", axr_task_manager.available_tasks[npc:id()])
 end
 
 function first_finished_igi_task(tg_id)
 	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
 		if cache.task_giver_id == tg_id
-				and (cache.status == igi_subtask.TASK_STATUSES.READY_TO_FINISH
+			and (cache.status == igi_subtask.TASK_STATUSES.READY_TO_FINISH
 				or cache.status == igi_subtask.TASK_STATUSES.COMPLETED) then
 			return task_id
 		end
@@ -238,12 +242,18 @@ IgiTask = {
 		return self.icon
 	end,
 
-	give_task = function (self)
-		igi_generic_task.initialise_CACHE(self.id)
-		igi_generic_task.quest_status(self.id) -- run once to setup current target
-		self.current_title = igi_generic_task.quest_text(self.id, "title")
-		self.current_descr = igi_generic_task.quest_text(self.id, "descr")
-		self.current_target = igi_generic_task.quest_target(self.id)
+	give_task             = function(self)
+		local ok, err = pcall(function(id)
+			igi_generic_task.initialise_CACHE(id)
+			igi_generic_task.quest_status(id) -- run once to setup current target
+			self.current_title = igi_generic_task.quest_text(id, "title")
+			self.current_descr = igi_generic_task.quest_text(id, "descr")
+			self.current_target = igi_generic_task.quest_target(id)
+		end, self.id)
+		if not ok then
+			on_task_crashed(err)
+			return
+		end
 		self.status = "selected"
 
 		local t = CGameTask()
@@ -279,21 +289,33 @@ IgiTask = {
 
 		local task_updated = false
 
-		local t_title = igi_generic_task.quest_text(self.id, "title")
+		local ok, t_title = pcall(igi_generic_task.quest_text, self.id, "title")
+		if not ok then
+			on_task_crashed(t_title, self.id)
+			return
+		end
 		if self.current_title ~= t_title then
 			task_updated = true
 			self.current_title = t_title
 			self.t:set_title(t_title)
 		end
 
-		local t_descr = igi_generic_task.quest_text(self.id, "descr")
+		local ok, t_descr = pcall(igi_generic_task.quest_text, self.id, "descr")
+		if not ok then
+			on_task_crashed(t_descr, self.id)
+			return
+		end
 		if self.current_descr ~= t_descr then
 			task_updated = true
 			self.current_descr = t_descr
 			self.t:set_description(t_descr)
 		end
 
-		local t_target = igi_generic_task.quest_target(self.id)
+		local ok, t_target = pcall(igi_generic_task.quest_target, self.id)
+		if not ok then
+			on_task_crashed(t_target, self.id)
+			return
+		end
 		if (self.current_target ~= t_target) then
 			task_updated = true
 			if not t_target then
@@ -309,7 +331,11 @@ IgiTask = {
 		end
 
 		-- status functor
-		local t = igi_generic_task.quest_status(self.id)
+		local ok, t = pcall(igi_generic_task.quest_status, self.id)
+		if not ok then
+			on_task_crashed(t, self.id)
+			return
+		end
 		if t == "complete" or t == "fail" or t == "reversed" then
 			self.last_check_task = t
 		end
@@ -319,13 +345,16 @@ IgiTask = {
 		self.check_time = nil
 		self.last_check_task = nil
 		self.status = "normal"
-		
+
 		if tmrs_tasks then	-- xcvb's task timers
 			tmrs_tasks.active_tasks[self.id] = nil
 		end
 
 		if self.last_check_task == "fail" then
-			igi_generic_task.finish_quest(self.id)
+			local ok, err = pcall(igi_generic_task.finish_quest, self.id)
+			if not ok then
+				on_task_crashed(err)
+			end
 			news_manager.send_task(db.actor, "fail", tsk)
 		end
 	end,
@@ -347,10 +376,13 @@ IgiTask = {
 		return t
 	end,
 
-	give_reward = function (self)
-		igi_generic_task.finish_quest(self.id)
+	give_reward           = function(self)
+		local ok, err = pcall(igi_generic_task.finish_quest, self.id)
+		if not ok then
+			on_task_crashed(err)
+		end
 		FINISHED_QUESTS[self.id] = game.get_game_time()
-		if tmrs_tasks then	-- xcvb's task timers
+		if tmrs_tasks then -- xcvb's task timers
 			tmrs_tasks.active_tasks[self.id] = nil
 		end
 	end,
@@ -448,4 +480,12 @@ function load_state(m_data)
 	FINISHED_QUESTS = m_data.igi_finished_quests or FINISHED_QUESTS
 end
 
-
+function on_task_crashed(err, task_id)
+	if task_id then
+		task_manager.get_task_manager():set_task_failed(task_id)
+	end
+	trace_dbg("Task crashed: ", err)
+	news_manager.send_tip(db.actor,
+		"Weird Tasks Framework crashed! Sorry :(. I've taken care of it, you can continue your playthrough.", nil, nil,
+		30000)
+end
