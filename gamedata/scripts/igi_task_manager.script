@@ -1,7 +1,30 @@
 local set = igi_utils.Set.from_list
-local is_subset = igi_utils.Set.is_subset
 local trace_dbg = igi_helper.trace_dbg
-local get_task_text = igi_description.get_task_text
+
+local function notnil(v)
+	if (v == nil) then
+		igi_generic_task.NIL_ERROR = true
+	end
+	igi_helper.trace_assert(v ~= nil)
+	return v
+end
+
+local Igi = {
+	is_subset = notnil(igi_utils.Set.is_subset),
+	get_task_text = notnil(igi_description.get_task_text),
+	get_all_quests = notnil(igi_taskdata.get_all_quests),
+	TASKS_CACHE = notnil(igi_generic_task.TASKS_CACHE),
+	TASK_SETUP = notnil(igi_generic_task.TASK_SETUP),
+	get_task_data = notnil(igi_taskdata.get_task_data),
+	TASK_STATUSES = notnil(igi_subtask.TASK_STATUSES),
+	setup_quest = notnil(igi_generic_task.setup_quest),
+	initialise_CACHE = notnil(igi_generic_task.initialise_CACHE),
+	try_prepare_quest = notnil(igi_generic_task.try_prepare_quest),
+	quest_status = notnil(igi_generic_task.quest_status),
+	quest_text = notnil(igi_generic_task.quest_text),
+	quest_target = notnil(igi_generic_task.quest_target),
+	finish_quest = notnil(igi_generic_task.finish_quest),
+}
 
 function on_game_start()
 	RegisterScriptCallback("load_state", load_state)
@@ -89,6 +112,19 @@ NPC_TAGS = {
 	zat_stancia_trader_merc = set{"Trader", "Mercenary", "Zaton"},
 }
 
+local function pcall(f, ...)
+	if type(f) ~= "function" then
+		callstack()
+		return false, "Not a function"
+	end
+	local xf = coroutine.create(f)
+	local ok, res = coroutine.resume(xf, ...)
+	if not ok then
+		trace_dbg("crash traceback", debug.traceback(xf, res))
+	end
+	return ok, res
+end
+
 REPEAT_TIMEOUT = 16200
 FINISHED_QUESTS = {}
 
@@ -97,7 +133,8 @@ function get_all_quests_for_npc(npc)
 	local npc_name = npc:section() ~= "m_trader" and npc:section() or npc:name()
 	if not NPC_QUESTS[npc_name] then
 		local quest_list = {}
-		for k, quests in pairs(igi_taskdata.get_all_quests()) do
+		local ok, all_quests = pcall(Igi.get_all_quests)
+		for k, quests in pairs(ok and all_quests or {}) do
 			for quest_name, quest_table in pairs(quests) do
 				if npc_has_quest(npc_name, quest_table) then
 					quest_list[#quest_list+1] = {k, quest_name}
@@ -111,7 +148,7 @@ function get_all_quests_for_npc(npc)
 end
 
 function is_valid_quest(tg_id, task_data, task_id)
-	if igi_generic_task.TASKS_CACHE[task_id] then
+	if Igi.TASKS_CACHE[task_id] then
 		return false	-- currently active
 	end
 
@@ -122,7 +159,7 @@ function is_valid_quest(tg_id, task_data, task_id)
 	end
 	FINISHED_QUESTS[task_id] = nil
 
-	local ok, err = pcall(igi_generic_task.try_prepare_quest, task_id, task_data, tg_id)
+	local ok, err = pcall(Igi.try_prepare_quest, task_id, task_data, tg_id)
 	if not ok then
 		on_task_crashed(err)
 	end
@@ -133,8 +170,8 @@ function get_valid_quests_for_npc(npc)
 	local quest_list = {}
 	for _, quest_id in pairs(get_all_quests_for_npc(npc)) do
 		local task_id = quest_id[1]..quest_id[2]..npc:id()
-		local task_data = igi_taskdata.get_task_data(quest_id)
-		if is_valid_quest(npc:id(), task_data, task_id) then
+		local ok, task_data = pcall(Igi.get_task_data, quest_id)
+		if ok and is_valid_quest(npc:id(), task_data, task_id) then
 			quest_list[#quest_list+1] = task_id
 		end
 	end
@@ -152,7 +189,7 @@ function npc_has_quest(npc_name, quest)
 	if not NPC_TAGS[npc_name] then return false end
 	local npc_tags = NPC_TAGS[npc_name]
 	for _, quest_tags in pairs(quest.quest_givers or {}) do
-		if is_subset(quest_tags, npc_tags) then
+		if Igi.is_subset(quest_tags, npc_tags) then
 			return true
 		end
 	end
@@ -169,10 +206,10 @@ function inject_tasks(npc)
 end
 
 function first_finished_igi_task(tg_id)
-	for task_id, cache in pairs(igi_generic_task.TASKS_CACHE) do
+	for task_id, cache in pairs(Igi.TASKS_CACHE) do
 		if cache.task_giver_id == tg_id
-			and (cache.status == igi_subtask.TASK_STATUSES.READY_TO_FINISH
-				or cache.status == igi_subtask.TASK_STATUSES.COMPLETED) then
+			and (cache.status == Igi.TASK_STATUSES.READY_TO_FINISH
+				or cache.status == Igi.TASK_STATUSES.COMPLETED) then
 			return task_id
 		end
 	end
@@ -197,10 +234,17 @@ function dialogs.drx_sl_text_mechanic_has_ordered_task_to_give( a, b )
 	local task_id = igi_tasks[math.random(#igi_tasks + vanilla_task_chance)]
 
 	if task_id then
-		local CACHE = igi_generic_task.TASK_SETUP[task_id]
+		local CACHE = Igi.TASK_SETUP[task_id]
 		dialogs.last_task_id = task_id
-		igi_generic_task.setup_quest(task_id)
-		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		local ok = pcall(Igi.setup_quest, task_id)
+		if ok then
+			local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "job_descr", CACHE.task_giver_id)
+			if ok then
+				return text
+			else
+				on_task_crashed(text, task_id)
+			end
+		end
 	end
 
 	return old_drx_sl_text_mechanic_has_ordered_task_to_give(a, b)
@@ -220,7 +264,7 @@ IgiTask = {
 	dont_send_update_news = false,
 
 	new = function (id)
-		local task_table = igi_generic_task.TASK_SETUP[id]
+		local task_table = Igi.TASK_SETUP[id]
 		local t = {
 			type			= "igi",
 			id				= id,
@@ -244,11 +288,11 @@ IgiTask = {
 
 	give_task             = function(self)
 		local ok, err = pcall(function(id)
-			igi_generic_task.initialise_CACHE(id)
-			igi_generic_task.quest_status(id) -- run once to setup current target
-			self.current_title = igi_generic_task.quest_text(id, "title")
-			self.current_descr = igi_generic_task.quest_text(id, "descr")
-			self.current_target = igi_generic_task.quest_target(id)
+			Igi.initialise_CACHE(id)
+			Igi.quest_status(id) -- run once to setup current target
+			self.current_title = Igi.quest_text(id, "title")
+			self.current_descr = Igi.quest_text(id, "descr")
+			self.current_target = Igi.quest_target(id)
 		end, self.id)
 		if not ok then
 			on_task_crashed(err)
@@ -289,7 +333,7 @@ IgiTask = {
 
 		local task_updated = false
 
-		local ok, t_title = pcall(igi_generic_task.quest_text, self.id, "title")
+		local ok, t_title = pcall(Igi.quest_text, self.id, "title")
 		if not ok then
 			on_task_crashed(t_title, self.id)
 			return
@@ -300,7 +344,7 @@ IgiTask = {
 			self.t:set_title(t_title)
 		end
 
-		local ok, t_descr = pcall(igi_generic_task.quest_text, self.id, "descr")
+		local ok, t_descr = pcall(Igi.quest_text, self.id, "descr")
 		if not ok then
 			on_task_crashed(t_descr, self.id)
 			return
@@ -311,7 +355,7 @@ IgiTask = {
 			self.t:set_description(t_descr)
 		end
 
-		local ok, t_target = pcall(igi_generic_task.quest_target, self.id)
+		local ok, t_target = pcall(Igi.quest_target, self.id)
 		if not ok then
 			on_task_crashed(t_target, self.id)
 			return
@@ -331,7 +375,7 @@ IgiTask = {
 		end
 
 		-- status functor
-		local ok, t = pcall(igi_generic_task.quest_status, self.id)
+		local ok, t = pcall(Igi.quest_status, self.id)
 		if not ok then
 			on_task_crashed(t, self.id)
 			return
@@ -351,7 +395,7 @@ IgiTask = {
 		end
 
 		if self.last_check_task == "fail" then
-			local ok, err = pcall(igi_generic_task.finish_quest, self.id)
+			local ok, err = pcall(Igi.finish_quest, self.id)
 			if not ok then
 				on_task_crashed(err)
 			end
@@ -377,7 +421,7 @@ IgiTask = {
 	end,
 
 	give_reward           = function(self)
-		local ok, err = pcall(igi_generic_task.finish_quest, self.id)
+		local ok, err = pcall(Igi.finish_quest, self.id)
 		if not ok then
 			on_task_crashed(err)
 		end
@@ -429,7 +473,7 @@ end
 
 old_give_task = task_manager.CRandomTask.give_task
 function task_manager.CRandomTask.give_task(self, task_id,task_giver_id)
-	if igi_generic_task.TASK_SETUP[task_id] then
+	if Igi.TASK_SETUP[task_id] then
 		local task = IgiTask.new(task_id)
 		self.task_info[task_id] = task
 		task:give_task()
@@ -440,9 +484,10 @@ end
 
 old_get_task_complete_text = axr_task_manager.get_task_complete_text
 function axr_task_manager.get_task_complete_text(task_id)
-	local CACHE = igi_generic_task.TASKS_CACHE[task_id]
+	local CACHE = Igi.TASKS_CACHE[task_id]
 	if CACHE then
-		return get_task_text(CACHE.description_key, "finish", CACHE.task_giver_id)
+		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "finish", CACHE.task_giver_id)
+		return ok and text or ""
 	end
 
 	return old_get_task_complete_text(task_id)
@@ -450,9 +495,10 @@ end
 
 old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
-	local CACHE = igi_generic_task.TASKS_CACHE[task_id] or igi_generic_task.TASK_SETUP[task_id]
+	local CACHE = Igi.TASKS_CACHE[task_id] or Igi.TASK_SETUP[task_id]
 	if CACHE then
-		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		return ok and text or ""
 	end
 
 	return old_get_task_job_description(task_id)
@@ -462,11 +508,16 @@ old_text_npc_has_task = dialogs.text_npc_has_task
 function dialogs.text_npc_has_task(a,b)
 	local npc = dialogs.who_is_npc(a, b)
 	local task_id = axr_task_manager.available_tasks[npc:id()] and axr_task_manager.available_tasks[npc:id()][1]
-	local CACHE = igi_generic_task.TASK_SETUP[task_id]
+	local CACHE = Igi.TASK_SETUP[task_id]
 
 	if CACHE then
-		igi_generic_task.setup_quest(task_id)
-		return get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		local ok, text = pcall(function()
+			Igi.setup_quest(task_id)
+			return Igi.get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		end)
+		if ok then
+			return text
+		end
 	end
 
 	return old_text_npc_has_task(a, b)
@@ -484,7 +535,7 @@ function on_task_crashed(err, task_id)
 	if task_id then
 		task_manager.get_task_manager():set_task_failed(task_id)
 	end
-	trace_dbg("Task crashed: ", err)
+	trace_dbg("FATAL: Task crashed: ", err, callstack(false, true))
 	news_manager.send_tip(db.actor,
 		"Weird Tasks Framework crashed! Sorry :(. I've taken care of it, you can continue your playthrough.", nil, nil,
 		30000)

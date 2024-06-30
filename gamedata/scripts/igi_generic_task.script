@@ -1,9 +1,9 @@
 -- =============================================================
 --	Quest functions (igi_generic_task.script)
---	Anomaly 1.5.5.0
+--	Anomaly 1.5.1
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "3.7"
+TASKS_VERSION = "3.7.1"
 TASK_SETUP = {}
 TASKS_CACHE = {TASKS_VERSION = TASKS_VERSION}
 
@@ -11,6 +11,7 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+NIL_ERROR = false
 
 function on_game_start()
     RegisterScriptCallback("save_state",save_state)
@@ -28,6 +29,11 @@ function actor_on_first_update()
 			.." -> "..TASKS_VERSION)
 	TASKS_CACHE.TASKS_VERSION = TASKS_VERSION
 	news_manager.send_tip(db.actor, "WTF: Update complete. Welcome to WTF "..TASKS_VERSION, nil, nil, 30000)
+	if NIL_ERROR then
+		news_manager.send_tip(db.actor,
+			"Something is nil! Check nonnil() calls. WTF is not initialised.", nil, nil,
+			30000)
+	end
 end
 
 function save_state(m_data)
