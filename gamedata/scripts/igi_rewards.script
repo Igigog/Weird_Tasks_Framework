@@ -1,107 +1,82 @@
-local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
-local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-REWARD_TYPES = {}
-
 function collect_and_give_rewards(CACHE)
-	local rewards = dup_table(CACHE.rewards and CACHE.rewards[CACHE.status] or {})
-	merge_rewards_from_subtasks(rewards, CACHE.entities, CACHE.status, CACHE.task_giver_id)
-	if rewards.goodwill then
-		rewards.goodwill.faction = rewards.goodwill.faction
-			or igi_helper.get_community_by_id(CACHE.task_giver_id)
-	end
+	local total = merge_rewards_from_subtasks(CACHE.entities, CACHE.status)
+	local rewards = split_to_rewards(total)
+
+	trace_dbg("rewards", rewards)
 	igi_callbacks.invoke_callbacks("on_before_rewarding", rewards)
-	give_rewards(rewards)
+	local faction = igi_helper.get_community_by_id(CACHE.task_giver_id)
+	give_rewards(rewards, faction)
 end
 
-function merge_rewards_from_subtasks(dest, entities, is_successful, tg_id)
+function split_to_rewards(points)
+	return {
+		money = Money.points_to_value(points * 0.8),
+		goodwill = Goodwill.points_to_value(points * 0.2),
+	}
+end
+
+function merge_rewards_from_subtasks(entities, is_successful)
+	local total = 0
 	-- Always add failed: if task is successful then these ones are failed optionals
-	merge_rewards_with_status(dest, entities, TASK_STATUSES.FAILED, tg_id)
+	total = total + merge_rewards_with_status(entities, TASK_STATUSES.FAILED)
 	if is_successful then
-		merge_rewards_with_status(dest, entities, TASK_STATUSES.COMPLETED, tg_id)
+		total = total + merge_rewards_with_status(entities, TASK_STATUSES.COMPLETED)
 	end
-	trace_dbg("With rewards from subtasks: ", dest)
+	return total
 end
 
-function merge_rewards_with_status(dest, entities, status, tg_id)
-	trace_dbg('Entities, status, rewards', entities, status, dest)
+function merge_rewards_with_status(entities, status)
+	trace_dbg('Entities, status', entities, status)
+	local total = 0
 	for _, entity in pairs(entities) do
 		if entity.status == status then
-			merge_reward_tables(dest, get_subtask_rewards(entity, tg_id))
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			total = total + target_tbl.get_complexity(entity)
 		end
 	end
+	return total
 end
 
-function get_subtask_rewards(entity, tg_id)
-	local target_tbl = igi_taskdata.get_target_table(entity.target)
-	local dynamic_rewards = target_tbl.get_rewards(entity, tg_id)
-	local static_rewards = dup_table(entity.rewards and entity.rewards[entity.status] or {})
-	trace_dbg('static rewards, dynamic: ', static_rewards, dynamic_rewards)
-
-	merge_reward_tables(static_rewards, dynamic_rewards)
-	return static_rewards
-end
-
-function merge_reward_tables(this, other)
-	trace_dbg("Combine: reward, other", this, other)
-
-	for k, reward in pairs(other) do
-		if this[k] and not this[k].blocked then
-			local typ = REWARD_TYPES[k]
-			typ.merge(this[k], reward)
-		elseif (not this[k]) and not this.blocked then
-			this[k] = dup_table(reward)
-		end
+function give_rewards(rewards, faction)
+	if (rewards.money) then
+		Money.give(rewards.money)
 	end
-	trace_dbg('combined', this)
-end
 
-function give_rewards(rewards_tbl)
-	rewards_tbl.blocked = nil
-	for typ, reward in pairs(rewards_tbl) do
-		REWARD_TYPES[typ].give(reward)
+	if (rewards.goodwill) then
+		Goodwill.give(rewards.goodwill, faction)
 	end
 end
 
-REWARD_TYPES.goodwill = {
-	merge = function (self, other)
-		self.value = (self.value or 0) + other.value * (other.multiplier or 1)
-			+  (other.additional or 0)
+Goodwill = {
+	give = function (amount, faction)
+		if amount == 0 then return end
+		xr_effects.complete_task_inc_goodwill(nil, nil, {amount, faction})
 	end,
 
-	give = function (self)
-		local value = (self.value or 0) * (self.multiplier or 1) + (self.additional or 0)
-		if value == 0 then return end
-		xr_effects.complete_task_inc_goodwill(nil, nil, {value, self.faction})
-	end,
+	points_to_value = function(points)
+		return points / 50
+	end
 }
 
-REWARD_TYPES.money = {
-	merge = function (self, other)
-		self.value = (self.value or 0) + other.value * (other.multiplier or 1)
-			+ (other.additional or 0)
-	end,
-
-	give = function (self)
-		local money = (self.value or 0) * (self.multiplier or 1) + (self.additional or 0)
-		money = money*igi_mcm.get_options_value("money_reward_coeff")
+Money = {
+	give = function (amount)
+		money = amount*igi_mcm.get_options_value("money_reward_coeff")
 		if money ~= 0 then
 			local min = money*igi_mcm.get_options_value("reward_spread_min")
 			local max = money*igi_mcm.get_options_value("reward_spread_max")
 			xr_effects.reward_random_money(nil, nil, {min, max})
 		end
 	end,
+
+	points_to_value = function (points)
+		return points
+	end
 }
 
-REWARD_TYPES.item = {
-	merge = function (self, other)
-		for section, amount in pairs(other) do
-			self[section] = (self[section] or 0) + amount
-		end
-	end,
-
+Item = {
 	give = function (self)
 		for section, quantity in pairs(self) do
 			for _=1,quantity do
@@ -113,28 +88,15 @@ REWARD_TYPES.item = {
 }
 
 function has_material_rewards(CACHE)
-	local static_rewards = CACHE.rewards and CACHE.rewards.COMPLETED
-	if static_rewards and static_rewards.money then
-		return true
-	end
-
-	if static_rewards and static_rewards.blocked then return false end
-
 	for _, entity in pairs(CACHE.entities) do
 		if entity.target then
-			local static_rewards = CACHE.rewards and CACHE.rewards.COMPLETED
-			if static_rewards and static_rewards.money and static_rewards.money.value ~= 0 then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			local dynamic_rewards = target_tbl.get_complexity(entity, CACHE.task_giver_id)
+			if dynamic_rewards ~= 0 then
 				return true
-			end
-			if not (static_rewards and static_rewards.blocked) then
-				local target_tbl = igi_taskdata.get_target_table(entity.target)
-				local dynamic_rewards = target_tbl.get_rewards(entity, CACHE.task_giver_id)
-				if dynamic_rewards.money and dynamic_rewards.money.value ~= 0 then
-					return true
-				end
 			end
 		end
 	end
-	
+
 	return false
 end

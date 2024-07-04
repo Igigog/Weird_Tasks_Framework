@@ -74,36 +74,17 @@ function get_description(entity)
 	}
 end
 
-local function get_item_base_cost(section)
+function get_item_base_cost(section)
 	local max_uses = IsItem("multiuse",section) or 1
 	local cost = ini_sys:r_float_ex(section,"cost") * (1 / max_uses)
 	return cost
 end
-get_item_base_cost = igi_utils.memoize_one_variable(get_item_base_cost)
 
 local function is_scaled_by_condition(sec)
 	if IsItem("multiuse",sec) then return false end
 	if IsItem("device",sec) then return false end
 	if IsItem("battery", sec) then return false end
 	return true
-end
-
-local function get_item_cost(id)
-	local obj = igi_helper.level_object(id)
-	local sec = obj:section()
-	local cost = get_item_base_cost(sec)
-
-	if is_scaled_by_condition(sec) then
-		local condition = obj:condition()
-		cost = cost*(condition*condition)
-	end
-
-	if IsItem("multiuse",sec) then
-		local uses = obj:get_remaining_uses()
-		cost = cost*uses
-	end
-
-	return cost
 end
 
 function give_arti_container(obj)
@@ -136,7 +117,7 @@ function release_fetch_items(entity)
 	end
 end
 
-function get_rewards(entity)
+function get_complexity(entity)
 	if entity.status == TASK_STATUSES.COMPLETED then
 		local money = 0
 		local base_cost = get_item_base_cost(entity.section_name)
@@ -148,21 +129,10 @@ function get_rewards(entity)
 		else
 			money = base_cost * entity.amount
 		end
-		return {
-			money = {
-				value = money,
-			},
-			goodwill = {
-				value = 50,
-			}
-		}
+		return money + 5000
 	elseif entity.status == TASK_STATUSES.FAILED then
 		local cost_sum = get_item_base_cost(entity.section_name)*entity.amount
-		return {
-			goodwill = {
-				value = -75 + math.floor(cost_sum/800)
-			}
-		}
+		return -5000 - cost_sum
 	end
 end
 

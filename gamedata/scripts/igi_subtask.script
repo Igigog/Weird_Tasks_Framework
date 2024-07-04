@@ -32,7 +32,12 @@ function finish_all_subtasks(CACHE)
 end
 
 function update_current_map_target(CACHE)
-	CACHE.current_target_id = get_quest_target(CACHE.entities)
+	if CACHE.status == TASK_STATUSES.COMPLETED
+		or CACHE.status == TASK_STATUSES.READY_TO_FINISH then
+		CACHE.current_target_id = CACHE.task_giver_id
+	else
+		CACHE.current_target_id = get_quest_target(CACHE.entities)
+	end
 end
 
 function process_subtasks(CACHE)

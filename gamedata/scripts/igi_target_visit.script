@@ -70,12 +70,8 @@ function status(subtask)
     return igi_subtask.TASK_STATUSES.RUNNING
 end
 
-function get_completed_money(entity)
-	return 300
-end
-
-function get_completed_goodwill(entity)
-	return 10
+function get_complexity(entity)
+	return 500
 end
 
 function test(entity)

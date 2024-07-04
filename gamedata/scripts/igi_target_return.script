@@ -53,16 +53,8 @@ function get_item_weight(entity)
 	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
 end
 
-function get_completed_money(entity)
-	return 500 + get_item_cost(entity)*get_item_weight(entity)/32
-end
-
-function get_completed_goodwill(entity)
-	return 25 + get_item_weight(entity)*10
-end
-
-function get_failed_goodwill(entity)
-	return -25 + (get_item_cost(entity)/(-400))
+function get_complexity(entity)
+	return get_item_cost(entity) * get_item_weight(entity) / 32
 end
 
 function test(entity)

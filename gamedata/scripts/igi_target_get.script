@@ -37,7 +37,7 @@ function quest_target(obj_data)
 	end
 end
 
-function get_completed_money(entity)
+function get_complexity(entity)
 	return 0
 end
 

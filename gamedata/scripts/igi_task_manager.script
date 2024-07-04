@@ -13,7 +13,7 @@ local Igi = {
 	is_subset = notnil(igi_utils.Set.is_subset),
 	get_task_text = notnil(igi_description.get_task_text),
 	get_all_quests = notnil(igi_taskdata.get_all_quests),
-	TASKS_CACHE = notnil(igi_generic_task.TASKS_CACHE),
+	get_cache = notnil(igi_generic_task.get_cache),
 	TASK_SETUP = notnil(igi_generic_task.TASK_SETUP),
 	get_task_data = notnil(igi_taskdata.get_task_data),
 	TASK_STATUSES = notnil(igi_subtask.TASK_STATUSES),
@@ -24,6 +24,7 @@ local Igi = {
 	quest_text = notnil(igi_generic_task.quest_text),
 	quest_target = notnil(igi_generic_task.quest_target),
 	finish_quest = notnil(igi_generic_task.finish_quest),
+	first_finished_igi_task = notnil(igi_generic_task.first_finished_igi_task),
 }
 
 function on_game_start()
@@ -148,7 +149,7 @@ function get_all_quests_for_npc(npc)
 end
 
 function is_valid_quest(tg_id, task_data, task_id)
-	if Igi.TASKS_CACHE[task_id] then
+	if Igi.get_cache(task_id) then
 		return false	-- currently active
 	end
 
@@ -205,21 +206,11 @@ function inject_tasks(npc)
 	trace_dbg("Injecting tasks! After: ", axr_task_manager.available_tasks[npc:id()])
 end
 
-function first_finished_igi_task(tg_id)
-	for task_id, cache in pairs(Igi.TASKS_CACHE) do
-		if cache.task_giver_id == tg_id
-			and (cache.status == Igi.TASK_STATUSES.READY_TO_FINISH
-				or cache.status == Igi.TASK_STATUSES.COMPLETED) then
-			return task_id
-		end
-	end
-end
-
 old_get_first_finished_task = axr_task_manager.get_first_finished_task
 function axr_task_manager.get_first_finished_task(npc,is_sim)
 	local task_id = old_get_first_finished_task(npc, is_sim)
 	if not task_id then
-		task_id = first_finished_igi_task(npc:id())
+		task_id = Igi.first_finished_igi_task(npc:id())
 	end
 	return task_id
 end
@@ -484,7 +475,7 @@ end
 
 old_get_task_complete_text = axr_task_manager.get_task_complete_text
 function axr_task_manager.get_task_complete_text(task_id)
-	local CACHE = Igi.TASKS_CACHE[task_id]
+	local CACHE = Igi.get_cache(task_id)
 	if CACHE then
 		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "finish", CACHE.task_giver_id)
 		return ok and text or ""
@@ -495,7 +486,7 @@ end
 
 old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
-	local CACHE = Igi.TASKS_CACHE[task_id] or Igi.TASK_SETUP[task_id]
+	local CACHE = Igi.get_cache(task_id) or Igi.TASK_SETUP[task_id]
 	if CACHE then
 		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "job_descr", CACHE.task_giver_id)
 		return ok and text or ""

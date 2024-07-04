@@ -23,14 +23,7 @@ function status(entity)
 end
 
 function setup_rewards(entity)
-	entity.rewards = {
-		money = {
-			value = get_money_reward(entity)
-		},
-		goodwill = {
-			value = get_goodwill_reward(entity)
-		}
-	}
+	entity._complexity = calculate_complexity(entity)
 end
 
 local function get_monster_value(se_npc)
@@ -62,7 +55,7 @@ local function get_npc_value(se_npc)
 	return value*(factors[tier] or 1)
 end
 
-function get_money_reward(entity)
+function calculate_complexity(entity)
 	local reward = 0
 	local se_squad = WorldState.objects[entity.id]
 	local faction = se_squad:get_squad_community()
@@ -82,15 +75,8 @@ function get_money_reward(entity)
 	return reward
 end
 
-function get_goodwill_reward(entity)
-	local se_squad = WorldState.objects[entity.id]
-	local npc_count = se_squad:npc_count()
-
-	return 50 - (40/npc_count)
-end
-
-function get_rewards(entity)
-	return entity.rewards
+function get_complexity(entity)
+	return entity._complexity
 end
 
 function test(entity)

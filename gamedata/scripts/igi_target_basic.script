@@ -266,6 +266,10 @@ function quest_target(entity)
 	return entity.id
 end
 
+function get_complexity(entity)
+	return 4000
+end
+
 function get_rewards(entity)
 	if entity.status == TASK_STATUSES.COMPLETED then
 		return {
