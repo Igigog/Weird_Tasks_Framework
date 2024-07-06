@@ -186,13 +186,11 @@ local function build_task_pack_tree(meta_section)
 end
 
 local function get_basic_rewards_page()
-	local coeff = Trackbar.new("money_reward_coeff")
-	local spread_min = Trackbar.new("reward_spread_min"):default(0.8)
-	local spread_max = Trackbar.new("reward_spread_max"):default(1.1)
+	local money_coeff = Trackbar.new("money_reward_coeff")
+	local goodwill_coeff = Trackbar.new("goodwill_reward_coeff")
 	return Page.new('')
-		:add(coeff)
-		:add(spread_min)
-		:add(spread_max)
+		:add(money_coeff)
+		:add(goodwill_coeff)
 end
 
 local function get_options_page()

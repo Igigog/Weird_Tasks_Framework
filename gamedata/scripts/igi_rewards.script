@@ -37,9 +37,12 @@ function get_reward_bounds(entities)
 end
 
 function split_to_rewards(points)
+	local scaled_points = points * (game_difficulties.get_eco_factor("rewards") or 1)
+	local money = Money.points_to_value(scaled_points * 0.8) * igi_mcm.get_options_value("money_reward_coeff")
+	local goodwill = Goodwill.points_to_value(scaled_points * 0.2)
 	return {
-		money = Money.points_to_value(points * 0.8),
-		goodwill = Goodwill.points_to_value(points * 0.2),
+		money = math.floor(money),
+		goodwill = math.ceil(goodwill),
 	}
 end
 
@@ -78,7 +81,7 @@ end
 Goodwill = {
 	give = function (amount, faction)
 		if amount == 0 then return end
-		xr_effects.complete_task_inc_goodwill(nil, nil, {amount, faction})
+		xr_effects.inc_faction_goodwill_to_actor(db.actor, nil, { faction, amount, true })
 	end,
 
 	points_to_value = function(points)
@@ -88,11 +91,8 @@ Goodwill = {
 
 Money = {
 	give = function (amount)
-		money = amount*igi_mcm.get_options_value("money_reward_coeff")
-		if money ~= 0 then
-			local min = money*igi_mcm.get_options_value("reward_spread_min")
-			local max = money*igi_mcm.get_options_value("reward_spread_max")
-			xr_effects.reward_random_money(nil, nil, {min, max})
+		if amount ~= 0 then
+			dialogs.relocate_money(db.actor, amount, "in")
 		end
 	end,
 
