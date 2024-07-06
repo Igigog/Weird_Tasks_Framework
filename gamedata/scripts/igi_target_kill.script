@@ -76,7 +76,8 @@ function calculate_complexity(entity)
 end
 
 function get_complexity(entity)
-	return entity._complexity
+	if entity._complexity then return entity._complexity end
+	return 2000, 5000
 end
 
 function test(entity)

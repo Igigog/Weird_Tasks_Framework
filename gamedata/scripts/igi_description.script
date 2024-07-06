@@ -27,7 +27,15 @@ function get_description(CACHE)
 		content[#content+1] = item_to_string(v, label)
 	end
 
-	return table.concat(content, "\\n")
+	return table.concat(content, "\\n").."\\n"..get_rewards_description(CACHE)
+end
+
+function get_rewards_description(CACHE)
+	local low, high = igi_rewards.guess_rewards(CACHE.entities)
+	return "Rewards: "
+		..tostring(low.money)..(high.money ~= low.money and "-"..tostring(high.money) or "").." RUB, "
+		.. tostring(low.goodwill) ..
+		(high.goodwill ~= low.goodwill and "-" .. tostring(high.goodwill) or "") .. " goodwill"
 end
 
 function get_task_text_values(CACHE)

@@ -1,4 +1,5 @@
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function collect_and_give_rewards(CACHE)
@@ -9,6 +10,30 @@ function collect_and_give_rewards(CACHE)
 	igi_callbacks.invoke_callbacks("on_before_rewarding", rewards)
 	local faction = igi_helper.get_community_by_id(CACHE.task_giver_id)
 	give_rewards(rewards, faction)
+end
+
+function guess_rewards(entities)
+	local low, high = get_reward_bounds(entities)
+	trace_assert(low ~= nil, "Low reward bound is nil")
+	if high == nil then
+		high = low
+	end
+	return split_to_rewards(low), split_to_rewards(high)
+end
+
+function get_reward_bounds(entities)
+	local lower_bound = 0
+	local higher_bound = 0
+	for _, entity in pairs(entities) do
+		if entity.target then
+			local target_tbl = igi_taskdata.get_target_table(entity.target)
+			local low, high = target_tbl.get_complexity(entity)
+			if high == nil then high = low end
+			lower_bound = lower_bound + low
+			higher_bound = higher_bound + high
+		end
+	end
+	return lower_bound, higher_bound
 end
 
 function split_to_rewards(points)

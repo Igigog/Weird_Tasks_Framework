@@ -23,7 +23,7 @@ function get_fetched_items(obj_data)
 	local ids = {}
 	local is_multi = IsItem("multiuse",section)
 	local is_ammo = IsItem("ammo",section)
-	
+
 	local function itr(temp, obj)
 		if not string.find(obj:section(), section) then return end
 		if amount <= 0 then return true end
@@ -118,22 +118,22 @@ function release_fetch_items(entity)
 end
 
 function get_complexity(entity)
-	if entity.status == TASK_STATUSES.COMPLETED then
+	local base_cost = get_item_base_cost(entity.section_name)
+	local scaled_by_condition = is_scaled_by_condition(entity.section_name)
+	if entity._ids and scaled_by_condition then
 		local money = 0
-		local base_cost = get_item_base_cost(entity.section_name)
-		if is_scaled_by_condition(entity.section_name) then
-			for id in pairs(entity._ids) do
-				local condition = get_object_by_id(id):condition()
-				money = money + base_cost * condition * condition
-			end
-		else
-			money = base_cost * entity.amount
+		for id in pairs(entity._ids) do
+			local condition = get_object_by_id(id):condition()
+			money = money + base_cost * condition * condition
 		end
-		return money + 5000
-	elseif entity.status == TASK_STATUSES.FAILED then
-		local cost_sum = get_item_base_cost(entity.section_name)*entity.amount
-		return -5000 - cost_sum
+		return money
 	end
+
+	if scaled_by_condition then
+		return base_cost * entity.amount * 0.7 * 0.7, base_cost * entity.amount
+	end
+
+	return base_cost * entity.amount
 end
 
 function entity_on_complete(entity)

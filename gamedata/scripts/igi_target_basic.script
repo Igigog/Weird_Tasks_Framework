@@ -125,7 +125,7 @@ end
 
 function setup_location(entity)
 	entity.tags.LOCATION = true
-	
+
 	if entity.coords then
 		return unwrap_entity_amount(entity)
 	end
@@ -268,26 +268,6 @@ end
 
 function get_complexity(entity)
 	return 4000
-end
-
-function get_rewards(entity)
-	if entity.status == TASK_STATUSES.COMPLETED then
-		return {
-			money = {
-				value = 3000
-			},
-			goodwill = {
-				value = 25
-			}
-		}
-	elseif entity.status == TASK_STATUSES.FAILED then
-		return {
-			goodwill = {
-				value = -25
-			}
-		}
-	end
-	return {}
 end
 
 ------------------------------------------------

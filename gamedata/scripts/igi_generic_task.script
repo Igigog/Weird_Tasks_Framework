@@ -48,11 +48,11 @@ end
 
 function get_cache(task_id)
 	igi_callbacks.set_current_task(task_id)
-	return trace_assert(TASKS_CACHE[task_id], "task "..task_id.." : CACHE not initialised")
+	return TASKS_CACHE[task_id]
 end
 
 local function get_setup_cache(task_id)
-	return trace_assert(TASK_SETUP[task_id], "task "..task_id.." : SETUP not initialised")
+	return TASK_SETUP[task_id]
 end
 ---------------------------< Precondition >---------------------------
 function try_prepare_quest(task_id, task_data, tg_id)
