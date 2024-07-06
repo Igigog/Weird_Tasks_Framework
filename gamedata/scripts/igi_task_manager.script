@@ -1,5 +1,6 @@
 local set = igi_utils.Set.from_list
 local trace_dbg = igi_helper.trace_dbg
+local trace_error = igi_helper.trace_error
 
 local function notnil(v)
 	if (v == nil) then
@@ -121,7 +122,7 @@ local function pcall(f, ...)
 	local xf = coroutine.create(f)
 	local ok, res = coroutine.resume(xf, ...)
 	if not ok then
-		trace_dbg("crash traceback", debug.traceback(xf, res))
+		trace_error("Crash", debug.traceback(xf, res .. "\\n"))
 	end
 	return ok, res
 end
@@ -526,8 +527,8 @@ function on_task_crashed(err, task_id)
 	if task_id then
 		task_manager.get_task_manager():set_task_failed(task_id)
 	end
-	trace_dbg("FATAL: Task crashed: ", err, callstack(false, true))
 	news_manager.send_tip(db.actor,
 		"Weird Tasks Framework crashed! Sorry :(. I've taken care of it, you can continue your playthrough.", nil, nil,
 		30000)
+	trace_error("Task crashed: ", err, callstack(false, true))
 end

@@ -66,7 +66,7 @@ function get_faction_enemies(faction)
 	}
 	local enemies_set = {}
 	local factions = game_relations.factions_table
-	
+
 	for _, enemy_faction in pairs(factions) do
 		if (game_relations.is_factions_enemies(faction, enemy_faction)) then
 			if not excluded[enemy_faction] then
@@ -89,6 +89,23 @@ function trace_dbg(title, ...)
 			end
 		end
 		printf("-------------------------")
+	end
+end
+
+function trace_error(title, ...)
+	local val = {}
+	val[#val + 1] = "WTF ERROR: " .. title
+	for k, v in pairs({ ... }) do
+		if type(v) == "table" then
+			val[#val+1] = utils_data.print_table(v, k, true)
+		else
+			val[#val + 1] = tostring(v)
+		end
+	end
+	val[#val + 1] = "-------------------------"
+	printf(table.concat(val, "\n"))
+	if igi_mcm.get_options_value("debug") then
+		news_manager.send_tip(db.actor, table.concat(val, "\\n"), nil, nil, 30000)
 	end
 end
 
