@@ -129,10 +129,6 @@ function get_complexity(entity)
 		return money
 	end
 
-	if scaled_by_condition then
-		return base_cost * entity.amount * 0.7 * 0.7, base_cost * entity.amount
-	end
-
 	return base_cost * entity.amount
 end
 
