@@ -33,9 +33,9 @@ end
 function get_rewards_description(CACHE)
 	local low, high = igi_rewards.guess_rewards(CACHE.entities)
 	return "Rewards: "
-		..tostring(low.money)..(high.money ~= low.money and "-"..tostring(high.money) or "").." RUB, "
-		.. tostring(low.goodwill) ..
-		(high.goodwill ~= low.goodwill and "-" .. tostring(high.goodwill) or "") .. " goodwill"
+		..tostring(math.floor(low.money))..(high.money ~= low.money and "-"..tostring(math.floor(high.money)) or "").." RUB, "
+		.. tostring(math.floor(low.goodwill)) ..
+		(high.goodwill ~= low.goodwill and "-" .. tostring(math.floor(high.goodwill)) or "") .. " goodwill"
 end
 
 function get_task_text_values(CACHE)
