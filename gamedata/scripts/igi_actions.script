@@ -1,4 +1,4 @@
-local trace_assert = igi_helper.trace_assert
+local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 
 actions = {}
@@ -19,7 +19,8 @@ end
 function update_action(action)
 	if action._state == "finished" then return end
 	if not are_conditions_fulfilled(action.conditions) then return end
-	local to_rerun = actions[action.type](action)
+	trace_dbg("Update action", action.run)
+	local to_rerun = loadstring("return "..action.run)()
 	if not to_rerun then action._state = "finished" end
 end
 
@@ -32,19 +33,19 @@ function are_conditions_fulfilled(conds)
 	return true
 end
 
-actions.repair = function (action)
-	local item = igi_helper.level_object(action.id)
+function repair(id, condition)
+	local item = igi_helper.level_object(id)
 	if not item then return end
-	item:set_condition(action.condition/100)
+	item:set_condition(condition/100)
 end
 
-actions.change_faction = function (action)
-	local se_squad = WorldState.objects[action.id]
+function change_faction(id, faction)
+	local se_squad = WorldState.objects[id]
 	if not se_squad or not se_squad.squad_members then return end
 	for npc in se_squad:squad_members() do
 		local member = igi_helper.level_object(npc.id)
 		if member then
-			member:set_character_community(action.faction, 0, 0)
+			member:set_character_community(faction, 0, 0)
 		end
 	end
 end
