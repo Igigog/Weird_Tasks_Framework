@@ -1,6 +1,3 @@
-local trace_assert = igi_helper.trace_assert
-local extend_list = igi_utils.extend_list
-
 Tree = igi_mcm_builder.Tree
 Page = igi_mcm_builder.Page
 ImageWithText = igi_mcm_builder.ImageWithText
@@ -45,29 +42,8 @@ local function task_table_value(task_name, prefix, path)
 	return cur_tbl[path[#path]]
 end
 
-local function task_table_value_safe(task_name, prefix, path)
-	local val = task_table_value(task_name, prefix, path)
-	if val == nil then return "" end
-	return val
-end
-
 local function set_config_value(task_name, prefix, path, value)
 	igi_taskdata.update_task_config_value(task_name, prefix, path, value)
-end
-
-local function set_config_value_typed(task_name, prefix, path, value)
-	if type(value) == "string" then
-		value = igi_db.parse_values(value)
-	end
-	if value == "nil" then value = nil end
-	set_config_value(task_name, prefix, path, value)
-end
-
-local function set_static_reward(task_name, prefix, path, value)
-	set_config_value_typed(task_name, prefix, path, value)
-	path = dup_table(path)
-	path[#path] = "blocked"
-	set_config_value_typed(task_name, prefix, path, value ~= "nil" or nil)
 end
 
 function reset_all_tasks(task, prefix)
@@ -76,16 +52,6 @@ function reset_all_tasks(task, prefix)
 			task_manager.get_task_manager():set_task_completed(task_id)
 		end
 	end
-end
-
-local function get_title(name)
-	return Title.new("ui_mcm_"..name.."_title")
-		:text("ui_mcm_igi_tasks_"..name.."_title")
-end
-
-local function get_description(name)
-	return Description.new("ui_mcm_"..name.."_desc")
-		:text("ui_mcm_igi_tasks_"..name.."_desc")
 end
 
 local function create_disable_widgets(task, prefix)
@@ -104,70 +70,12 @@ local function create_cancel_widgets(task, prefix)
 	return Page.new(''):add(check)
 end
 
-local function create_rewards_modifiers_widgets(task, prefix)
-	local page = Page.new('')
-	page:add(get_title("rewards_modifiers"))
-	page:add(get_description("rewards_modifiers"))
-	local additional_money = InputField.new("add_money")
-		:hint("igi_tasks_add_money")
-		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "additional"}})
-		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "additional"}})
-
-	local additional_goodwill = InputField.new("add_goodwill")
-		:hint("igi_tasks_add_goodwill")
-		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}})
-		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "additional"}})
-
-	local money_multiplier = InputField.new("mult_money")
-		:hint("igi_tasks_mult_money")
-		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}})
-		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "money", "multiplier"}})
-
-	local goodwill_multiplier = InputField.new("mult_goodwill")
-		:hint("igi_tasks_mult_goodwill")
-		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}})
-		:callback({set_config_value_typed, task, prefix, {"rewards", "COMPLETED", "goodwill", "multiplier"}})
-
-	page:add(additional_money)
-			:add(additional_goodwill)
-			:add(money_multiplier)
-			:add(goodwill_multiplier)
-
-	return page
-end
-
-local function create_static_rewards_widgets(task, prefix)
-	local page = Page.new('')
-	page:add(get_title("static_rewards"))
-	page:add(get_description("static_rewards"))
-	local money = InputField.new("reward_money")
-		:hint("igi_tasks_reward_money")
-		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "money", "value"}})
-		:callback({set_static_reward, task, prefix, {"rewards", "COMPLETED", "money", "value"}})
-
-	local goodwill = InputField.new("reward_goodwill")
-		:hint("igi_tasks_reward_goodwill")
-		:current_value({task_table_value_safe, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}})
-		:callback({set_static_reward, task, prefix, {"rewards", "COMPLETED", "goodwill", "value"}})
-
-	return page:add(money):add(goodwill)
-end
-
-local function create_rewards_widgets(task, prefix)
-	local page = Page.new('')
-	page:merge(create_static_rewards_widgets(task, prefix))
-	page:add(Line.new())
-	page:merge(create_rewards_modifiers_widgets(task, prefix))
-	return page
-end
-
 local function build_task_page(task, prefix)
 	local page = Page.new(task):text("igi_task_text_"..prefix.."_"..task.."_title")
 	page:add(Title.new(task):text("igi_task_text_"..prefix.."_"..task.."_title"))
 	page:merge(create_disable_widgets(task, prefix))
 	page:merge(create_cancel_widgets(task, prefix))
 	page:add(Line.new())
-	page:merge(create_rewards_widgets(task, prefix))
 	return page
 end
 
