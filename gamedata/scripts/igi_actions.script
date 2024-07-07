@@ -1,8 +1,22 @@
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-actions = {}
-conditions = {}
+local fCache = {}
+
+local function eval(v)
+	local f = fCache[v]
+	if f == nil then
+		local nf = loadstring("return "..v)
+		fCache[v] = nf
+		return nf ~= nil and nf()
+	end
+	return f()
+end
+
+function check_conditions(conds)
+	return are_conditions_fulfilled(conds)
+end
 
 function initialise_actions(CACHE)
 	if not CACHE.actions then return end
@@ -18,15 +32,15 @@ end
 
 function update_action(action)
 	if action._state == "finished" then return end
-	if not are_conditions_fulfilled(action.conditions) then return end
+	if not are_conditions_fulfilled(action.when) then return end
 	trace_dbg("Update action", action.run)
-	local to_rerun = loadstring("return "..action.run)()
+	local to_rerun = eval(action.run)
 	if not to_rerun then action._state = "finished" end
 end
 
 function are_conditions_fulfilled(conds)
 	for _, condition in ipairs(conds) do
-		if not conditions[condition.type](condition) then
+		if not eval(condition) then
 			return false
 		end
 	end
@@ -50,8 +64,8 @@ function change_faction(id, faction)
 	end
 end
 
-conditions.is_online = function (self)
-	local se_obj = WorldState.objects[self.id]
+function is_online(id)
+	local se_obj = WorldState.objects[id]
 	if not se_obj then return end
 
 	if se_obj.squad_members then
@@ -66,16 +80,47 @@ conditions.is_online = function (self)
 	return se_obj.online
 end
 
-conditions.is_parent_dead = function (self)
-	local se_obj = WorldState.objects[self.id]
-	if not se_obj then return end
-
-	local parent = WorldState.objects[se_obj.parent_id]
-	return not parent:alive()
+function is_low_condition(id, max_condition)
+	local item = igi_helper.level_object(id)
+	if not item then return false end
+	return item:condition() < (max_condition / 100)
 end
 
-conditions.is_low_condition = function (self)
-	local item = igi_helper.level_object(self.id)
-	if not item then return false end
-	return item:condition() < (self.max_condition / 100)
+function goodwill(value)
+	local task_giver = mob_trade.GetTalkingNpc()
+	local community = igi_helper.get_community_by_id(task_giver:id())
+	return db.actor:community_goodwill(community) >= value
+end
+
+function rank(tier)
+	local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
+	trace_assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
+		"Invalid quest tier")
+
+	if quest_tiers[tier] then
+		lower_bound = quest_tiers[tier][1]
+		higher_bound = quest_tiers[tier][2]
+	elseif ranks.stalker_rank_intervals[tier] then
+		lower_bound = ranks.stalker_rank_intervals[tier][1]
+		higher_bound = ranks.stalker_rank_intervals[tier][2]
+	end
+	local player_rank = db.actor:character_rank()
+	return player_rank >= lower_bound and player_rank <= higher_bound
+end
+
+function daytime(lower_bound, higher_bound)
+	local h_dt = (24 + higher_bound - lower_bound) % 24
+
+	local game_t = game.get_game_time()
+	local y, m, d = game_t:get()
+
+	local t = game.CTime()
+	t:set(y, m, d, lower_bound, 0, 0, 0)
+	if not (game_t > t) then
+		return false
+	end
+
+	local dt = game.CTime()
+	dt:setHMS(h_dt, 0, 0)
+	return game_t < (t + dt)
 end

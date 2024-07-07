@@ -61,7 +61,7 @@ function try_prepare_quest(task_id, task_data, tg_id)
 
 	if task_data.disabled then return end
 	if not igi_mcm.get_options_value("debug") then
-		if not igi_precondition.check_conditions(task_data.preconditions) then
+		if not igi_actions.check_conditions(task_data.preconditions or {}) then
 			return
 		end
 	end
