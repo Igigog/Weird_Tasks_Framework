@@ -1,9 +1,15 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local set = igi_utils.Set.from_list
+
+function has_material_rewards(CACHE)
+	local _, high = get_reward_bounds(CACHE.entities)
+	return high > 0
+end
 
 function collect_and_give_rewards(CACHE)
-	local total = merge_rewards_from_subtasks(CACHE.entities, CACHE.status)
+	local total = CACHE.complexity or collect_rewards(CACHE.entities)
 	local rewards = split_to_rewards(total)
 
 	trace_dbg("rewards", rewards)
@@ -12,8 +18,21 @@ function collect_and_give_rewards(CACHE)
 	give_rewards(rewards, faction)
 end
 
-function guess_rewards(entities)
-	local low, high = get_reward_bounds(entities)
+function collect_rewards(entities)
+	local low, high = get_reward_bounds(entities, set { TASK_STATUSES.COMPLETED })
+	if (low ~= high) then
+		igi_helper.trace_error("Rewards did not converge, low: " .. low .. " high: " .. high)
+	end
+	return low
+end
+
+function guess_rewards(CACHE)
+	if CACHE.complexity then
+		local rw = split_to_rewards(CACHE.complexity)
+		return rw, rw
+	end
+	local entities = CACHE.entities
+	local low, high = get_reward_bounds(entities, TASK_STATUSES)
 	trace_assert(low ~= nil, "Low reward bound is nil")
 	if high == nil then
 		high = low
@@ -21,11 +40,11 @@ function guess_rewards(entities)
 	return split_to_rewards(low), split_to_rewards(high)
 end
 
-function get_reward_bounds(entities)
+function get_reward_bounds(entities, allowed_statuses)
 	local lower_bound = 0
 	local higher_bound = 0
 	for _, entity in pairs(entities) do
-		if entity.target then
+		if entity.target and allowed_statuses[entity.status or ""] then
 			local target_tbl = igi_taskdata.get_target_table(entity.target)
 			local low, high = target_tbl.get_complexity(entity)
 			if high == nil then high = low end
@@ -44,28 +63,6 @@ function split_to_rewards(points)
 		money = math.floor(money),
 		goodwill = math.ceil(goodwill),
 	}
-end
-
-function merge_rewards_from_subtasks(entities, is_successful)
-	local total = 0
-	-- Always add failed: if task is successful then these ones are failed optionals
-	total = total + merge_rewards_with_status(entities, TASK_STATUSES.FAILED)
-	if is_successful then
-		total = total + merge_rewards_with_status(entities, TASK_STATUSES.COMPLETED)
-	end
-	return total
-end
-
-function merge_rewards_with_status(entities, status)
-	trace_dbg('Entities, status', entities, status)
-	local total = 0
-	for _, entity in pairs(entities) do
-		if entity.status == status then
-			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			total = total + target_tbl.get_complexity(entity)
-		end
-	end
-	return total
 end
 
 function give_rewards(rewards, faction)
@@ -111,17 +108,3 @@ Item = {
 		end
 	end,
 }
-
-function has_material_rewards(CACHE)
-	for _, entity in pairs(CACHE.entities) do
-		if entity.target then
-			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			local dynamic_rewards = target_tbl.get_complexity(entity, CACHE.task_giver_id)
-			if dynamic_rewards ~= 0 then
-				return true
-			end
-		end
-	end
-
-	return false
-end
