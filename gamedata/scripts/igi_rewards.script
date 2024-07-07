@@ -4,8 +4,8 @@ local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local set = igi_utils.Set.from_list
 
 function has_material_rewards(CACHE)
-	local _, high = get_reward_bounds(CACHE.entities, TASK_STATUSES)
-	return high > 0
+	local _, high = guess_rewards(CACHE)
+	return high.money > 0
 end
 
 function collect_and_give_rewards(CACHE)
