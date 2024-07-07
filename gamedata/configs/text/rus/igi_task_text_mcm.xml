@@ -35,7 +35,10 @@
 		<text>Настройки</text>
 	</string>
 	<string id="ui_mcm_igi_tasks_Options_debug">
-		<text>Режим дебага (Может вызывать падение фпс)</text>
+		<text>Режим дебага</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_super_debug">
+		<text>Режим разработчика</text>
 	</string>
 	<string id="ui_mcm_igi_tasks_Options_reset_all">
 		<text>Сбросить все настройки групп заданий</text>
@@ -48,7 +51,7 @@
 		<text>Завершить все активные задания</text>
 	</string>
 
-	
+
 	<string id="ui_mcm_igi_tasks_task_pack_general_title">
 		<text>Общие</text>
 	</string>
@@ -64,7 +67,7 @@
 		<text>Модификаторы наград</text>
 	</string>
 	<string id="ui_mcm_igi_tasks_rewards_modifiers_desc">
-		<text>>>> Эти модификаторы работают вместе с статичными и динамическими наградами. 
+		<text>>>> Эти модификаторы работают вместе с статичными и динамическими наградами.
 			Используйте их, если хотите изменить динамические награды
 		</text>
 	</string>

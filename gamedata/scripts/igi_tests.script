@@ -20,7 +20,7 @@ TESTS = {}
 SUBTASK_TESTS = {}
 
 function on_key_press(key)
-    if not igi_mcm.get_options_value("debug") then return end
+    if not igi_mcm.get_options_value("super_debug") then return end
     if STATE.current_tests_name then return end
     if key == DIK_keys.DIK_K then
         start_integration_tests("entity")
