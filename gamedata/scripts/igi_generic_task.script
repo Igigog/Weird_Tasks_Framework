@@ -99,7 +99,6 @@ end
 function quest_status(task_id)
 	local CACHE = get_cache(task_id)
 	---------------------------<ACTIONS>---------------------
-	igi_map_marks.update_marks(CACHE)
 	igi_actions.update_actions(CACHE)
 	igi_subtask.process_subtasks(CACHE)
 	igi_callbacks.invoke_callbacks("on_task_update", CACHE)
@@ -149,7 +148,6 @@ function finish_quest(task_id)
 
 	igi_callbacks.invoke_callbacks("on_complete", CACHE)
 	igi_subtask.finish_all_subtasks(CACHE)
-	igi_map_marks.unmark_all(CACHE)
 	igi_rewards.collect_and_give_rewards(CACHE)
 
 	TASKS_CACHE[task_id] = nil
