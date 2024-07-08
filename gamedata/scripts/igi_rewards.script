@@ -3,16 +3,85 @@ local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local set = igi_utils.Set.from_list
 
+DEFAULT_REWARDER = {
+	has_material_rewards = function (self, CACHE)
+		local _, high = self:guess_rewards(CACHE)
+		return high.money > 0
+	end,
+
+	split_to_rewards = function (self, points)
+		local money = Money.points_to_value(points * 0.8)
+		local goodwill = Goodwill.points_to_value(points * 0.2)
+		return {
+			money = math.floor(money),
+			goodwill = math.ceil(goodwill),
+		}
+	end,
+
+	guess_rewards = function (self, CACHE)
+		local low, high = get_reward_bounds(CACHE.entities, TASK_STATUSES)
+		trace_assert(low ~= nil, "Low reward bound is nil")
+		if high == nil then
+			high = low
+		end
+		return self:split_to_rewards(low), self:split_to_rewards(high)
+	end
+}
+
+_STATIC_REWARDER = {
+	_money = 0,
+	_goodwill = 0,
+
+	has_material_rewards = function (self, CACHE)
+		return self._money > 0
+	end,
+
+	split_to_rewards = function (self, points)
+		return {
+			money = self._money,
+			goodwill = self._goodwill
+		}
+	end,
+
+	guess_rewards = function(self, CACHE)
+		local s = self:split_to_rewards(0)
+		return s, s
+	end
+}
+function STATIC_REWARDER(money, goodwill)
+	return setmetatable({
+		_money = money,
+		_goodwill = goodwill
+	}, {__index = _STATIC_REWARDER})
+end
+
+local rewarder_cache = {}
+local function get_rewarder(CACHE)
+	if not CACHE.rewarder then
+		return DEFAULT_REWARDER
+	end
+	local rw = rewarder_cache[CACHE.rewarder]
+	if not rw then
+		local new_rw = loadstring("return "..CACHE.rewarder)()
+		rewarder_cache[CACHE.rewarder] = new_rw
+		return new_rw
+	end
+	return rw
+end
+
 function has_material_rewards(CACHE)
-	local _, high = guess_rewards(CACHE)
-	return high.money > 0
+	return get_rewarder(CACHE):has_material_rewards(CACHE)
+end
+
+function guess_rewards(CACHE)
+	return get_rewarder(CACHE):guess_rewards(CACHE)
 end
 
 function collect_and_give_rewards(CACHE)
-	local total = CACHE.complexity or collect_rewards(CACHE.entities)
-	local rewards = split_to_rewards(total)
+	local total = collect_rewards(CACHE.entities)
+	local rewards = get_rewarder(CACHE):split_to_rewards(total)
 
-	trace_dbg("rewards", rewards)
+	trace_dbg("rewards", CACHE.rewarder or "DEFAULT_REWARDER", rewards)
 	igi_callbacks.invoke_callbacks("on_before_rewarding", CACHE, rewards)
 	local faction = igi_helper.get_community_by_id(CACHE.task_giver_id)
 	give_rewards(rewards, faction)
@@ -24,20 +93,6 @@ function collect_rewards(entities)
 		igi_helper.trace_error("Rewards did not converge, low: " .. low .. " high: " .. high)
 	end
 	return low
-end
-
-function guess_rewards(CACHE)
-	if CACHE.complexity then
-		local rw = split_to_rewards(CACHE.complexity)
-		return rw, rw
-	end
-	local entities = CACHE.entities
-	local low, high = get_reward_bounds(entities, TASK_STATUSES)
-	trace_assert(low ~= nil, "Low reward bound is nil")
-	if high == nil then
-		high = low
-	end
-	return split_to_rewards(low), split_to_rewards(high)
 end
 
 function get_reward_bounds(entities, allowed_statuses)
@@ -52,22 +107,13 @@ function get_reward_bounds(entities, allowed_statuses)
 			higher_bound = higher_bound + high
 		end
 	end
-	return lower_bound, higher_bound
-end
-
-function split_to_rewards(points)
-	local scaled_points = points * (game_difficulties.get_eco_factor("rewards") or 1)
-	local money = Money.points_to_value(scaled_points * 0.8) * igi_mcm.get_options_value("money_reward_coeff")
-	local goodwill = Goodwill.points_to_value(scaled_points * 0.2)
-	return {
-		money = math.floor(money),
-		goodwill = math.ceil(goodwill),
-	}
+	local multi =  game_difficulties.get_eco_factor("rewards") or 1
+	return lower_bound * multi, higher_bound * multi
 end
 
 function give_rewards(rewards, faction)
 	if (rewards.money) then
-		Money.give(rewards.money)
+		Money.give(rewards.money * igi_mcm.get_options_value("money_reward_coeff"))
 	end
 
 	if (rewards.goodwill) then
