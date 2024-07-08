@@ -78,6 +78,12 @@ function invoke_callbacks(callback_name, CACHE, ...)
 	trace_dbg(callback_name, CACHE)
 	send_target_callbacks(callback_name, CACHE, ...)
 	send_custom_callbacks(callback_name, CACHE, ...)
+
+	if CACHE[callback_name] then
+		for _, f in ipairs(CACHE[callback_name]) do
+			loadstring(f)()
+		end
+	end
 end
 
 function invoke_callbacks_custom(callback_name, CACHE, ...)
