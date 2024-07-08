@@ -31,7 +31,7 @@ function initialise_entities(CACHE)
 			end
 			igi_linker.broadcast_entity(entities, entity)
             trace_dbg('group_data, new entities', entity, new_entities)
-			
+
 			new[#new+1] = new_entities
 		end
 	end
@@ -41,7 +41,7 @@ function initialise_entities(CACHE)
             entities[#entities + 1] = entity
 		end
 	end
-	
+
 	return true
 end
 
@@ -67,7 +67,7 @@ function create_entities(CACHE)
 		end
 	end
 
-	igi_callbacks.invoke_callbacks("on_after_target_creation")
+	igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
 end
 
 function initialise(entity)

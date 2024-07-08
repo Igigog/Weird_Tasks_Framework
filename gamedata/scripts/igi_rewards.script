@@ -13,7 +13,7 @@ function collect_and_give_rewards(CACHE)
 	local rewards = split_to_rewards(total)
 
 	trace_dbg("rewards", rewards)
-	igi_callbacks.invoke_callbacks("on_before_rewarding", rewards)
+	igi_callbacks.invoke_callbacks("on_before_rewarding", CACHE, rewards)
 	local faction = igi_helper.get_community_by_id(CACHE.task_giver_id)
 	give_rewards(rewards, faction)
 end

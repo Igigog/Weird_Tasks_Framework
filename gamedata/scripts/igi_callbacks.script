@@ -35,21 +35,10 @@ function remove_callback(name, func)
 	if callbacks[name] then callbacks[name][func] = nil end
 end
 
-current_task_id = nil
-function set_current_task(task_id)
-	current_task_id = task_id
-	CreateTimeEvent("igi_callbacks", "reset_current_task", 0, reset_current_task)
-end
-
-function reset_current_task()
-	current_task_id = nil
-	return true
-end
-
 local function send_target_callbacks(callback_name, CACHE, ...)
 	local entity_table = CACHE.entities
 	local target_set = {}
-	
+
 	for k, entity in pairs(entity_table) do
 		if entity.target then
 			local target_tbl = igi_taskdata.get_target_table(entity.target)
@@ -60,7 +49,7 @@ local function send_target_callbacks(callback_name, CACHE, ...)
 			end
 		end
 	end
-	
+
 	for k, entity in pairs(entity_table) do
 		if entity.target then
 			local target_tbl = igi_taskdata.get_target_table(entity.target)
@@ -85,8 +74,7 @@ local function send_custom_callbacks(callback_name, CACHE, ...)
 	end
 end
 
-function invoke_callbacks(callback_name, ...)
-	local CACHE = igi_generic_task.TASKS_CACHE[current_task_id]
+function invoke_callbacks(callback_name, CACHE, ...)
 	trace_dbg(callback_name, CACHE)
 	send_target_callbacks(callback_name, CACHE, ...)
 	send_custom_callbacks(callback_name, CACHE, ...)

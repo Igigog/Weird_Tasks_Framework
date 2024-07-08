@@ -46,7 +46,10 @@ function process_subtasks(CACHE)
 	for _, entity in pairs(CACHE.entities) do
 		if entity.status == TASK_STATUSES.RUNNING
 				or entity.status == TASK_STATUSES.READY_TO_FINISH then
-			updated = update_entity_status(entity) or updated
+			if update_entity_status(entity) then
+				igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, entity)
+				updated = true
+			end
 		end
 	end
 
@@ -101,9 +104,8 @@ end
 function update_entity_status(entity)
 	local f = igi_helper.lookup_functor(entity.functors.status[1], _G)
 	local new_status = f(entity)
-	if new_status == entity.status then return end
+	if new_status == entity.status then return false end
 	entity.status = new_status
-	igi_callbacks.invoke_callbacks("on_subtask_status_change", entity)
 	return true
 end
 
