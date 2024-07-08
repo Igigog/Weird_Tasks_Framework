@@ -47,7 +47,6 @@ function load_state(m_data)
 end
 
 function get_cache(task_id)
-	igi_callbacks.set_current_task(task_id)
 	return TASKS_CACHE[task_id]
 end
 
