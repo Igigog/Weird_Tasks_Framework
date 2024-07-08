@@ -153,7 +153,7 @@ function get_task_data(task_id)
 	local task_tbl = get_task_table(task_name, prefix)
 	trace_assert(task_tbl, "No such task: "..tostring(task_id or "nil"))
 
-	igi_callbacks.invoke_callbacks_custom("on_get_taskdata", task_tbl, task_id)
+	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, task_id)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
@@ -165,7 +165,7 @@ function finalize_task_cache(CACHE, task_id)
 
 	for _, entity in pairs(CACHE.entities) do
 		entity.tags = entity.tags or {}
-		entity.functors = entity.functors 
+		entity.functors = entity.functors
 			or get_target_table(entity.target or "basic").FUNCTORS
 			or {
 				setup = {"igi_target_basic.setup_"..entity.entity_type},
