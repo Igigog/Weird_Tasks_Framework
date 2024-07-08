@@ -22,17 +22,16 @@ function on_game_start()
 end
 
 function actor_on_first_update()
-	if last_tasks_version == TASKS_VERSION then
-		return
-	end
-
-	printf("Weird Tasks Framework: Updating "..(TASKS_CACHE.TASKS_VERSION or "nil")
-			.." -> "..TASKS_VERSION)
-	news_manager.send_tip(db.actor, "WTF: Update complete. Welcome to WTF "..TASKS_VERSION, nil, nil, 30000)
 	if NIL_ERROR then
 		news_manager.send_tip(db.actor,
 			"Something is nil! Check nonnil() calls. WTF is not initialised.", nil, nil,
 			30000)
+	end
+
+	if last_tasks_version ~= TASKS_VERSION then
+		printf("Weird Tasks Framework: Updating " .. (TASKS_CACHE.TASKS_VERSION or "nil")
+			.. " -> " .. TASKS_VERSION)
+		news_manager.send_tip(db.actor, "WTF: Update complete. Welcome to WTF " .. TASKS_VERSION, nil, nil, 30000)
 	end
 end
 
