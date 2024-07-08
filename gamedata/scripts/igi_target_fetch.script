@@ -12,34 +12,33 @@ local trace_dbg = igi_helper.trace_dbg
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function ready_to_finish(obj_data)
-	local ids, amount = get_fetched_items(obj_data)
+	local ids, total = get_fetched_items(obj_data)
 	obj_data._ids = ids
-	return amount <= 0
+	return total >= obj_data.amount
 end
 
 function get_fetched_items(obj_data)
 	local section = obj_data.section_name
-	local amount = obj_data.amount or 1
+	local total = 0
 	local ids = {}
 	local is_multi = IsItem("multiuse",section)
 	local is_ammo = IsItem("ammo",section)
 
 	local function itr(temp, obj)
 		if not string.find(obj:section(), section) then return end
-		if amount <= 0 then return true end
 		if is_multi then
 			ids[obj:id()] = obj:get_remaining_uses()
-			amount = amount - obj:get_remaining_uses()
+			total = total + obj:get_remaining_uses()
 		elseif is_ammo then
 			ids[obj:id()] = obj:ammo_get_count()
-			amount = amount - obj:ammo_get_count()
+			total = total + obj:ammo_get_count()
 		else
 			ids[obj:id()] = 1
-			amount = amount - 1
+			total = total + 1
 		end
 	end
 	db.actor:iterate_inventory(itr, nil)
-	return ids, amount
+	return ids, total
 end
 
 function status(entity)
@@ -63,11 +62,7 @@ function get_description(entity)
 	local str = game.translate_string(item_name)..", "..tostring(entity.amount)
 	if igi_mcm.get_options_value("utjan_fetch_thing") then
 		local _, amount = get_fetched_items(entity)
-		if amount <= 0 then
-			str = str.." "..game.translate_string("igi_tasks_utjan_fetch_done")
-		else
-			str = str.." "..string.format(game.translate_string("igi_tasks_utjan_fetch_need"), amount)
-		end
+		str = str .. " " .. string.format(game.translate_string("igi_tasks_utjan_fetch_need"), amount)
 	end
 	return {
 		targets = {str}
