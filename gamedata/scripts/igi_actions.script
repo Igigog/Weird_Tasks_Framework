@@ -23,11 +23,6 @@ function check_conditions(conds)
 	return true
 end
 
-function initialise_actions(CACHE)
-	if not CACHE.actions then return end
-	igi_text_processor.resolve_and_link_table(CACHE.actions, CACHE.entities)
-end
-
 function update_actions(CACHE)
 	if not CACHE.actions then return end
 	for _, action in pairs(CACHE.actions) do
