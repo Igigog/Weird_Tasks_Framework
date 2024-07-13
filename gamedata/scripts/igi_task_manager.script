@@ -15,7 +15,7 @@ local Igi = {
 	get_task_text = notnil(igi_description.get_task_text),
 	get_all_quests = notnil(igi_taskdata.get_all_quests),
 	get_cache = notnil(igi_generic_task.get_cache),
-	TASK_SETUP = notnil(igi_generic_task.TASK_SETUP),
+	get_setup = notnil(igi_generic_task.get_setup_cache),
 	get_task_data = notnil(igi_taskdata.get_task_data),
 	TASK_STATUSES = notnil(igi_subtask.TASK_STATUSES),
 	setup_quest = notnil(igi_generic_task.setup_quest),
@@ -161,11 +161,11 @@ function is_valid_quest(tg_id, task_data, task_id)
 	end
 	FINISHED_QUESTS[task_id] = nil
 
-	local ok, err = pcall(Igi.try_prepare_quest, task_id, task_data, tg_id)
+	local ok, out = pcall(Igi.try_prepare_quest, task_id, task_data, tg_id)
 	if not ok then
-		on_task_crashed(err)
+		on_task_crashed(out)
 	end
-	return ok
+	return ok and (out ~= nil)
 end
 
 function get_valid_quests_for_npc(npc)
@@ -226,7 +226,7 @@ function dialogs.drx_sl_text_mechanic_has_ordered_task_to_give( a, b )
 	local task_id = igi_tasks[math.random(#igi_tasks + vanilla_task_chance)]
 
 	if task_id then
-		local CACHE = Igi.TASK_SETUP[task_id]
+		local CACHE = Igi.get_setup(task_id)
 		dialogs.last_task_id = task_id
 		local ok = pcall(Igi.setup_quest, task_id)
 		if ok then
@@ -256,7 +256,7 @@ IgiTask = {
 	dont_send_update_news = false,
 
 	new = function (id)
-		local task_table = Igi.TASK_SETUP[id]
+		local task_table = Igi.get_setup(id)
 		local t = {
 			type			= "igi",
 			id				= id,
@@ -465,7 +465,7 @@ end
 
 old_give_task = task_manager.CRandomTask.give_task
 function task_manager.CRandomTask.give_task(self, task_id,task_giver_id)
-	if Igi.TASK_SETUP[task_id] then
+	if Igi.get_setup(task_id) then
 		local task = IgiTask.new(task_id)
 		self.task_info[task_id] = task
 		task:give_task()
@@ -487,7 +487,7 @@ end
 
 old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
-	local CACHE = Igi.get_cache(task_id) or Igi.TASK_SETUP[task_id]
+	local CACHE = Igi.get_cache(task_id) or Igi.get_setup(task_id)
 	if CACHE then
 		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "job_descr", CACHE.task_giver_id)
 		return ok and text or ""
@@ -500,16 +500,14 @@ old_text_npc_has_task = dialogs.text_npc_has_task
 function dialogs.text_npc_has_task(a,b)
 	local npc = dialogs.who_is_npc(a, b)
 	local task_id = axr_task_manager.available_tasks[npc:id()] and axr_task_manager.available_tasks[npc:id()][1]
-	local CACHE = Igi.TASK_SETUP[task_id]
+	local CACHE = Igi.get_setup(task_id)
 
 	if CACHE then
 		local ok, text = pcall(function()
 			Igi.setup_quest(task_id)
 			return Igi.get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
 		end)
-		if ok then
-			return text
-		end
+		return ok and text or "Uhh... Something went wrong. Sorry :) - Igi"
 	end
 
 	return old_text_npc_has_task(a, b)

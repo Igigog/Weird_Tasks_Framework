@@ -49,7 +49,7 @@ function get_cache(task_id)
 	return TASKS_CACHE[task_id]
 end
 
-local function get_setup_cache(task_id)
+function get_setup_cache(task_id)
 	return TASK_SETUP[task_id]
 end
 ---------------------------< Precondition >---------------------------
