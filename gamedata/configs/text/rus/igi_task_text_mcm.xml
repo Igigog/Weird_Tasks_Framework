@@ -70,32 +70,9 @@
 	</string>
 
 	<string id="ui_mcm_igi_tasks_Options_money_reward_coeff">
-		<text>Множитель наград</text>
+		<text>Множитель наград - Деньги</text>
 	</string>
-	<string id="ui_mcm_igi_tasks_Options_reward_spread_min">
-		<text>Разброс наград (нижняя граница)</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_Options_reward_spread_max">
-		<text>Разброс наград (верхняя граница)</text>
-	</string>
-
-	<string id="ui_mcm_igi_tasks_reward_money">
-		<text>Деньги</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_reward_goodwill">
-		<text>Репутация</text>
-	</string>
-
-	<string id="ui_mcm_igi_tasks_add_money">
-		<text>Доп. деньги</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_mult_money">
-		<text>Множитель денег</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_add_goodwill">
-		<text>Доп. репутация</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_mult_goodwill">
-		<text>Множитель репутации</text>
+	<string id="ui_mcm_igi_tasks_Options_goodwill_reward_coeff">
+		<text>Множитель наград - Репутация</text>
 	</string>
 </string_table>

@@ -69,32 +69,9 @@
 	</string>
 
 	<string id="ui_mcm_igi_tasks_Options_money_reward_coeff">
-		<text>Reward multiplier</text>
+		<text>Reward multiplier - Money</text>
 	</string>
-	<string id="ui_mcm_igi_tasks_Options_reward_spread_min">
-		<text>Reward spread (lower bound)</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_Options_reward_spread_max">
-		<text>Reward spread (higher bound)</text>
-	</string>
-
-	<string id="ui_mcm_igi_tasks_reward_money">
-		<text>Money</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_reward_goodwill">
-		<text>Goodwill</text>
-	</string>
-
-	<string id="ui_mcm_igi_tasks_add_money">
-		<text>Additional money</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_mult_money">
-		<text>Money multiplier</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_add_goodwill">
-		<text>Additional goodwill</text>
-	</string>
-	<string id="ui_mcm_igi_tasks_mult_goodwill">
-		<text>Goodwill multiplier</text>
+		<string id="ui_mcm_igi_tasks_Options_goodwill_reward_coeff">
+		<text>Reward multiplier - Goodwill</text>
 	</string>
 </string_table>
