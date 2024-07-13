@@ -71,15 +71,17 @@ end
 ------------------------------------------------
 
 function get_location_description(entity)
-	if not entity.id then return end
-	local se_obj = WorldState.objects[entity.id]
-	if SIMBOARD.smarts[entity.id] then
-		return "st_"..se_obj:name().."_name"
-	elseif SIMBOARD.smarts[entity.where] then
-		local smart = WorldState.objects[entity.where]
-		return "st_"..smart:name().."_name"
+	return get_smart_name_by_id(entity.id)
+		or get_smart_name_by_id(entity.where)
+		or (entity.id and dynamic_news_helper.GetPointDescription(WorldState.objects[entity.id]))
+		or nil
+end
+
+function get_smart_name_by_id(id)
+	if tonumber(id) and SIMBOARD.smarts[id] then
+		local smart = WorldState.objects[id]
+		return "st_" .. smart:name() .. "_name"
 	end
-	return dynamic_news_helper.GetPointDescription(se_obj)
 end
 
 function get_se_entity_description(entity)
@@ -111,7 +113,7 @@ function get_description(entity)
 	local desc = {}
 	if entity.entity_type == "squad" then
 		desc.factions = {entity.faction or ini_sys:r_string_ex(entity.section_name, "faction")}
-		desc.locations = {entity.where}
+		desc.locations = { get_smart_name_by_id(entity.where) }
 	elseif entity.entity_type == "item" then
 		desc.targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
 	end
