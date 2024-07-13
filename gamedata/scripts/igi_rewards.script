@@ -13,8 +13,8 @@ DEFAULT_REWARDER = {
 		local money = Money.points_to_value(points * 0.8)
 		local goodwill = Goodwill.points_to_value(points * 0.2)
 		return {
-			money = math.floor(money),
-			goodwill = math.ceil(goodwill),
+			money = math.floor(money * igi_mcm.get_options_value("money_reward_coeff")),
+			goodwill = math.ceil(goodwill * igi_mcm.get_options_value("goodwill_reward_coeff")),
 		}
 	end,
 
@@ -40,8 +40,8 @@ _STATIC_REWARDER = {
 		-- Ignores points, manually adjust to economy
 		local multi = game_difficulties.get_eco_factor("rewards") or 1
 		return {
-			money = self._money * multi,
-			goodwill = self._goodwill * multi
+			money = math.floor(self._money * multi * igi_mcm.get_options_value("money_reward_coeff")),
+			goodwill = math.ceil(self._goodwill * multi * igi_mcm.get_options_value("goodwill_reward_coeff"))
 		}
 	end,
 
@@ -115,7 +115,7 @@ end
 
 function give_rewards(rewards, faction)
 	if (rewards.money) then
-		Money.give(rewards.money * igi_mcm.get_options_value("money_reward_coeff"))
+		Money.give(rewards.money)
 	end
 
 	if (rewards.goodwill) then
