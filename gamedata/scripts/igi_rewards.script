@@ -37,9 +37,11 @@ _STATIC_REWARDER = {
 	end,
 
 	split_to_rewards = function (self, points)
+		-- Ignores points, manually adjust to economy
+		local multi = game_difficulties.get_eco_factor("rewards") or 1
 		return {
-			money = self._money,
-			goodwill = self._goodwill
+			money = self._money * multi,
+			goodwill = self._goodwill * multi
 		}
 	end,
 
