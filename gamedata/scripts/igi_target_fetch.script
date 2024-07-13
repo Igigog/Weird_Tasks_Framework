@@ -12,9 +12,16 @@ local trace_dbg = igi_helper.trace_dbg
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function ready_to_finish(obj_data)
-	local ids, total = get_fetched_items(obj_data)
+	local ids = get_fetched_items(obj_data)
+	local amount = obj_data.amount
+	for id, itm_amount in pairs(ids) do
+		if amount <= 0 then
+			ids[id] = nil
+		end
+		amount = amount - itm_amount
+	end
 	obj_data._ids = ids
-	return total >= obj_data.amount
+	return amount <= 0
 end
 
 function get_fetched_items(obj_data)
@@ -99,14 +106,12 @@ end
 function release_fetch_items(entity)
 	local amount = entity.amount or 1
 	for id, itm_amount in pairs(entity._ids) do
-		if amount > 0 then
-			amount = amount - itm_amount
-			local obj = get_object_by_id(id)
-			if obj:section() ~= entity.section_name then
-				give_arti_container(obj)
-			end
-			alife_release(igi_world_state.WorldState.objects[id])
+		amount = amount - itm_amount
+		local obj = get_object_by_id(id)
+		if obj:section() ~= entity.section_name then
+			give_arti_container(obj)
 		end
+		alife_release(igi_world_state.WorldState.objects[id])
 	end
 
 	if amount < 0 then
