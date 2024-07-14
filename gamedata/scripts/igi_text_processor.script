@@ -59,7 +59,7 @@ local function str_to_macro(str)
 end
 
 local function macro_iterator(str)
-	return str:gmatch("%&[a-zA-Z]+%([^&%[%]]*%)%&")
+	return str:gmatch("%&[a-zA-Z._]+%([^&%[%]]*%)%&")
 end
 
 local function resolve_in_str(str)

@@ -16,7 +16,7 @@ local Igi = {
 	get_all_quests = notnil(igi_taskdata.get_all_quests),
 	get_cache = notnil(igi_generic_task.get_cache),
 	get_setup = notnil(igi_generic_task.get_setup_cache),
-	get_task_data = notnil(igi_taskdata.get_task_data),
+	get_task_cache = notnil(igi_taskdata.get_task_cache),
 	TASK_STATUSES = notnil(igi_subtask.TASK_STATUSES),
 	setup_quest = notnil(igi_generic_task.setup_quest),
 	initialise_CACHE = notnil(igi_generic_task.initialise_CACHE),
@@ -169,10 +169,13 @@ function is_valid_quest(tg_id, task_data, task_id)
 end
 
 function get_valid_quests_for_npc(npc)
+	local tg_id = npc:id()
 	local quest_list = {}
 	for _, quest_id in pairs(get_all_quests_for_npc(npc)) do
-		local task_id = quest_id[1]..quest_id[2]..npc:id()
-		local ok, task_data = pcall(Igi.get_task_data, quest_id)
+		local task_id = quest_id[1] .. quest_id[2] .. tg_id
+		local _ = pcall(igi_random.set_seed, task_id)
+		local _ = pcall(igi_macros.set_task_giver, tg_id)	-- TODO: remove this)
+		local ok, task_data = pcall(Igi.get_task_cache, quest_id, task_id, tg_id)
 		if ok and is_valid_quest(npc:id(), task_data, task_id) then
 			quest_list[#quest_list+1] = task_id
 		end

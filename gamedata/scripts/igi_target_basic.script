@@ -39,7 +39,7 @@ local function unwrap_entity_amount(prototype)
 end
 
 local function assert_has_valid_section(entity)
-	local section = trace_assert(entity.section_name, "Section does not exist")
+	local section = trace_assert(entity.section_name, "entity.section_name is nil", entity)
 	trace_assert(ini_sys:section_exist(section), "bad section: "..section)
 end
 

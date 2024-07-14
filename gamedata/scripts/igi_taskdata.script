@@ -145,24 +145,28 @@ function get_all_quests()
 	return IGI_QUESTS
 end
 
--------------------------------------------------
--- global functions
--------------------------------------------------
-function get_task_data(task_id)
-	local prefix, task_name = igi_helper.get_task_name(task_id)
+local function get_task_data(quest_id)
+	local prefix, task_name = igi_helper.get_task_name(quest_id)
 	local task_tbl = get_task_table(task_name, prefix)
-	trace_assert(task_tbl, "No such task: "..tostring(task_id or "nil"))
+	trace_assert(task_tbl, "No such task: " .. tostring(quest_id or "nil"))
 
-	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, task_id)
+	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, quest_id)
 	return task_tbl
 end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
 
-function finalize_task_cache(CACHE, task_id)
-	CACHE.disabled = nil		-- not needed
-	CACHE.preconditions = nil	-- not needed
+-------------------------------------------------
+-- global functions
+-------------------------------------------------
+function get_task_cache(quest_id, task_id, tg_id)
+	return finalize_task_cache(get_task_data(quest_id), task_id, tg_id)
+end
+
+function finalize_task_cache(task_data, task_id, tg_id)
+	local CACHE = dup_table(task_data)
 	CACHE.quest_givers = nil	-- not needed
 	CACHE.task_id = task_id
+	CACHE.task_giver_id = tg_id
 
 	for _, entity in pairs(CACHE.entities) do
 		entity.tags = entity.tags or {}
@@ -179,6 +183,7 @@ function finalize_task_cache(CACHE, task_id)
 	igi_text_processor.resolve_and_link_cache(CACHE)
 
 	trace_dbg("finalized CACHE", CACHE)
+	return CACHE
 end
 
 function get_target_table(target)

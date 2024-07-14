@@ -58,8 +58,8 @@ function quest_target(entity)
 end
 
 function setup(entity)
-	trace_assert(ini_sys:section_exist(entity.section_name or "nil"),
-		"Section does not exist")
+	trace_assert(type(entity.section_name) == "string", "entity.section_name should be string", entity)
+	trace_assert(ini_sys:section_exist(entity.section_name), "entity.section_name is not a valid section", entity.section_name)
 	entity.amount = entity.amount or 1
 	return {}
 end
