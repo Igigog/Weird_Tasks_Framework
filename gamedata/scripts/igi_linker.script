@@ -1,6 +1,29 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 
+LinkContext  = {
+	new = function(self, CACHE)
+		local link_context = {
+			CACHE = CACHE
+		}
+		for _, entity in pairs(CACHE.entities) do
+			if entity.link_id then
+				trace_assert(link_context[entity.link_id] == nil, "Entity already in context", link_context, entity)
+				link_context[entity.link_id] = entity
+			end
+		end
+		return setmetatable(link_context, { __index = self })
+	end,
+
+	set_this = function(self, entity)
+		self.this = entity
+	end,
+
+	get = function(self, key)
+		return self[key]
+	end,
+}
+
 Link = {
 	new = function (link_id, field, is_se_object_link)
 		local t = {
@@ -16,12 +39,16 @@ Link = {
 		return self.link_id == entity.link_id
 	end,
 
+	points_to_self = function (self)
+		return self.link_id == "this"
+	end,
+
 	is_se_object_link = function (self)
 		return self.look_in_se_object
 	end,
 
-    resolve = function(self, entities)
-		local entity = self:get_linked_entity(entities)
+    resolve = function(self, link_context)
+		local entity = link_context:get(self.link_id)
 		trace_assert(entity, "Linker can't find entity for link:", self)
 		local out = self:resolve_field(entity)
 		return out and tostring(out) or nil
@@ -36,14 +63,6 @@ Link = {
 		end
 		return entity[self.field]
     end,
-
-	get_linked_entity = function(self, entities)
-        for _, entity in pairs(entities) do
-            if self:is_pointed_to(entity) then
-                return entity
-            end
-        end
-	end,
 }
 
 function broadcast_entity(entities, entity)

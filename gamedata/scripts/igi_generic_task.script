@@ -88,7 +88,7 @@ function initialise_CACHE(task_id)
 	igi_macros.set_task_giver(CACHE.task_giver_id)
 	igi_entities.create_entities(CACHE)
 	igi_subtask.initialise_subtasks(CACHE)
-	igi_text_processor.resolve_and_link_table(CACHE, CACHE.entities)
+	igi_text_processor.resolve_and_link_cache(CACHE)
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 end
