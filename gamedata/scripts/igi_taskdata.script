@@ -159,8 +159,9 @@ end
 get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
 
 function finalize_task_cache(CACHE, task_id)
-	CACHE.disabled = nil	-- not needed anymore
+	CACHE.disabled = nil		-- not needed
 	CACHE.preconditions = nil	-- not needed
+	CACHE.quest_givers = nil	-- not needed
 	CACHE.task_id = task_id
 
 	for _, entity in pairs(CACHE.entities) do
@@ -175,6 +176,7 @@ function finalize_task_cache(CACHE, task_id)
 	end
 
 	igi_text_processor.resolve_macros_and_link_variables(CACHE.entities)
+	igi_text_processor.resolve_and_link_table(CACHE, CACHE.entities)
 
 	trace_dbg("finalized CACHE", CACHE)
 end
