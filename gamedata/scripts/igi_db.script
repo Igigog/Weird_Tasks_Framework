@@ -62,8 +62,8 @@ setmetatable(LtxView, LtxView_mt)
 
 function LtxView_mt:__call(file)
 	trace_assert(file, "LtxView: no file")
-	local ini = trace_assert(ini_file(database_folder..file),
-		"LtxView: no such file: "..file)
+	local ini = ini_file(database_folder..file)
+	if not ini then return end
 
 	local view = {
 		_filename = file,

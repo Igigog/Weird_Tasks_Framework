@@ -1,5 +1,4 @@
 local trace_dbg = igi_helper.trace_dbg
-local trace_assert_no_crash = igi_helper.trace_assert_no_crash
 local trace_assert = igi_helper.trace_assert
 
 -------------------------------------------------
@@ -16,12 +15,8 @@ end
 
 local default_tasks_path = get_game_path().."gamedata\\configs\\igi_tasks\\tasks\\"
 
-local function get_task_path(task_name, prefix)
-	return prefix.."\\"..task_name..".json"
-end
-
 local function get_file_content(path)
-	file = trace_assert_no_crash(io.open(path, "rb"))
+	file = io.open(path, "rb")
 	if not file then return end
 	local content = file:read "*a" -- *a or *all reads the whole file
 	file:close()
@@ -29,11 +24,9 @@ local function get_file_content(path)
 end
 
 local function get_raw_task_table(task_name, prefix)
-	local task_path = get_task_path(task_name, prefix)
+	local task_path = prefix .. "\\" .. task_name .. ".json"
 	local content = get_file_content(default_tasks_path..task_path)
-	if not content then return end
-
-	trace_dbg("raw task content: ", content)
+	if not content then return {} end
     return json.decode(content)
 end
 
@@ -47,34 +40,29 @@ function remove_empty_tables(tbl)
 end
 
 function get_task_table(task_name, prefix)
-	trace_dbg("get_task_data: "..prefix.." "..task_name)
-	local task_table = trace_assert(
-		get_raw_task_table(task_name, prefix),
-		"task_json: no json file for task "..prefix.."_"..task_name
-	)
-
+	local task_table = get_raw_task_table(task_name, prefix)
 	task_table.description_key = task_table.description_key or (prefix.."_"..task_name)
 	task_table.quest_id = {prefix, task_name}
-
 	return task_table
 end
 
 local IGI_QUESTS = {}
 function get_all_quests()
 	if not next(IGI_QUESTS) then
-		local meta_ltx = igi_db.LtxView("pack_meta\\base_meta.ltx")
-		for _, meta_section in meta_ltx:iter() do
-			trace_dbg("meta", meta_section, meta_section.prefix)
-			local prefix = meta_section.prefix
+		local packs = getFS():file_list_open(
+			"$game_config$", "igi_tasks\\tasks\\", 2 + 4 + 8)
+		for i = 0, packs:Size() - 1 do
+			local prefix = string.gsub(packs:GetAt(i), "\\", "")
 			IGI_QUESTS[prefix] = {}
 
-			local files = getFS():file_list_open("$game_config$",
-			"igi_tasks\\tasks\\"..prefix.."\\",
-			1+4+8)
+			local files = getFS():file_list_open(
+				"$game_config$", "igi_tasks\\tasks\\"..prefix.."\\", 1 + 8)
 
-			for i=0, files:Size()-1 do
-				local quest_name = files:GetAt(i)
-				IGI_QUESTS[prefix][quest_name] = get_task_table(quest_name, prefix)
+			for j=0, files:Size()-1 do
+				local quest_name = string.match(files:GetAt(j), "(.*)%.json$")
+				if quest_name then
+					IGI_QUESTS[prefix][quest_name] = get_task_table(quest_name, prefix)
+				end
 			end
 		end
 	end

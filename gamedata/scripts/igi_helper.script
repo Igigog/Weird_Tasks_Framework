@@ -109,14 +109,6 @@ function trace_error(title, ...)
 	end
 end
 
-function trace_assert_no_crash(val, ...)
-	if not val then
-		local func_name = debug.getinfo(2, "n").name
-		trace_dbg("ASSERTION FAILED: "..func_name, ...)
-	end
-	return val
-end
-
 function trace_assert(val, err, ...)
 	if not val then
 		callstack()
