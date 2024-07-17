@@ -106,12 +106,9 @@ function on_mcm_load()
 	igi_mcm_features.add_mcm_options()
 	local tree = Tree.new("igi_tasks")
 	tree:add_page(get_options_page())
-	printf(utils_data.print_table(igi_taskdata.get_all_quests(), "all_quests", true))
 
 	for prefix, names in pairs(igi_taskdata.get_all_quests()) do
 		tree:add_subtree(build_task_pack_tree(prefix, names))
 	end
-	local t = tree:build()
-	printf(utils_data.print_table(t, "mcm_tree", true))
-	return t
+	return tree:build()
 end
