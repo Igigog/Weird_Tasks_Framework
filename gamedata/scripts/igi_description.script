@@ -42,16 +42,11 @@ function get_rewards_description(CACHE)
 		(high.goodwill ~= low.goodwill and "-" .. tostring(high.goodwill) or "") .. " goodwill"
 end
 
-function get_task_text_values(CACHE)
+function get_task_text_function(CACHE)
 	local mark = igi_mcm.get_options_value("wtf_task_mark") and "[WTF] " or ""
-	local title = mark..get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
+	local title = mark .. get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
 	local text = get_description(CACHE)
 	local icon = CACHE.icon or "ui_iconsTotal_mutant"
-	return title, text, icon
-end
-
-function get_task_text_function(CACHE)
-	local title, text, icon = get_task_text_values(CACHE)
 
 	return function ()
 		db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
