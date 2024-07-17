@@ -23,24 +23,12 @@ local function get_file_content(path)
 	return content
 end
 
-local function get_raw_task_table(task_name, prefix)
-	local task_path = prefix .. "\\" .. task_name .. ".json"
-	local content = get_file_content(default_tasks_path..task_path)
-	if not content then return {} end
-    return json.decode(content)
-end
-
-function remove_empty_tables(tbl)
-	for k, v in pairs(tbl) do
-		if type(v) == "table" and remove_empty_tables(v) then
-			tbl[k] = nil
-		end
- 	end
-	return not next(tbl)
-end
-
 function get_task_table(task_name, prefix)
-	local task_table = get_raw_task_table(task_name, prefix)
+	local task_path = prefix .. "\\" .. task_name .. ".json"
+	local content = get_file_content(default_tasks_path .. task_path)
+	if not content then return {} end
+	local task_table = json.decode(content)
+
 	task_table.description_key = task_table.description_key or (prefix.."_"..task_name)
 	task_table.quest_id = {prefix, task_name}
 	return task_table
