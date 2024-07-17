@@ -57,7 +57,7 @@ function try_prepare_quest(task_id, task_data, tg_id)
 	trace_dbg("validate "..task_id, task_data)
 	trace_assert(task_data, "WTF: validate_task: no task data")
 
-	if task_data.disabled then return end
+	if igi_mcm.is_task_disabled(task_data.quest_id) then return end
 	if not igi_mcm.get_options_value("debug") then
 		if not igi_actions.check_conditions(task_data.preconditions or {}) then
 			return

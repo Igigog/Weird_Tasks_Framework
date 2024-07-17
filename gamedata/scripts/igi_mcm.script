@@ -25,25 +25,13 @@ local function get_default_option(option_id)
 	return OPTION_DEFAULTS[option_id]
 end
 
-local function get_mcm_option(option_id)
+function get_options_value(option_id)
 	return ui_mcm.get("igi_tasks/Options/"..option_id)
 end
-get_options_value = get_mcm_option
 
-local function task_table_value(task_name, prefix, path)
-	local tbl = igi_taskdata.get_task_table(task_name, prefix)
-
-	local cur_tbl = tbl
-	for i=1,#path-1 do
-		cur_tbl = cur_tbl[path[i]]
-		if not cur_tbl then return nil end
-	end
-
-	return cur_tbl[path[#path]]
-end
-
-local function set_config_value(task_name, prefix, path, value)
-	igi_taskdata.update_task_config_value(task_name, prefix, path, value)
+function is_task_disabled(quest_id)
+	local prefix, task_name = quest_id[1], quest_id[2]
+	return ui_mcm.get("igi_tasks/" .. prefix .. "/" .. task_name .. "/disabled")
 end
 
 function reset_all_tasks(task, prefix)
@@ -54,38 +42,29 @@ function reset_all_tasks(task, prefix)
 	end
 end
 
-local function create_disable_widgets(task, prefix)
-	local check = Checkbox.new("check_disabled")
-		:hint("igi_tasks_disable_task")
-		:current_value({task_table_value, task, prefix, {"disabled"}})
-		:callback({set_config_value, task, prefix, {"disabled"}})
-	return Page.new(''):add(check)
-end
-
-local function create_cancel_widgets(task, prefix)
-	local check = Checkbox.new("cancel_all")
-		:hint("igi_tasks_cancel_all")
-		:current_value({function() return false end})
-		:callback({reset_all_tasks, task, prefix})
-	return Page.new(''):add(check)
-end
-
 local function build_task_page(task, prefix)
 	local page = Page.new(task):text("igi_task_text_"..prefix.."_"..task.."_title")
 	page:add(Title.new(task):text("igi_task_text_"..prefix.."_"..task.."_title"))
-	page:merge(create_disable_widgets(task, prefix))
-	page:merge(create_cancel_widgets(task, prefix))
+	page:add(
+		Checkbox.new("disabled")
+			:hint("igi_tasks_disable_task")
+	)
+	page:add(
+		Checkbox.new("cancel_all")
+			:hint("igi_tasks_cancel_all")
+			:current_value({function() return false end})
+			:callback({reset_all_tasks, task, prefix})
+	)
 	page:add(Line.new())
 	return page
 end
 
 local function build_task_pack_tree(meta_section)
-	igi_taskdata.create_path(meta_section.prefix)
 	local files = getFS():file_list_open("$game_config$",
 		"igi_tasks\\tasks\\"..meta_section.prefix.."\\",
 		1+4+8)
 
-	local tree = Tree.new(meta_section.name):text(meta_section.name)
+	local tree = Tree.new(meta_section.prefix):text(meta_section.name)
 	for i=0,files:Size()-1 do
 		local task = files:GetAt(i)
 		tree:add_page(build_task_page(task, meta_section.prefix))
@@ -112,11 +91,6 @@ local function get_options_page()
 		page:add(Checkbox.new(id):default(default))
 	end
 
-	page:add(Checkbox.new("reset_all")
-		:current_value({function () return false end})
-		:callback({igi_taskdata.reset_all_custom_tables})
-	)
-
 	page:merge(get_basic_rewards_page())
 	return page
 end
@@ -128,9 +102,6 @@ local function reset_tasks_on_new_framework()
 		printf("Updating WTF: ", old_version, "=>", TASKS_VERSION)
 		axr_main.config:w_value("igi_tasks", "tasks_version", TASKS_VERSION)
 		axr_main.config:save()
-		if old_version then
-			igi_taskdata.reset_all_custom_tables()
-		end
 	end
 end
 
@@ -144,5 +115,7 @@ function on_mcm_load()
 	for _, meta_section in meta_ltx:iter() do
 		tree:add_subtree(build_task_pack_tree(meta_section))
 	end
-	return tree:build()
+	local t = tree:build()
+	printf(utils_data.print_table(t, "mcm tree", true))
+	return t
 end

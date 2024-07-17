@@ -24,7 +24,7 @@ Set = {
 		end
 		return new_set
 	end,
-	
+
 	difference = function(self, set2)
 		local new_set = dup_table(self)
 		for k in pairs(set2) do
@@ -32,7 +32,7 @@ Set = {
 		end
 		return new_set
 	end,
-	
+
 	from_list = function(list)
 		local new_set = {}
 		for _, v in pairs(list) do
@@ -326,20 +326,6 @@ function iterate_table(tbl, func)
 			iterate_table(v, func)
 		end
 		func(k, v, tbl)
-	end
-end
-
-function combine_tables(tbl1, tbl2)
-	for k in pairs(tbl2) do
-		igi_helper.trace_assert(
-			type(tbl1[k]) == type(tbl2[k]) or not tbl1[k],
-			"combine tables: can't combine", tbl1, tbl2)
-
-		if type(tbl1[k]) == "table" then
-			combine_tables(tbl1[k], tbl2[k])
-		else
-			tbl1[k] = tbl2[k]
-		end
 	end
 end
 
