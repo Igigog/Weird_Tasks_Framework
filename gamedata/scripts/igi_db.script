@@ -20,7 +20,7 @@ function parse_values(str)
 		if value == "true" or value == "false" then
 			value = value == "true"
 		end
-		
+
 		table.insert(values, tonumber(value) or value)
 	end
 	if #values == 1 then return values[1] end
@@ -48,7 +48,7 @@ end
 
 function get_value(file, section, key)
 	if not file or not section or not key then return nil end
-	
+
 	local ini = type(file) == "userdata" and file or ini_file(database_folder..file)
 	if not ini:section_exist(section) then return nil end
 	if not ini:line_exist(section, key) then return nil end
@@ -62,15 +62,15 @@ setmetatable(LtxView, LtxView_mt)
 
 function LtxView_mt:__call(file)
 	trace_assert(file, "LtxView: no file")
-	local ini = trace_assert(ini_file(database_folder..file), 
+	local ini = trace_assert(ini_file(database_folder..file),
 		"LtxView: no such file: "..file)
-	
+
 	local view = {
 		_filename = file,
 		_ini = ini,
 	}
 
-	
+
 	setmetatable(view, LtxView_mt)
 	return view
 end
@@ -114,13 +114,13 @@ SectionView._methods = {}
 
 function SectionView_mt:__call(ini, section)
 	trace_assert(ini and section, "SectionView: no file or section")
-	
+
 	if type(ini) ~= "userdata" then
 		ini = ini_file(database_folder..ini)
 	end
-	
+
 	if not ini:section_exist(section) then return nil end
-	
+
 	local view = {
 		_ini = ini,
 		_section = section,
