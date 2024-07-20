@@ -5,9 +5,6 @@ local callbacks = {
 	on_get_taskdata = {},
 	entity_on_get_taskdata = {},
 
-	on_before_first_run = {},
-	entity_on_before_first_run = {},
-
 	on_first_run = {},
 	entity_on_first_run = {},
 

@@ -83,7 +83,6 @@ function initialise_CACHE(task_id)
 	TASK_SETUP[task_id] = nil
 
 	local CACHE = get_cache(task_id)
-	igi_callbacks.invoke_callbacks("on_before_first_run", CACHE)
 
 	igi_macros.set_task_giver(CACHE.task_giver_id)
 	igi_entities.create_entities(CACHE)
