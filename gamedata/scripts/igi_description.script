@@ -31,6 +31,7 @@ function get_description(CACHE)
 end
 
 function get_rewards_description(CACHE)
+	if not igi_mcm.get_options_value("show_rewards") then return "" end
 	local low, high = igi_rewards.guess_rewards(CACHE)
 	if (low.money == 0 and high.money == 0 and low.goodwill == 0 and high.goodwill == 0) then
 		return ""
