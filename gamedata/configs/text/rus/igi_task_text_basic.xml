@@ -31,4 +31,12 @@
 	<string id="igi_task_text_treasure_unique">
 		<text>Что-то ценное</text>
 	</string>
+	<string id="igi_task_text_rewards">
+		<text>Награды: </text>
+	</string>
+	<string id="igi_task_text_money">
+		<text>RUB</text>
+	</string>
+	<string id="igi_task_text_goodwill">
+		<text>отношения</text>
 </string_table>

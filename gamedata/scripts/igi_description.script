@@ -36,10 +36,14 @@ function get_rewards_description(CACHE)
 		return ""
 	end
 
-	return "Rewards: "
-		..tostring(low.money)..(high.money ~= low.money and "-"..tostring(high.money) or "").." RUB, "
+	return game.translate_string(igi_db.TEXT_HEADER .. "rewards")
+		..
+		tostring(low.money) ..
+		(high.money ~= low.money and "-" .. tostring(high.money) or "") ..
+		" " .. game.translate_string(igi_db.TEXT_HEADER .. "money") .. ", "
 		.. tostring(low.goodwill) ..
-		(high.goodwill ~= low.goodwill and "-" .. tostring(high.goodwill) or "") .. " goodwill"
+		(high.goodwill ~= low.goodwill and "-" .. tostring(high.goodwill) or "") ..
+		" " .. game.translate_string(igi_db.TEXT_HEADER .. "goodwill")
 end
 
 function get_task_text_function(CACHE)

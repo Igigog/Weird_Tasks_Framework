@@ -16,7 +16,7 @@
 	<string id="igi_task_text_finish">
 		<text>Igi Tasks: Finish not found, but congrats anyway</text>
 	</string>
-	
+
 	<!-- UI -->
 	<string id="igi_task_text_targets">
 		<text>Target</text>
@@ -29,5 +29,16 @@
 	</string>
 	<string id="igi_task_text_treasure_unique">
 		<text>Something valuable</text>
+	</string>
+
+	<!-- Rewards -->
+	<string id="igi_task_text_rewards">
+		<text>Rewards: </text>
+	</string>
+	<string id="igi_task_text_money">
+		<text>RUB</text>
+	</string>
+	<string id="igi_task_text_goodwill">
+		<text>goodwill</text>
 	</string>
 </string_table>
