@@ -19,6 +19,7 @@ function get_options_value(option_id)
 end
 
 function get_task_value(quest_id, key)
+	if not quest_id then return end
 	local prefix, task_name = quest_id[1], quest_id[2]
 	return ui_mcm.get("igi_tasks/" .. prefix .. "/" .. task_name .. "/" .. key)
 end
