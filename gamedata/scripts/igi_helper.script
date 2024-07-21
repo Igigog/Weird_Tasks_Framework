@@ -150,3 +150,16 @@ function lookup_functor(name, origin)
 	end
 	return f
 end
+
+local fCache = {}
+
+function eval(v)
+	local f = fCache[v]
+	if f == nil then
+		local nf = loadstring("return " .. v)
+		fCache[v] = nf
+		---@diagnostic disable-next-line: need-check-nil
+		return nf()
+	end
+	return f()
+end

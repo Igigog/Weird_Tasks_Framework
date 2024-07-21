@@ -78,7 +78,7 @@ function invoke_callbacks(callback_name, CACHE, ...)
 
 	if CACHE[callback_name] then
 		for _, f in ipairs(CACHE[callback_name]) do
-			loadstring(f)()
+			igi_helper.eval(f)
 		end
 	end
 end

@@ -2,21 +2,9 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-local fCache = {}
-
-local function eval(v)
-	local f = fCache[v]
-	if f == nil then
-		local nf = loadstring("return "..v)
-		fCache[v] = nf
-		return nf ~= nil and nf()
-	end
-	return f()
-end
-
 function check_conditions(conds)
 	for _, condition in ipairs(conds) do
-		if not eval(condition) then
+		if not igi_helper.eval(condition) then
 			return false
 		end
 	end
@@ -34,7 +22,7 @@ function update_action(action)
 	if action._done then return end
 	if not check_conditions(action.when) then return end
 	trace_dbg("Update action", action.run)
-	local to_rerun = eval(action.run)
+	local to_rerun = igi_helper.eval(action.run)
 	if not to_rerun then action._done = true end
 end
 

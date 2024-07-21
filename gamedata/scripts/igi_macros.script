@@ -10,7 +10,7 @@ end
 
 Macro = {
     new = function(str)
-		local f = assert(loadstring("return "..str))
+		local f = assert(igi_helper.eval(str))
     	trace_assert(f, "Macro fucked up and catched fire", str)
     	setfenv(f, Macro)
 		local t = {f}
