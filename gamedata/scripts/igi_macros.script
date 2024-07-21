@@ -3,11 +3,6 @@ local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local Set = igi_utils.Set
 
-current_tg_faction = nil
-function set_task_giver(tg_id)
-	current_tg_faction = igi_helper.get_community_by_id(tg_id)
-end
-
 Macro = {
     new = function(str)
 		local out = assert(igi_helper.eval(str))
@@ -56,6 +51,7 @@ function TableValueByKey(tbl_name, key)
 	return igi_db.ini_tables[tbl_name][key]
 end
 
+local current_tg_faction = nil
 local function get_faction(keyword)
 	if keyword == "actor" then
 		return db.actor:character_community()
@@ -67,7 +63,8 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Faction(args_str)
+function Faction(tg_id, args_str)
+	current_tg_faction = igi_helper.get_community_by_id(tg_id)
 	-- args checker needed
 	local tokens = tokenize(args_str)
 	local factions = evaluate(tokens, 1, #tokens)
