@@ -5,7 +5,6 @@ function on_game_start()
     RegisterScriptCallback("save_state", save_state)
     RegisterScriptCallback("load_state", load_state)
     RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-    RegisterScriptCallback("on_key_press", on_key_press)
 end
 
 STATE = {
@@ -18,18 +17,6 @@ STATE = {
 
 TESTS = {}
 SUBTASK_TESTS = {}
-
-function on_key_press(key)
-    if not igi_mcm.get_options_value("super_debug") then return end
-    if STATE.current_tests_name then return end
-    if key == DIK_keys.DIK_K then
-        start_integration_tests("entity")
-    elseif key == DIK_keys.DIK_H then
-        start_integration_tests("quest")
-    elseif key == DIK_keys.DIK_E then
-        start_normal_tests()
-    end
-end
 
 function save_state(m_data)
     m_data.igi_tests_state = STATE
