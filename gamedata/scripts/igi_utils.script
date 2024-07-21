@@ -204,6 +204,11 @@ function random_table_element(tbl)
 	return random_elem, random_key
 end
 
+function choose(...)
+	local list = { ... }
+	return list[igi_random.rand(#list)]
+end
+
 function get_random_items(orig_list, amount)
 	if not orig_list or #orig_list < amount then
 		return nil, "Not enough items"

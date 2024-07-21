@@ -17,13 +17,9 @@ Macro = {
 	end,
 
 	resolve = function(self)
-		local v = self[1]
-		trace_dbg("resolved", tostring(v))
-		return v
+		return self[1]
 	end
 }
-
-setmetatable(Macro, {__index = _G})
 
 function ScaleToPlayer(a, b)
 	-- will return integer from a to b (or from 1 to a) based
@@ -47,10 +43,6 @@ function ScaleToPlayer(a, b)
 	return b and a or 1
 end
 
-function Random(b, a)
-	return igi_random.rand(b, a)
-end
-
 function TableValueRandom(tbl_name)
 	local tbl = igi_db.ini_tables[tbl_name]:as_table()
 	local elem = igi_utils.random_table_element(tbl)
@@ -61,21 +53,7 @@ function TableValueRandom(tbl_name)
 end
 
 function TableValueByKey(tbl_name, key)
-	trace_assert(tbl_name and key)
-	local tbl = igi_db.ini_tables[tbl_name]
-	return tbl[key]
-end
-
-function ChooseOne(...)
-	return igi_utils.random_table_element({...})
-end
-
-local constant_functions = {
-	actor_level = level.name,
-	player_level = level.name,
-}
-function Constant(key)
-	return constant_functions[key]()
+	return igi_db.ini_tables[tbl_name][key]
 end
 
 local function get_faction(keyword)
