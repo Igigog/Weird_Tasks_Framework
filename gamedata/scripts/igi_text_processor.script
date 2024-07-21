@@ -8,11 +8,19 @@ local function str_to_link(str)
 end
 
 local function link_iterator(str)
-	return str:gmatch("%[[^%[%]%&]+%]")
+	return str:gmatch("%b[]")
+end
+
+local function macro_iterator(str)
+	return str:gmatch("%b&&")
+end
+
+local function has_link(str)
+	return link_iterator(str)()
 end
 
 local function has_macro(str)
-	return str:find("%b&&")
+	return macro_iterator(str)()
 end
 
 local function resolve_links_in_str(str, link_context)
@@ -58,23 +66,21 @@ local function str_to_macro(str)
 	return trace_assert(macro, "Macro can't be resolved: " .. str)
 end
 
-local function macro_iterator(str)
-	return str:gmatch("%&[a-zA-Z._]+%([^&%[%]]*%)%&")
-end
-
 local function resolve_in_str(str)
 	local has_changed = false
 	local changes = true
 	while changes do
 		changes = false
 		for macro_str in macro_iterator(str) do
-			local macro = str_to_macro(macro_str)
-			trace_dbg("resolve macro", macro_str, macro)
-			local resolved = macro:resolve()
-			trace_dbg("resolved", igi_utils.escape_pattern(macro_str), resolved)
-			str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
-			changes = true
-			has_changed = true
+			if not has_link(macro_str) then
+				local macro = str_to_macro(macro_str)
+				trace_dbg("resolve macro", macro_str, macro)
+				local resolved = macro:resolve()
+				trace_dbg("resolved", igi_utils.escape_pattern(macro_str), resolved)
+				str = str:gsub(igi_utils.escape_pattern(macro_str), resolved)
+				changes = true
+				has_changed = true
+			end
 		end
 	end
 
@@ -112,7 +118,7 @@ function resolve_and_link_cache(CACHE)
 end
 
 function try_str_to_link(str)
-	-- Won't work with dependencies with macros
+	trace_assert(not has_macro(str), "Macro found in link! That's not allowed.", str)
 	local link_id, sep, field = str:match("%[([^%.]+)([%.%:])(.+)%]")
 
 	if not (link_id and field) then
@@ -138,8 +144,8 @@ end
 function has_no_outer_links(tbl, entity)
 	for k,v in pairs(tbl) do
 		if type(v) == 'string' then
-			for k2 in link_iterator(v) do
-				if not str_to_link(k2):points_to_self() then
+			for str in link_iterator(v) do
+				if not str_to_link(str):points_to_self() then
 					return false
 				end
 			end
@@ -153,8 +159,8 @@ end
 function has_no_se_obj_links(tbl)
 	for k,v in pairs(tbl) do
 		if type(v) == 'string' then
-			for k2 in link_iterator(v) do
-				local link = str_to_link(k2)
+			for str in link_iterator(v) do
+				local link = str_to_link(str)
 				if link:is_se_object_link() then
 					return false
 				end

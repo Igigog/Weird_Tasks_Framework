@@ -10,15 +10,14 @@ end
 
 Macro = {
     new = function(str)
-		local f = assert(igi_helper.eval(str))
-    	trace_assert(f, "Macro fucked up and catched fire", str)
-    	setfenv(f, Macro)
-		local t = {f}
+		local out = assert(igi_helper.eval(str))
+    	trace_assert(out, "Macro fucked up and catched fire", str)
+		local t = {out}
 		return setmetatable(t, {__index = Macro})
 	end,
 
 	resolve = function(self)
-		local v = self[1]()
+		local v = self[1]
 		trace_dbg("resolved", tostring(v))
 		return v
 	end
@@ -26,7 +25,7 @@ Macro = {
 
 setmetatable(Macro, {__index = _G})
 
-function Macro.ScaleToPlayer(a, b)
+function ScaleToPlayer(a, b)
 	-- will return integer from a to b (or from 1 to a) based
 	-- on player rank
 	local endgame_rank = 8000	-- TODO: move to settings
@@ -48,11 +47,11 @@ function Macro.ScaleToPlayer(a, b)
 	return b and a or 1
 end
 
-function Macro.Random(b, a)
+function Random(b, a)
 	return igi_random.rand(b, a)
 end
 
-function Macro.TableValueRandom(tbl_name)
+function TableValueRandom(tbl_name)
 	local tbl = igi_db.ini_tables[tbl_name]:as_table()
 	local elem = igi_utils.random_table_element(tbl)
 	if type(elem) == "table" then
@@ -61,13 +60,13 @@ function Macro.TableValueRandom(tbl_name)
 	return elem
 end
 
-function Macro.TableValueByKey(tbl_name, key)
+function TableValueByKey(tbl_name, key)
 	trace_assert(tbl_name and key)
 	local tbl = igi_db.ini_tables[tbl_name]
 	return tbl[key]
 end
 
-function Macro.ChooseOne(...)
+function ChooseOne(...)
 	return igi_utils.random_table_element({...})
 end
 
@@ -75,7 +74,7 @@ local constant_functions = {
 	actor_level = level.name,
 	player_level = level.name,
 }
-function Macro.Constant(key)
+function Constant(key)
 	return constant_functions[key]()
 end
 
@@ -90,7 +89,7 @@ local function get_faction(keyword)
 end
 
 local evaluate, tokenize
-function Macro.Faction(args_str)
+function Faction(args_str)
 	-- args checker needed
 	local tokens = tokenize(args_str)
 	local factions = evaluate(tokens, 1, #tokens)
