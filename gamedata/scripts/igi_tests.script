@@ -110,7 +110,9 @@ function start_integration_test(id, cache)
     trace_dbg("Running test: "..id, cache)
     STATE.current_test = id
 
-    if prepare_mock_quest(cache, id) then
+    local ok, mock = pcall(prepare_mock_quest, cache, id)
+
+    if ok and mock then
         task_manager.get_task_manager():give_task(id)
         CreateTimeEvent("igi_tests", "current_test", 0, continue_test_worker)
     else
@@ -157,7 +159,13 @@ function continue_test_worker()
     local target_tbl = igi_taskdata.get_target_table(entity.target)
     trace_assert(target_tbl.test, "Test is not implemented for target "..entity.target)
 
-    local finished = target_tbl.test(entity)
+    local ok, finished = pcall(target_tbl.test, entity)
+    if not ok then
+        assert_test(nil, finished)
+        finish_test()
+        return true
+    end
+
     if finished then
         finish_test()
         return true
