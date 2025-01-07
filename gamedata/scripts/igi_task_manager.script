@@ -523,12 +523,24 @@ function load_state(m_data)
 	FINISHED_QUESTS = m_data.igi_finished_quests or FINISHED_QUESTS
 end
 
+crash_count = 0
 function on_task_crashed(err, task_id)
 	if task_id then
 		task_manager.get_task_manager():set_task_failed(task_id)
 	end
-	news_manager.send_tip(db.actor,
-		"Weird Tasks Framework crashed! Sorry :(. I've taken care of it, you can continue your playthrough.", nil, nil,
-		30000)
 	trace_error("Task crashed: ", err, callstack(false, true))
+	crash_count = crash_count + 1
+
+	if (crash_count == 1 and igi_mcm.get_options_value("wtf_crash_message")) then
+		CreateTimeEvent("igi_send_crash_msg", 0, 0, function()
+			news_manager.send_tip(db.actor,
+				"[" ..
+				tostring(crash_count) ..
+				"x] " ..
+				"Weird Tasks Framework crashed! Sorry :(. I've taken care of it, you can continue your playthrough.", nil,
+				nil, 30000)
+			crash_count = 0
+			return true
+		end)
+	end
 end

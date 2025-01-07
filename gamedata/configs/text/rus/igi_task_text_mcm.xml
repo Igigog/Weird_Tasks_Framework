@@ -34,6 +34,18 @@
 	<string id="ui_mcm_menu_Options">
 		<text>Настройки</text>
 	</string>
+	<string id="ui_mcm_igi_tasks_Options_wtf_crash_message">
+		<text>Показывать краш-сообщения</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_integration_tests_entity">
+		<text>Run integration tests (entity)</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_integration_tests_quest">
+		<text>Run integration tests (quest)</text>
+	</string>
+	<string id="ui_mcm_igi_tasks_Options_unit_tests">
+		<text>Run unit tests</text>
+	</string>
 	<string id="ui_mcm_igi_tasks_Options_debug">
 		<text>Режим дебага</text>
 	</string>
