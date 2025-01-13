@@ -57,18 +57,11 @@ function STATIC_REWARDER(money, goodwill)
 	}, {__index = _STATIC_REWARDER})
 end
 
-local rewarder_cache = {}
 local function get_rewarder(CACHE)
 	if not CACHE.rewarder then
 		return DEFAULT_REWARDER
 	end
-	local rw = rewarder_cache[CACHE.rewarder]
-	if not rw then
-		local new_rw = igi_helper.eval(CACHE.rewarder)
-		rewarder_cache[CACHE.rewarder] = new_rw
-		return new_rw
-	end
-	return rw
+	return igi_helper.eval(CACHE.rewarder)
 end
 
 function has_material_rewards(CACHE)
