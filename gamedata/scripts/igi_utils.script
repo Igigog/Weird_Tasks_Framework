@@ -64,133 +64,6 @@ Set = {
 	end,
 }
 
-Heap = {
-	__cls = 'Heap',
-
-	new = function ()
-		local t = {
-			priorities = {},
-			payloads = {},
-		}
-		return setmetatable(t, {__index = Heap})
-	end,
-
-	swap = function(self, index1, index2)
-		self.priorities[index1], self.priorities[index2] =
-			self.priorities[index2], self.priorities[index1]
-
-		self.payloads[index1], self.payloads[index2] =
-			self.payloads[index2], self.payloads[index1]
-	end,
-
-	compare = function(self, index1, index2)
-		igi_helper.trace_assert(self.priorities[index1] and self.priorities[index2], "No priorities?", self)
-		return self.priorities[index1] > self.priorities[index2]
-	end,
-
-	sift_up = function(self, index)
-		if index == 1 then return end
-
-		local parent_index = math.floor(index/2)
-		if self:compare(parent_index, index) then
-			self:swap(index, parent_index)
-			self:sift_up(parent_index)
-		end
-	end,
-
-	sift_down = function(self, index)
-		local minIndex, leftChildIndex, rightChildIndex
-		leftChildIndex, rightChildIndex = index * 2, index * 2 + 1
-		local priorities = self.priorities
-
-		if rightChildIndex > #priorities then
-			if leftChildIndex > #priorities then
-				return
-			else
-				minIndex = leftChildIndex
-			end
-		else
-			if self:compare(leftChildIndex, rightChildIndex) then
-				minIndex = rightChildIndex
-			else
-				minIndex = leftChildIndex
-			end
-		end
-
-		if self:compare(index, minIndex) then
-			self:swap(index, minIndex)
-			self:sift_down(minIndex)
-		end
-	end,
-
-	push = function(self, payload, priority)
-		igi_helper.trace_assert(priority and payload, "No priority or payload")
-		self.priorities[#self.priorities+1] = priority
-		self.payloads[#self.payloads+1] = payload
-		self:sift_up(#self.priorities)
-	end,
-
-	pop = function(self)
-		if #self.payloads == 0 then return end
-		local to_return = self.payloads[1]
-
-		self.priorities[1] = self.priorities[#self.priorities]
-		self.payloads[1] = self.payloads[#self.payloads]
-
-		self.priorities[#self.priorities] = nil
-		self.payloads[#self.payloads] = nil
-		if #self.priorities > 0 then
-			self:sift_down(1)
-		end
-
-		return to_return
-	end,
-
-	peek = function(self)
-		return self.payloads[1]
-	end,
-
-	change_priority = function(self, payload, priority)
-		for i, payload2 in ipairs(self.payloads) do
-			if payload2 == payload then
-				local old_priority = self.priorities[i]
-				self.priorities[i] = priority
-
-				if priority < old_priority then
-					self:sift_up(i)
-				else
-					self:sift_down(i)
-				end
-			end
-		end
-	end,
-
-	remove_by_index = function(self, index)
-		self.priorities[index] = self.priorities[#self.priorities]
-		self.payloads[index] = self.payloads[#self.payloads]
-
-		self.payloads[#self.payloads] = nil
-		self.priorities[#self.priorities] = nil
-		self:sift_down(index)
-	end,
-
-	remove_element = function(self, payload)
-		for i=#self.payloads, 1, -1 do
-			if self.payloads[i] == payload then
-				self:remove_by_index(i)
-			end
-		end
-	end,
-
-	size = function (self)
-		return #self.payloads
-	end,
-
-	get = function(self, index)
-		return self.payloads[index]
-	end
-}
-
 function random_table_element(tbl)
 	-- It's preffered to use lists with igi_random.rand rather
 	-- than this function bcs this function is slow
@@ -235,21 +108,6 @@ function extend_list(orig, val)
 	return orig
 end
 
-function add_to_list_recursive(tbl, val, ...)
-	if not tbl then return end
-
-	local args = {...}
-	for k, v in pairs(args) do
-		if not tbl[v] then
-			tbl[v] = {}
-		end
-		tbl = tbl[v]
-		if k == #args then
-			table.insert(tbl, val)
-		end
-	end
-end
-
 function memoize_one_variable(f, id)
     local cache = MemoizeCache.new(id)
     return function (arg)
@@ -264,32 +122,8 @@ function memoize_one_variable(f, id)
     end
 end
 
-function one_timer_one_variable(f, id)
-	local cache = MemoizeCache.new(id)
-	return function (arg)
-		local key = arg ~= nil and arg or "!nil!"
-		if not cache[key] then
-			cache[key] = true
-			return f(arg)
-		end
-	end
-end
-
 function escape_pattern(text)
     return text:gsub("([^%w])", "%%%1")
-end
-
-function partial(f, ...)
-	args = {...}
-	print(unpack(args))
-	local new_f = function(...)
-	    local new_args = {unpack(args)}
-	    for k,v in pairs({...}) do	-- lua, blyat...
-	        new_args[#new_args+1] = v
-	    end
-		return f(unpack(new_args))
-	end
-	return new_f
 end
 
 MemoizeCache = {
@@ -325,15 +159,6 @@ function MemoizeCache.reset(id)
 	end
 end
 
-function iterate_table(tbl, func)
-	for k,v in pairs(tbl) do
-		if type(v) == "table" then
-			iterate_table(v, func)
-		end
-		func(k, v, tbl)
-	end
-end
-
 function defaultdict(factory)
 	local tbl = {}
 	local metatbl = {}
@@ -352,12 +177,6 @@ function defaultdict(factory)
 	end
 	setmetatable(tbl, metatbl)
 	return tbl
-end
-
-function shallow_copy(dest, src)
-	for k, v in pairs(src) do
-		dest[k] = v
-	end
 end
 
 function convert_type(str)
