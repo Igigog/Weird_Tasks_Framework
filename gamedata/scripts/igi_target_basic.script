@@ -29,15 +29,6 @@ local function ids_to_entities(prototype, ids)
 	return new_entities
 end
 
-local function unwrap_entity_amount(prototype)
-	local new_entities = {}
-	for _=2, prototype.amount or 1 do
-		local t = dup_table(prototype)
-		new_entities[#new_entities+1] = t
-	end
-	return new_entities
-end
-
 local function assert_has_valid_section(entity)
 	local section = trace_assert(entity.section_name, "entity.section_name is nil", entity)
 	trace_assert(ini_sys:section_exist(section), "bad section: "..section)
@@ -129,12 +120,12 @@ function setup_location(entity)
 	entity.tags.LOCATION = true
 
 	if entity.coords then
-		return unwrap_entity_amount(entity)
+		return {}
 	end
 
 	if entity.id then
 		igi_entities.bind_to_se_obj(entity, entity.id)
-		return unwrap_entity_amount(entity)
+		return {}
 	end
 
 	if entity.name then
@@ -143,7 +134,7 @@ function setup_location(entity)
 			"Unknown name "..entity.name)
 		igi_entities.bind_to_se_obj(entity, smart.id)
 		entity.name = nil
-		return unwrap_entity_amount(entity)
+		return {}
 	end
 
 	local ids
@@ -162,7 +153,7 @@ function setup_squad(entity)
 
 	if entity.to_create then
 		assert_has_valid_section(entity)
-		return unwrap_entity_amount(entity)
+		return {}
 	end
 
 	local enemy_factions
@@ -185,7 +176,7 @@ function setup_item(entity)
 
 	if entity.to_create then
 		assert_has_valid_section(entity)
-		return unwrap_entity_amount(entity)
+		return {}
 	end
 
 	trace_assert(entity.item_list, "No item list given")
