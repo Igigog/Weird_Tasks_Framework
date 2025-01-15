@@ -72,20 +72,3 @@ function rank(tier)
 	local player_rank = db.actor:character_rank()
 	return player_rank >= lower_bound and player_rank <= higher_bound
 end
-
-function daytime(lower_bound, higher_bound)
-	local h_dt = (24 + higher_bound - lower_bound) % 24
-
-	local game_t = game.get_game_time()
-	local y, m, d = game_t:get()
-
-	local t = game.CTime()
-	t:set(y, m, d, lower_bound, 0, 0, 0)
-	if not (game_t > t) then
-		return false
-	end
-
-	local dt = game.CTime()
-	dt:setHMS(h_dt, 0, 0)
-	return game_t < (t + dt)
-end
