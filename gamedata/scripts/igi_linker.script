@@ -50,12 +50,6 @@ Link = {
 	end,
 
 	resolve_field = function(self, entity)
-		if self.look_in_se_object and not entity.tags.BINDED then
-			return nil
-		end
-		if (self.look_in_se_object) then
-			return igi_helper.find_in_game_object(entity, self.field)
-		end
 		return entity[self.field]
     end,
 }
