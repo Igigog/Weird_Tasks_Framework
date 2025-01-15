@@ -25,11 +25,10 @@ LinkContext  = {
 }
 
 Link = {
-	new = function (link_id, field, is_se_object_link)
+	new = function (link_id, field)
 		local t = {
 			link_id = link_id,
 			field = field,
-			look_in_se_object = is_se_object_link,
 		}
 
 		return setmetatable(t, {__index = Link})
@@ -41,10 +40,6 @@ Link = {
 
 	points_to_self = function (self)
 		return self.link_id == "this"
-	end,
-
-	is_se_object_link = function (self)
-		return self.look_in_se_object
 	end,
 
     resolve = function(self, link_context)

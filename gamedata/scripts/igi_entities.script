@@ -18,7 +18,7 @@ function initialise_entities(CACHE)
 	local entities = CACHE.entities
 	local new = {}
 	for _, entity in pairs(entities) do
-		if (not entity.tags.INIT) and igi_text_processor.has_no_se_obj_links(entity, entity) then
+		if (not entity.tags.INIT) then
             trace_dbg('setup group ' .. tostring(_), entity)
 			local new_entities = initialise(entity)
 			if not new_entities then

@@ -125,7 +125,7 @@ function try_str_to_link(str)
 		return nil
 	end
 
-	return igi_linker.Link.new(link_id, field, sep == ":")
+	return igi_linker.Link.new(link_id, field)
 end
 
 function link_entity(str, entity)
@@ -150,22 +150,6 @@ function has_no_outer_links(tbl, entity)
 				end
 			end
 		elseif type(v) == 'table' and not has_no_outer_links(v, entity) then
-			return false
-		end
-	end
-	return true
-end
-
-function has_no_se_obj_links(tbl)
-	for k,v in pairs(tbl) do
-		if type(v) == 'string' then
-			for str in link_iterator(v) do
-				local link = str_to_link(str)
-				if link:is_se_object_link() then
-					return false
-				end
-			end
-		elseif type(v) == 'table' and not has_no_se_obj_links(v) then
 			return false
 		end
 	end
