@@ -91,17 +91,15 @@ function create(entity)
 end
 
 function bind_to_se_obj(entity, id)
-	trace_assert(not entity.tags.BINDED, "Entity is already binded: remove the tag manually is it's intended", entity)
 	local se_obj = igi_world_state.WorldState.objects[id]
 	trace_assert(se_obj, "Server object does not exist")
 	entity.id = se_obj.id
     entity.section_name = se_obj:section_name()
-	entity.tags.BINDED = true
 	return entity
 end
 
 function get_binded_object(entity)
-	trace_assert(entity.tags.BINDED and entity.id, "Entity is not binded or id was removed", entity)
+	trace_assert(entity.section_name and entity.id, "Entity is not binded or id was removed", entity)
 	local se_obj = WorldState.objects[entity.id]
 	if (not se_obj) or se_obj:section_name() ~= entity.section_name then return end
 	return se_obj
