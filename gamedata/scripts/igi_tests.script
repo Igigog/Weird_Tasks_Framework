@@ -7,6 +7,12 @@ function on_game_start()
     RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 end
 
+RESULT = {
+    SUCCESS = "SUCCESS",
+    FAIL = "FAIL",
+    DISABLED = "DISABLED"
+}
+
 STATE = {
     current_tests_name = nil,
     current_test = nil,
@@ -68,9 +74,12 @@ end
 local function report_tests_history()
     local report = {}
     local count_successful = 0
-    for test_case, success in pairs(STATE.tests_history) do
-        if success then
+    local count_disabled = 0
+    for test_case, result in pairs(STATE.tests_history) do
+        if result == RESULT.SUCCESS then
             count_successful = count_successful + 1
+        elseif result == RESULT.DISABLED then
+            count_disabled = count_disabled + 1
         else
             report[#report+1] = test_case..": %c[d_red]fail%c[0,255,255,255]"
         end
@@ -78,6 +87,7 @@ local function report_tests_history()
 
     news_manager.send_tip(db.actor,
         "Tests finished. Report:\\n"
+        .."["..count_disabled.."]: %c[0,155,155,155]disabled%c[0,255,255,255]\\n \\n"
         .."["..count_successful.."]: %c[d_green]success%c[0,255,255,255]\\n \\n"
         ..table.concat(report, "\\n \\n"), nil, nil, 30000)
     trace_dbg("Test report:", STATE.tests_history)
@@ -115,6 +125,9 @@ function start_integration_test(id, cache)
     if ok and mock then
         task_manager.get_task_manager():give_task(id)
         CreateTimeEvent("igi_tests", "current_test", 0, continue_test_worker)
+    elseif cache.quest_id and igi_mcm.get_task_value(cache.quest_id, "disabled") then
+        STATE.tests_history[STATE.current_test] = RESULT.DISABLED
+        finish_test()
     else
         assert_test(nil, "Can't prepare quest")
     end
@@ -180,8 +193,8 @@ function finish_test()
         task_manager.get_task_manager():set_task_completed(STATE.current_test)
     end
 
-    if STATE.tests_history[STATE.current_test] ~= false then
-        STATE.tests_history[STATE.current_test] = true
+    if not STATE.tests_history[STATE.current_test] then
+        STATE.tests_history[STATE.current_test] = RESULT.SUCCESS
     end
 
     STATE.current_test = nil
@@ -191,7 +204,7 @@ function assert_test(successful, reason, ...)
     if successful then return successful end
     actor_menu.set_fade_msg("WTF: test "..STATE.current_test.." failed: "..reason, 10, {G = 10, B = 10})
     trace_dbg("Test unsuccessful! ", STATE.current_test, reason, ...)
-    STATE.tests_history[STATE.current_test] = false
+    STATE.tests_history[STATE.current_test] = RESULT.FAIL
     finish_test()
 end
 
