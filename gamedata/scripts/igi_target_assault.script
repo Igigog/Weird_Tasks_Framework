@@ -104,7 +104,16 @@ function test(entity)
 	if entity._test_stage == 1 then
 		local se_obj = igi_entities.get_binded_object(entity)
 		assert_test(se_obj, "Entity does not exist")
-		igi_tests.travel_to_se_obj(se_obj)
+		if igi_mcm.get_options_value("fast_tests") then
+			for _, sq_id in pairs(entity.squads) do
+				local se_squad = WorldState.objects[sq_id]
+				if se_squad then
+					igi_tests.teleport_to_player(se_squad)
+				end
+			end
+		else
+			igi_tests.travel_to_se_obj(se_obj)
+		end
 	elseif entity._test_stage == 2 then
 		for _, sq_id in pairs(entity.squads) do
 			local se_squad = WorldState.objects[sq_id]

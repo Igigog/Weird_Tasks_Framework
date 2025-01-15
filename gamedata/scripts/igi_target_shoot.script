@@ -123,7 +123,11 @@ function test(entity)
 		assert_test(se_obj, "Entity does not exist")
         local se_obj = alife_create_item("wpn_mp133", WorldState.objects[0])
         entity._test_wpn_id = se_obj.id
-        igi_tests.travel_to_se_obj(se_obj)
+        if igi_mcm.get_options_value("fast_tests") then
+			igi_tests.teleport_to_player(se_obj)
+		else
+			igi_tests.travel_to_se_obj(se_obj)
+		end
 
     elseif entity._test_stage == 2 then
         local obj = igi_helper.level_object(entity._test_wpn_id)

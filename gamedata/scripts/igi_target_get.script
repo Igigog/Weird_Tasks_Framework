@@ -47,7 +47,11 @@ function test(entity)
 	if not entity._test_stage == 1 then
 		local se_obj = igi_entities.get_binded_object(entity)
 		assert_test(se_obj, "Entity does not exist")
-		igi_tests.travel_to_se_obj(se_obj)
+		if igi_mcm.get_options_value("fast_tests") then
+			igi_tests.teleport_to_player(se_obj)
+		else
+			igi_tests.travel_to_se_obj(se_obj)
+		end
 
 	elseif entity._test_stage == 2 then
 		local se_obj = igi_entities.get_binded_object(entity)
@@ -55,7 +59,7 @@ function test(entity)
 		db.actor:transfer_item(obj, db.actor)
 
 	elseif entity._test_stage == 3 then
-		assert_test(entity.status == "COMPLETED", "Quest did not complete after killing")
+		assert_test(entity.status == "COMPLETED", "Quest did not complete")
 		return true
 	end
 end

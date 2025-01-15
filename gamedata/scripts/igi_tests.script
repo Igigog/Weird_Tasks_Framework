@@ -213,10 +213,21 @@ local function get_level_id(se_obj)
     return WorldState.gg:vertex(se_obj.m_game_vertex_id):level_id()
 end
 
+function teleport_to_player(se_obj)
+    assert(se_obj:section_name() ~= "smart_terrain", "Are you teleporting smarts?")
+
+    if se_obj and se_obj.commander_id then
+        TeleportSquad(se_obj, db.actor:position(), db.actor:level_vertex_id(), db.actor:game_vertex_id())
+    else
+        TeleportObject(se_obj.id, db.actor:position(), db.actor:level_vertex_id(), db.actor:game_vertex_id())
+    end
+end
+
 function travel_to_se_obj(se_obj)
     if get_level_id(se_obj) == get_level_id(alife():object(0)) then
 		db.actor:set_actor_position(se_obj.position)
 	else
+        assert(not igi_mcm.get_options_value("fast_tests"), "Don't change levels when fasts tests are enabled")
 		ChangeLevel(se_obj.position, se_obj.m_level_vertex_id, se_obj.m_game_vertex_id, VEC_ZERO, false)
 	end
 end
