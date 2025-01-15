@@ -47,15 +47,6 @@ local function force_parent_online(se_obj)
 	end
 end
 
-local function get_coords(str)
-	trace_assert(type(str) == "string", "not a string")
-	local lvl, x, y, z = str:match("(.*),(.*),(.*),(.*)")
-	x, y, z = tonumber(x), tonumber(y), tonumber(z)
-	lvl = igi_db.LtxView("map_config.ltx").map_names[lvl]
-	trace_assert(lvl, "ERROR: Can't get lvl! "..str)
-	return lvl, x, y, z
-end
-
 ------------------------------------------------
 -- DESCRIPTION
 -- Prepares description
@@ -243,9 +234,6 @@ function create_item(entity)
 		if (parent.id == 0) then
 			news_manager.relocate_item(db.actor, "in", entity.section_name, 1)
 		end
-	else
-		local lvl, x, y, z = get_coords(entity.where)
-		se_obj = alife_create(entity.section_name, vector():set(x,y+1,z), 0, lvl)
 	end
 	igi_entities.bind_to_se_obj(entity, se_obj.id)
 end
