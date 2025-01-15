@@ -4,7 +4,8 @@ local trace_assert = igi_helper.trace_assert
 LinkContext  = {
 	new = function(self, CACHE)
 		local link_context = {
-			CACHE = CACHE
+			CACHE = CACHE,
+			this = {}
 		}
 		for _, entity in pairs(CACHE.entities) do
 			if entity.link_id then
@@ -43,6 +44,7 @@ Link = {
 	end,
 
     resolve = function(self, link_context)
+		trace_dbg("Link resolve", self, link_context)
 		local entity = link_context:get(self.link_id)
 		trace_assert(entity, "Linker can't find entity for link:", self)
 		local out = self:resolve_field(entity)
