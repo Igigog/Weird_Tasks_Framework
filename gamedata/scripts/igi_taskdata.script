@@ -91,7 +91,6 @@ function finalize_task_cache(task_data, task_id, tg_id)
 			}
 	end
 
-	igi_text_processor.resolve_macros_and_link_variables(CACHE)
 	igi_text_processor.resolve_and_link_cache(CACHE)
 
 	trace_dbg("finalized CACHE", CACHE)

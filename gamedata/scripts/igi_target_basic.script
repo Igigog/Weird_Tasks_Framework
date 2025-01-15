@@ -16,16 +16,8 @@ local function ids_to_entities(prototype, ids)
 	ids = igi_utils.get_random_items(ids, prototype.amount or 1)
 	if not ids then return end
 
-	igi_entities.bind_to_se_obj(prototype, ids[#ids])
-	ids[#ids] = nil
-
-	local new_entities = {}
-	for _, id in ipairs(ids) do
-		local t = dup_table(prototype)
-		igi_entities.bind_to_se_obj(t, id)
-		new_entities[#new_entities+1] = t
-	end
-	return new_entities
+	prototype.ids = table.concat(ids, ',')
+	prototype.GEN = "igi_generate.Split('ids', 'id')"
 end
 
 local function assert_has_valid_section(entity)

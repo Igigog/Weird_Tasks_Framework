@@ -10,33 +10,30 @@ function initialise_quest(task_data, task_id, tg_id)
 		return nil
 	end
 
+	igi_text_processor.resolve_and_link_cache(CACHE)
 	trace_dbg("CACHE after setup "..task_id, CACHE)
 	return CACHE
 end
 
 function initialise_entities(CACHE)
 	local entities = CACHE.entities
-	local new = {}
 	for _, entity in pairs(entities) do
 		if (not entity.tags.INIT) then
             trace_dbg('setup group ' .. tostring(_), entity)
-			local new_entities = initialise(entity)
-			if not new_entities then
-				return trace_dbg("entity failed", entity)
-			end
+			local ok = initialise(entity)
+			if not ok then return end
 			igi_linker.broadcast_entity(entities, entity)
-            trace_dbg('group_data, new entities', entity, new_entities)
-
-			new[#new+1] = new_entities
+            trace_dbg('group_data', entity)
 		end
 	end
 
-	for _, new_entities in pairs(new) do
-		for _, entity in pairs(new_entities) do
-            entities[#entities + 1] = entity
+	CACHE.entities = {}
+	for _, entity in pairs(entities) do
+		local gen_entities = igi_generate.generate(entity)
+		for _, new_entity in pairs(gen_entities) do
+			CACHE.entities[#CACHE.entities+1] = new_entity
 		end
 	end
-
 	return true
 end
 
@@ -71,9 +68,12 @@ function initialise(entity)
 
 	for _, functor_name in pairs(entity.functors.setup) do
 		local f = igi_helper.lookup_functor(functor_name, _G) --! only one functor right now
-		local new_entities = f(entity)
-		trace_dbg("group_data, new entities", entity, new_entities)
-		return new_entities
+		local ok, err = pcall(f, entity)
+		if not ok then
+			return trace_dbg("entity failed", entity, err)
+		end
+		trace_dbg("group_data", entity)
+		return ok
 	end
 end
 

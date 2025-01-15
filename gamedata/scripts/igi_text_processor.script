@@ -114,6 +114,7 @@ function resolve_macros_and_link_variables(CACHE)
 end
 
 function resolve_and_link_cache(CACHE)
+	resolve_macros_and_link_variables(CACHE)
 	return inner_resolve_and_link_table(CACHE, igi_linker.LinkContext:new(CACHE))
 end
 
