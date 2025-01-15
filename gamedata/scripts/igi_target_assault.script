@@ -113,6 +113,7 @@ function test(entity)
 					local npc = igi_helper.level_object(se_npc.id)
 					npc:kill(db.actor)
 				end
+				igi_helper.level_object(se_squad:commander_id()):kill(db.actor)
 			end
 		end
 	elseif entity._test_stage == 4 then
