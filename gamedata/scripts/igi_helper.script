@@ -13,6 +13,10 @@ function level_object(id)
 	return level.object_by_id(id)
 end
 
+function se_object(id)
+	return WorldState[id]
+end
+
 function get_task_name(task_id)
 	return task_id[1], task_id[2]
 end
