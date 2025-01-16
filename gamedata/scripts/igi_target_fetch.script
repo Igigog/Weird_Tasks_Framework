@@ -1,7 +1,7 @@
 TARGET_NAME = "fetch"
 PATTERN = "basic"
 FUNCTORS = {
-	setup = {script_name()..".setup"},
+	setup = {},
 	create = {},
 	status = {script_name()..".status"},
 	cleanup = {},
@@ -55,13 +55,6 @@ end
 
 function quest_target(entity)
 	return -1
-end
-
-function setup(entity)
-	trace_assert(type(entity.section_name) == "string", "entity.section_name should be string", entity)
-	trace_assert(ini_sys:section_exist(entity.section_name), "entity.section_name is not a valid section", entity.section_name)
-	entity.amount = entity.amount or 1
-	return {}
 end
 
 function get_description(entity)
