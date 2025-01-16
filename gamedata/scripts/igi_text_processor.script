@@ -12,7 +12,7 @@ local function link_iterator(str)
 end
 
 local function macro_iterator(str)
-	return str:gmatch("%b&&")
+	return str:gmatch("%!?%&[^%&]*%&")
 end
 
 local function has_link(str)
@@ -66,13 +66,13 @@ local function str_to_macro(str)
 	return trace_assert(macro, "Macro can't be resolved: " .. str)
 end
 
-local function resolve_in_str(str)
+local function resolve_in_str(str, resolve_bangs)
 	local has_changed = false
 	local changes = true
 	while changes do
 		changes = false
 		for macro_str in macro_iterator(str) do
-			if not has_link(macro_str) then
+			if not has_link(macro_str) and (resolve_bangs or string.sub(macro_str, 1, 1) ~= "!") then
 				local macro = str_to_macro(macro_str)
 				trace_dbg("resolve macro", macro_str, macro)
 				local resolved = macro:resolve()
@@ -88,13 +88,13 @@ local function resolve_in_str(str)
 	return str, has_changed
 end
 
-local function inner_resolve_and_link_table(tbl, link_context)
+local function inner_resolve_and_link_table(tbl, link_context, resolve_bangs)
 	local made_changes = false
 
 	local has_changed = true
 	while has_changed do
 		has_changed = resolve_free_dependencies(link_context, tbl)
-		has_changed = resolve_macros(tbl) or has_changed
+		has_changed = resolve_macros(tbl, resolve_bangs) or has_changed
 		if has_changed then
 			made_changes = true
 		end
@@ -102,21 +102,25 @@ local function inner_resolve_and_link_table(tbl, link_context)
 	return made_changes
 end
 
-function resolve_macros_and_link_variables(CACHE)
+function resolve_macros_and_link_variables(CACHE, resolve_bangs)
 	local link_context = igi_linker.LinkContext:new(CACHE)
 	local has_changed = true
 	while has_changed do
 		has_changed = false
 		for _, entity in pairs(CACHE.entities) do
+			trace_dbg("Before resolve_and_link_entity", entity)
 			link_context:set_this(entity)
-			has_changed = inner_resolve_and_link_table(entity, link_context) or has_changed
+			has_changed = inner_resolve_and_link_table(entity, link_context, resolve_bangs) or has_changed
+			trace_dbg("After resolve_and_link_entity", entity)
 		end
 	end
 end
 
-function resolve_and_link_cache(CACHE)
+function resolve_and_link_cache(CACHE, resolve_bangs)
+	trace_dbg("Before resolve_and_link_cache", CACHE)
 	resolve_macros_and_link_variables(CACHE)
-	return inner_resolve_and_link_table(CACHE, igi_linker.LinkContext:new(CACHE))
+	inner_resolve_and_link_table(CACHE, igi_linker.LinkContext:new(CACHE), resolve_bangs)
+	trace_dbg("After resolve_and_link_cache", CACHE)
 end
 
 function try_str_to_link(str)
@@ -158,13 +162,13 @@ function has_no_outer_links(tbl, entity)
 	return true
 end
 
-function resolve_macros(tbl)
+function resolve_macros(tbl, resolve_bangs)
 	local has_changed = false
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
-			has_changed = resolve_macros(v) or has_changed
+			has_changed = resolve_macros(v, resolve_bangs) or has_changed
 		elseif type(v) == 'string' then
-			local str, changes = resolve_in_str(v)
+			local str, changes = resolve_in_str(v, resolve_bangs)
 			if changes then
 				tbl[k] = convert_type(str)
 				has_changed = true

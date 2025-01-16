@@ -7,7 +7,7 @@ local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-local function force_parent_online(se_obj)
+function force_parent_online(se_obj)
 	if se_obj.parent_id == 65535 then return end
 	local parent = WorldState.objects[se_obj.parent_id]
 	local p_clsid = parent:clsid()
@@ -40,7 +40,7 @@ function get_smart_name_by_id(id)
 end
 
 function get_description(entity)
-	if entity.id then
+	if type(entity.id) == "number" then
 		local se_obj = WorldState.objects[entity.id]
 		local parent_npc = igi_helper.is_common_npc(se_obj.parent_id) and WorldState.objects[se_obj.parent_id]
 
@@ -63,26 +63,15 @@ end
 -- Called after getting a task to create/prepare actual game objects
 ------------------------------------------------
 
-function create_location(entity)
-	if entity.location_type == 'stash' then
-		treasure_manager.set_random_stash(nil, nil, nil, entity.id)
-	end
+function squad_create(smart_id, section)
+	assert(smart_id and section, "No smart_id or section")
+	return utils_obj.create_squad(section, alife_object(smart_id):name())
 end
 
-function create_squad(entity)
-    if entity.id then
-		local se_obj = igi_entities.get_binded_object(entity)
-		se_obj.stay_time = game.get_game_time()
-		se_obj.force_online = true
-		return
-	end
-
-	local smart_name = SIMBOARD.smarts[entity.where].smrt:name()
-	local squad = utils_obj.create_squad(entity.section_name, smart_name)
-	squad.stay_time = game.get_game_time()
-	squad.force_online = true
-
-	entity.id = squad.id
+function init_squad(id)
+	local se_obj = alife_object(id)
+	se_obj.stay_time = game.get_game_time()
+	se_obj.force_online = true
 end
 
 function create_item(entity)
