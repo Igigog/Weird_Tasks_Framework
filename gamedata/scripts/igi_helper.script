@@ -21,6 +21,10 @@ function get_task_name(task_id)
 	return task_id[1], task_id[2]
 end
 
+function smart_by_name(name)
+	return SIMBOARD.smarts_by_names[name]
+end
+
 
 function is_common_npc(id)
 	--Parameter is correct | not world map | not player |

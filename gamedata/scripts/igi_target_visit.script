@@ -1,14 +1,15 @@
 TARGET_NAME = "visit"
 PATTERN = "basic"
 FUNCTORS = {
-	setup = {script_name()..".setup"},
-	create = {"igi_target_basic.create_location"},
+	setup = {"igi_helper.noop"},
+	create = {"igi_helper.noop"},
 	status = {script_name()..".status"},
 	cleanup = {},
 }
 
 local WorldState = igi_world_state.WorldState
 local trace_dbg = igi_helper.trace_dbg
+local trace_assert = igi_helper.trace_assert
 MAX_DISTANCE_SQR = 2500
 
 local function distance(position_1, position_2)
@@ -19,42 +20,6 @@ end
 
 local function get_level_id(se_obj)
 	return WorldState.gg:vertex(se_obj.m_game_vertex_id):level_id()
-end
-
-local function explode_path(entity)
-	local names = str_explode(entity.path, ",")
-	entity.name = names[1]
-	entity.path = nil
-	entity.order = entity.order or 1
-
-	local clones = {}
-	for i=2, #names do
-		local new = dup_table(entity)
-		new.order = entity.order + i
-		new.name = names[i]
-		clones[#clones+1] = new
-	end
-	return clones
-end
-
-function setup(entity)
-	if not entity.path then
-		return igi_target_basic.setup_location(entity)
-	end
-	local clones = explode_path(entity)
-	local new_entities = igi_target_basic.setup_location(entity)
-	if not new_entities then return end
-
-	for _, clone in ipairs(clones) do
-		new_entities[#new_entities+1] = clone
-		local new_clones = igi_target_basic.setup_location(clone)
-		if not new_clones then return end
-		for _, new_clone in ipairs(new_clones) do
-			new_entities[#new_entities+1] = new_clone
-		end
-	end
-
-	return new_entities
 end
 
 function is_complete(obj_data)

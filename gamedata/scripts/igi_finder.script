@@ -40,12 +40,11 @@ local function get_distance_bounds(str)
 	return tonumber(lower), tonumber(higher)
 end
 
-local function check_location(se_obj, args)
+local function check_location(se_obj, lower_bound, higher_bound)
 	local obj_level = igi_helper.get_object_level(se_obj)
 	if blacklist[obj_level] then return false end
 
 	local dist = WorldState.distance_by_level[obj_level]
-	local lower_bound, higher_bound = get_distance_bounds(args.search_distance)
 	trace_dbg("Bounds", lower_bound, higher_bound, dist)
 	return dist >= lower_bound and dist <= higher_bound
 end
@@ -129,20 +128,18 @@ end
 filters = {
 	only_enemies = enemy_to_handler,
 	search_in = search_in_handler,
-	search_distance = check_location,
 }
 
 local function check_object_by_args(se_obj, args)
 	-- search distance first as the most effective
 	local tmp = args.search_distance
 	if args.search_distance then
-		if not check_location(se_obj, args) then
+		local lower_bound, higher_bound = get_distance_bounds(args.search_distance)
+		if not check_location(se_obj, lower_bound, higher_bound) then
 			-- igi_helper.trace_dbg("location sucked")
 			return false
 		end
 	end
-	-- delete search distance to not check twice
-	args.search_distance = nil
 
 	for k, filter in pairs(filters) do
 		if args[k] and not filter(se_obj, args) then
@@ -248,25 +245,29 @@ function get_squads_by_args(args, factions)
 	return targets
 end
 
-function is_stash_suitable(id, args)
-	trace_dbg('finder: suitable', id, args)
+function is_stash_suitable(id, lower_bound, higher_bound)
+	trace_dbg('finder: suitable', id, lower_bound, higher_bound)
 	local se_obj = WorldState.objects[id]
 	if not se_obj then return false end
-	if not check_location(se_obj, args) then
+	if not check_location(se_obj, lower_bound, higher_bound) then
 		return false
 	end
 
 	return true
 end
 
-function get_stashes(args)
+function get_stashes(lower_bound, higher_bound)
 	local stashes = treasure_manager.caches
 	local returned_stashes = {}
 	for id, is_not_available in pairs(stashes) do
-		if not is_not_available and is_stash_suitable(id, args) then
+		if (not is_not_available) and is_stash_suitable(id, lower_bound, higher_bound) then
 			returned_stashes[#returned_stashes+1] = id
 		end
 	end
 	trace_dbg("Stashes: ", returned_stashes)
 	return returned_stashes
+end
+
+function get_stashes_string(lower_bound, higher_bound)
+	return table.concat(get_smarts(lower_bound, higher_bound), ',')
 end
