@@ -2,7 +2,9 @@ local trace_assert = igi_helper.trace_assert
 
 function generate(entity)
     if not entity.GEN then return {entity} end
-    return igi_helper.eval(entity.GEN)(entity)
+    local gen = igi_helper.eval(entity.GEN)
+    entity.GEN = nil
+    return gen(entity)
 end
 
 function Amount(n)
@@ -16,12 +18,13 @@ function Amount(n)
     end
 end
 
-function Split(field_in, field_out)
+function Split(field_in, field_out, count)
     return function (entity)
         local before = entity[field_in]
         trace_assert(before ~= nil, "Split field is nil", entity)
         trace_assert(field_out ~= nil, "Split out field is nil", entity)
 
+        entity[field_in] = nil
         if type(before) ~= "string" then -- probably single value converted to other type
             entity[field_out] = before
             return {entity}
@@ -32,6 +35,10 @@ function Split(field_in, field_out)
             local t = dup_table(entity)
             t[field_out] = igi_utils.convert_type(val)
             new_entities[#new_entities+1] = t
+
+            if count and #new_entities >= count then
+                break
+            end
         end
         return new_entities
     end
