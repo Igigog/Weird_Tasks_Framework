@@ -102,7 +102,6 @@ function setup_location(entity)
 	entity.tags.LOCATION = true
 
 	if entity.id then
-		igi_entities.bind_to_se_obj(entity, entity.id)
 		return {}
 	end
 
@@ -184,7 +183,7 @@ function create_squad(entity)
 	squad.stay_time = game.get_game_time()
 	squad.force_online = true
 
-	igi_entities.bind_to_se_obj(entity, squad.id)
+	entity.id = squad.id
 end
 
 function create_item(entity)
@@ -206,14 +205,15 @@ function create_item(entity)
 
 		se_obj = alife_create(entity.section_name, location,
 			smart.m_level_vertex_id, smart.m_game_vertex_id)
+		entity.id = se_obj.id
 	elseif tonumber(entity.where) then
 		local parent = WorldState.objects[entity.where]
 		se_obj = alife_create_item(entity.section_name, parent)
 		if (parent.id == 0) then
 			news_manager.relocate_item(db.actor, "in", entity.section_name, 1)
 		end
+		entity.id = se_obj.id
 	end
-	igi_entities.bind_to_se_obj(entity, se_obj.id)
 end
 
 ------------------------------------------------
