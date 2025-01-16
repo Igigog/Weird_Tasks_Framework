@@ -129,7 +129,7 @@ function start_integration_test(id, cache)
         STATE.tests_history[STATE.current_test] = RESULT.DISABLED
         finish_test()
     else
-        assert_test(nil, "Can't prepare quest")
+        assert_test(nil, "Can't prepare quest", ok, mock)
     end
 end
 
