@@ -1,8 +1,8 @@
 TARGET_NAME = "assault"
 PATTERN = "basic"
 FUNCTORS = {
-	setup = { "igi_helper.noop" },
-	create = { "igi_helper.noop" },
+	setup = {},
+	create = {},
 	status = { script_name() .. ".status" },
 	cleanup = {},
 }

@@ -171,5 +171,3 @@ function eval(v)
 	end
 	return f()
 end
-
-function noop() end
