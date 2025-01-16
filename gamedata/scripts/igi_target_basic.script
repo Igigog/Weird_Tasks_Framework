@@ -7,11 +7,6 @@ local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-local function assert_has_valid_section(entity)
-	local section = trace_assert(entity.section_name, "entity.section_name is nil", entity)
-	trace_assert(ini_sys:section_exist(section), "bad section: "..section)
-end
-
 local function force_parent_online(se_obj)
 	if se_obj.parent_id == 65535 then return end
 	local parent = WorldState.objects[se_obj.parent_id]
@@ -44,40 +39,23 @@ function get_smart_name_by_id(id)
 	end
 end
 
-function get_se_entity_description(entity)
-	local se_obj = WorldState.objects[entity.id]
-	if entity.entity_type == "squad" then
+function get_description(entity)
+	if entity.id then
+		local se_obj = WorldState.objects[entity.id]
+		local parent_npc = igi_helper.is_common_npc(se_obj.parent_id) and WorldState.objects[se_obj.parent_id]
+
 		return {
 			locations = {get_location_description(entity)},
-			factions = {se_obj.player_id},
-		}
-	elseif igi_helper.is_common_npc(se_obj.parent_id) then
-		local parent_npc = WorldState.objects[se_obj.parent_id]
-		return {
-			locations = {get_location_description(entity)},
-			factions = {alife_character_community(parent_npc)},
-			targets = {parent_npc:character_name()}
+			factions = {se_obj.player_id or parent_npc and alife_character_community(parent_npc) or nil},
+			targets = {parent_npc and parent_npc:character_name() or nil}
 		}
 	else
 		return {
-			locations = {get_location_description(entity)}
+			factions = {entity.faction or ini_sys:r_string_ex(entity.section_name, "faction")},
+			locations = { get_smart_name_by_id(entity.where) },
+			targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
 		}
 	end
-end
-
-function get_description(entity)
-	if not entity.to_create then
-		return get_se_entity_description(entity)
-	end
-
-	local desc = {}
-	if entity.entity_type == "squad" then
-		desc.factions = {entity.faction or ini_sys:r_string_ex(entity.section_name, "faction")}
-		desc.locations = { get_smart_name_by_id(entity.where) }
-	elseif entity.entity_type == "item" then
-		desc.targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
-	end
-	return desc
 end
 
 ------------------------------------------------
