@@ -85,7 +85,6 @@ function finalize_task_cache(task_data, task_id, tg_id)
 		entity.functors = entity.functors
 			or get_target_table(entity.target or "basic").FUNCTORS
 			or (entity.entity_type and {
-				setup = {"igi_target_basic.setup_"..entity.entity_type},
 				create = {"igi_target_basic.create_"..entity.entity_type},
 			}) or {}
 	end

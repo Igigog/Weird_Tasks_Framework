@@ -6,35 +6,19 @@ local WorldState = igi_world_state.WorldState
 function initialise_quest(task_data, task_id, tg_id)
 	trace_dbg("setup "..task_id, task_data)
 	local CACHE = igi_taskdata.finalize_task_cache(task_data, task_id, tg_id)
-	if not initialise_entities(CACHE) then
-		return nil
+
+	local new_entities = {}
+	for _, entity in pairs(CACHE.entities) do
+		local gen_entities = igi_generate.generate(entity)
+		for _, new_entity in pairs(gen_entities) do
+			new_entities[#new_entities+1] = new_entity
+		end
 	end
+	CACHE.entities = new_entities
 
 	igi_text_processor.resolve_and_link_cache(CACHE)
 	trace_dbg("CACHE after setup "..task_id, CACHE)
 	return CACHE
-end
-
-function initialise_entities(CACHE)
-	local entities = CACHE.entities
-	for _, entity in pairs(entities) do
-		if (not entity.tags.INIT) then
-            trace_dbg('setup group ' .. tostring(_), entity)
-			local ok = initialise(entity)
-			if not ok then return end
-			igi_linker.broadcast_entity(entities, entity)
-            trace_dbg('group_data', entity)
-		end
-	end
-
-	CACHE.entities = {}
-	for _, entity in pairs(entities) do
-		local gen_entities = igi_generate.generate(entity)
-		for _, new_entity in pairs(gen_entities) do
-			CACHE.entities[#CACHE.entities+1] = new_entity
-		end
-	end
-	return true
 end
 
 function create_entities(CACHE)
@@ -62,29 +46,13 @@ function create_entities(CACHE)
 	igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
 end
 
-function initialise(entity)
-	assert(not entity.tags.INIT, "Already initialized")
-	entity.tags.INIT = true
-
-	for _, functor_name in pairs(entity.functors.setup) do
-		local f = igi_helper.lookup_functor(functor_name, _G) --! only one functor right now
-		local ok, err = pcall(f, entity)
-		if not ok then
-			return trace_dbg("entity failed", entity, err)
-		end
-		trace_dbg("group_data", entity)
-		return ok
-	end
-end
-
 function create(entity)
-	trace_assert(entity.tags.INIT, "Not an initialised entity")
 	entity.tags.CREATED = true
 
 	igi_text_processor.resolve_macros(entity)
 	trace_dbg("processed entity", entity)
 
-	for _, functor_name in pairs(entity.functors.create) do
+	for _, functor_name in pairs(entity.functors.create or {}) do
 		igi_helper.lookup_functor(functor_name, _G)(entity)
 		trace_dbg("create after functor", functor_name, entity)
 	end
