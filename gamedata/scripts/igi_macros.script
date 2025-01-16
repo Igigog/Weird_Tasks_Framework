@@ -5,14 +5,11 @@ local Set = igi_utils.Set
 
 Macro = {
     new = function(str)
-		local out = assert(igi_helper.eval(str))
-    	trace_assert(out, "Macro fucked up and catched fire", str)
-		local t = {out}
-		return setmetatable(t, {__index = Macro})
+		return setmetatable({str}, {__index = Macro})
 	end,
 
 	resolve = function(self)
-		return self[1]
+		return assert(igi_helper.eval(self[1]))
 	end
 }
 
