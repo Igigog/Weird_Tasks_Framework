@@ -9,11 +9,14 @@ end
 
 function Amount(n)
     return function (entity)
+        local link_id = entity.link_id
+        entity.link_id = nil
         local new_entities = {}
         for _=1, n do
             local t = dup_table(entity)
             new_entities[#new_entities+1] = t
         end
+        new_entities[1].link_id = link_id
         return new_entities
     end
 end
@@ -30,6 +33,8 @@ function Split(field_in, field_out, count)
             return {entity}
         end
 
+        local link_id = entity.link_id
+        entity.link_id = nil
         local new_entities = {}
         for val in before:gmatch("[^,%s]+") do
             local t = dup_table(entity)
@@ -40,6 +45,7 @@ function Split(field_in, field_out, count)
                 break
             end
         end
+        new_entities[1].link_id = link_id
         return new_entities
     end
 end
