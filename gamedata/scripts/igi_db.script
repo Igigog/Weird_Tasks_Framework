@@ -27,6 +27,10 @@ function parse_values(str)
 	return values
 end
 
+function get(table)
+	return ini_tables[table]:as_table()
+end
+
 local function get_table(file, section)
 	if not file or not section then return end
 	local tbl = {}
