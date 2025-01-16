@@ -211,10 +211,8 @@ function get_objects_pool(sections, search_type)
 end
 
 
-function get_smarts(where)
+function get_smarts(lower_bound, higher_bound)
 	local smart_list = {}
-	local lower_bound, higher_bound = get_distance_bounds(where)
-
 	for i=lower_bound, higher_bound do
 		for level in pairs(WorldState.levels_by_distance[i]) do
 			for smart_name in pairs(WorldState.smarts_by_level[level]) do
@@ -226,6 +224,10 @@ function get_smarts(where)
 	end
 
 	return smart_list
+end
+
+function get_smarts_string(lower_bound, higher_bound)
+	return table.concat(get_smarts(lower_bound, higher_bound), ',')
 end
 
 function get_squads_by_args(args, factions)

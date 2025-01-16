@@ -107,7 +107,7 @@ function setup_location(entity)
 
 	local ids
 	if entity.search_for == 'smart' then
-		ids = igi_finder.get_smarts(entity.where)
+		return
 	elseif entity.search_for == 'stash' then
 		ids = igi_finder.get_stashes(entity)
 	else
