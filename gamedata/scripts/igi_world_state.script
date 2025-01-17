@@ -2,17 +2,7 @@
 -- local trace_assert = igi_helper.trace_assert
 
 function on_game_start()
-    RegisterScriptCallback("server_entity_on_register", server_entity_on_register)
-	RegisterScriptCallback("server_entity_on_unregister", server_entity_on_unregister)
     RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-end
-
-function server_entity_on_register(se_obj)
-	add_to_objects(se_obj)
-end
-
-function server_entity_on_unregister(se_obj)
-	remove_from_objects(se_obj)
 end
 
 function actor_on_first_update()
@@ -38,51 +28,10 @@ function release_entity(entity)
 end
 
 WorldState = {
-	objects_by_name = igi_utils.defaultdict(function () return {} end),
 	levels_by_distance = igi_utils.defaultdict(function () return {} end),
 	smarts_by_level = igi_utils.defaultdict(function () return {} end),
 	distance_by_level = {},
 }
-
-
-setmetatable(WorldState.objects, {__index = function (self, key)
-    local id = tonumber(key)
-	if not (id and id <= 65535) then
-		-- after if to avoid unnecessary string concatenation
-		igi_helper.trace_assert(nil, "Don't look at me, senpai, I'm "..tostring(key).." >//////<")
-	end
-
-    local se_obj = alife():object(id)
-    if not se_obj then return end
-
-    add_to_objects(se_obj)
-    return se_obj
-end})
-
-
-function fill_objects()
-    -- Is about 3x slower than naive implementation for first run, gets up to 5x faster for non-first runs
-    local add_to_objects, rawget = add_to_objects, rawget
-	local objects, sim = WorldState.objects, alife()
-    local sim_object = sim.object   -- this one access gives 25% performance boost
-	for i=1,65534 do
-        if not rawget(objects, i) then
-            local se_obj = sim_object(sim, i)
-            if se_obj then
-                add_to_objects(se_obj)
-            end
-        end
-	end
-    ResetTimeEvent("igi_world_state", "fill_objects", 30)
-end
-
-function add_to_objects(se_obj)
-    WorldState.objects_by_name[se_obj:section_name()][se_obj.id] = se_obj
-end
-
-function remove_from_objects(se_obj)
-	WorldState.objects_by_name[se_obj:section_name()][se_obj.id] = nil
-end
 
 ------------------------------
 

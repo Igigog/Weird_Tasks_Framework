@@ -46,9 +46,9 @@ function find_objects_in_world(lower_bound, higher_bound, sections)
 
 	local out = {}
 	for _, section in pairs(sections) do
-		for id in pairs(WorldState.objects_by_name[section] or {}) do
+		for id=1,65534 do
 			local se_obj = alife_object(id)
-			if se_obj
+			if se_obj and se_obj:section_name() == section
 					and check_location(se_obj, lower_bound, higher_bound)
 					and object_in_world(se_obj) then
 				out[#out+1] = id
@@ -62,25 +62,18 @@ end
 function find_items_in_enemy(lower_bound, higher_bound, sections)
 	trace_assert(#sections > 0, "No sections were given for searching")
 	
-	local pool = {}
-	for o_section, objects in pairs(WorldState.objects_by_name) do
-		for _, section in pairs(sections) do
-			if string.find(o_section, section) then
-				pool[#pool+1] = objects
-				break
-			end
-		end
-	end
-	
 	local out = {}
-	for _, group in pairs(pool) do
-		for id in pairs(group) do
-			local se_obj = alife_object(id)
-			if se_obj
-					and check_location(se_obj, lower_bound, higher_bound)
-					and igi_helper.is_common_npc(se_obj.parent_id)
-					and is_parent_enemy(se_obj) then
-				out[#out+1] = id
+	for id=1,65534 do
+		local se_obj = alife_object(id)
+		if se_obj
+				and check_location(se_obj, lower_bound, higher_bound)
+				and igi_helper.is_common_npc(se_obj.parent_id)
+				and is_parent_enemy(se_obj) then
+			for _, section in pairs(sections) do
+				if string.find(se_obj:section_name(), section) then
+					out[#out+1] = id
+					break
+				end
 			end
 		end
 	end
