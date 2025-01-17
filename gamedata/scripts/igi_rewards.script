@@ -138,14 +138,3 @@ Money = {
 		return points
 	end
 }
-
-Item = {
-	give = function (self)
-		for section, quantity in pairs(self) do
-			for _=1,quantity do
-				alife_create_item(section, db.actor)
-			end
-			news_manager.relocate_item(db.actor, "in", section, quantity)
-		end
-	end,
-}
