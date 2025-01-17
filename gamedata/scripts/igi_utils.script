@@ -41,19 +41,6 @@ Set = {
 		return new_set
 	end,
 
-	to_list = function(self)
-		local tbl = {}
-		for k in pairs(self) do
-			tbl[#tbl + 1] = k
-		end
-		tbl.__cls = nil
-		return tbl
-	end,
-
-	insert = function (self, k)
-		self[k] = true
-	end,
-
 	is_subset = function (set1, set2)
 		for k in pairs(set1) do
 			if not set2[k] then
