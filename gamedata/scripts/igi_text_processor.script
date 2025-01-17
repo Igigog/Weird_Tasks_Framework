@@ -3,6 +3,8 @@ local trace_assert  = igi_helper.trace_assert
 local convert_type = igi_utils.convert_type
 
 LinkContext  = {
+	_link_prefix = "__igi__link_",
+
 	new = function(self, CACHE)
 		local link_context = {
 			CACHE = CACHE,
@@ -24,6 +26,14 @@ LinkContext  = {
 	get = function(self, key)
 		return self[key]
 	end,
+
+	to_env = function (self)
+		local env = {}
+		for k, v in pairs(self) do
+			env[LinkContext._link_prefix .. k] = v
+		end
+		return env
+	end
 }
 
 Link = {
@@ -55,6 +65,10 @@ Link = {
 	resolve_field = function(self, entity)
 		return entity[self.field]
     end,
+
+	as_variable = function (self)
+		return LinkContext._link_prefix .. self.link_id .. "." .. self.field
+	end
 }
 
 local function str_to_link(str)
@@ -74,8 +88,8 @@ local function str_to_macro(str)
 	return string.match(str, "%$(.*)")
 end
 
-local function resolve_macro(macro)
-	return igi_helper.eval(macro)
+local function resolve_macro(macro, link_context)
+	return igi_helper.eval(macro, link_context:to_env())
 end
 
 local function resolve_links_in_str(str, link_context)
@@ -84,7 +98,7 @@ local function resolve_links_in_str(str, link_context)
 		local link = str_to_link(dep)
 		local resolved = link:resolve(link_context)
 		if resolved and not str_to_macro(resolved) then
-			str = convert_type(str:gsub(igi_utils.escape_pattern(dep), resolved))
+			str = str:gsub(igi_utils.escape_pattern(dep), link:as_variable())
 			has_changes = true
 		end
 	end
@@ -111,12 +125,12 @@ local function resolve_free_dependencies(link_context, tbl)
 	return has_changes
 end
 
-local function resolve_in_str(str, resolve_bangs)
+local function resolve_in_str(str, resolve_bangs, link_context)
 	local macro = str_to_macro(str)
 	if macro ~= nil then
 		if not has_link(str) and (resolve_bangs or string.sub(str, 1, 1) ~= "!") then
 			trace_dbg("resolve macro", str, macro)
-			local resolved = resolve_macro(macro)
+			local resolved = resolve_macro(macro, link_context)
 			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or resolved
 			trace_dbg("resolved", str, resolved_str)
 			return resolved_str
@@ -132,7 +146,7 @@ local function inner_resolve_and_link_table(tbl, link_context, resolve_bangs)
 	local has_changed = true
 	while has_changed do
 		has_changed = resolve_free_dependencies(link_context, tbl)
-		has_changed = resolve_macros(tbl, resolve_bangs) or has_changed
+		has_changed = resolve_macros(tbl, resolve_bangs, link_context) or has_changed
 		if has_changed then
 			made_changes = true
 		end
@@ -199,13 +213,13 @@ function has_no_outer_links(tbl, entity)
 	return true
 end
 
-function resolve_macros(tbl, resolve_bangs)
+function resolve_macros(tbl, resolve_bangs, link_context)
 	local has_changed = false
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
-			has_changed = resolve_macros(v, resolve_bangs) or has_changed
+			has_changed = resolve_macros(v, resolve_bangs, link_context) or has_changed
 		elseif type(v) == 'string' then
-			local out = resolve_in_str(v, resolve_bangs)
+			local out = resolve_in_str(v, resolve_bangs, link_context)
 			if out ~= v then
 				tbl[k] = out ~= nil and out or "nil"
 				has_changed = true

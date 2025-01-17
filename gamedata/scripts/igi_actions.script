@@ -4,10 +4,11 @@ local WorldState = igi_world_state.WorldState
 
 function update_actions(CACHE)
 	if not CACHE.actions then return end
+	local env = igi_text_processor.LinkContext:new(CACHE):to_env()
 	for _, action in pairs(CACHE.actions) do
-		if (not action._done) and igi_helper.eval(action.when) then
+		if (not action._done) and igi_helper.eval(action.when, env) then
 			trace_dbg("Run action", action)
-			action._done = not igi_helper.eval(action.run)
+			action._done = not igi_helper.eval(action.run, env)
 		 end
 	end
 end

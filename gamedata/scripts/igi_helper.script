@@ -168,13 +168,14 @@ end
 
 local fCache = {}
 
-function eval(v)
+function eval(v, env)
 	local f = fCache[v]
 	if f == nil then
-		local nf = loadstring("return " .. v)
-		fCache[v] = nf
-		---@diagnostic disable-next-line: need-check-nil
-		return nf()
+		f = loadstring("return " .. v)
+		fCache[v] = f
 	end
+	assert(f, "Unreachable")
+
+	setfenv(f, setmetatable(env or {}, {__index = _G}))
 	return f()
 end
