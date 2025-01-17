@@ -2,7 +2,6 @@ TARGET_NAME = "visit"
 PATTERN = "basic"
 FUNCTORS = {
 	status = {script_name()..".status"},
-	cleanup = {},
 }
 
 local WorldState = igi_world_state.WorldState

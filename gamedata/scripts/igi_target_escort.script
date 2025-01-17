@@ -2,7 +2,6 @@ TARGET_NAME = "escort"
 PATTERN = "basic"
 FUNCTORS = {
 	status = {script_name()..".status"},
-	cleanup = {},
 }
 
 local TASK_STATUSES = igi_subtask.TASK_STATUSES

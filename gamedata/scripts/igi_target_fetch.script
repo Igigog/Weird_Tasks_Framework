@@ -2,7 +2,6 @@ TARGET_NAME = "fetch"
 PATTERN = "basic"
 FUNCTORS = {
 	status = {script_name()..".status"},
-	cleanup = {},
 }
 
 local trace_assert = igi_helper.trace_assert
