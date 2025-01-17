@@ -16,17 +16,6 @@ function is_entity_in_world(entity)
 	return se_obj and se_obj.parent_id == 65535
 end
 
-function release_entity(entity)
-	local se_obj = igi_helper.get_binded_object(entity)
-	if not se_obj then return end
-
-	if entity.entity_type == 'item' then
-		safe_release_manager.release(se_obj)
-	elseif entity.entity_type == 'squad' then
-		SIMBOARD:remove_squad(se_obj)
-	end
-end
-
 WorldState = {
 	levels_by_distance = igi_utils.defaultdict(function () return {} end),
 	smarts_by_level = igi_utils.defaultdict(function () return {} end),
