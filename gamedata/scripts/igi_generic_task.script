@@ -116,7 +116,7 @@ function quest_target(task_id)
 	-- trace target in debug mode
 	--[[ local target_id = CACHE.current_target_id
 	if target_id and igi_mcm.get_options_value("debug") then
-		local se_obj = WorldState.objects[target_id]
+		local se_obj = alife_object(target_id)
 		if se_obj then
 			local sec = se_obj and se_obj:section_name() or "nil"
 			trace_dbg("target "..tostring(target_id).." is "..sec)

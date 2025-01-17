@@ -40,7 +40,7 @@ function is_completed(obj_data)
 
 	local cleared = true
 	for _, sq_id in pairs(obj_data.squads) do
-		local squad = WorldState.objects[sq_id]
+		local squad = alife_object(sq_id)
 		if squad then
 			cleared = false
 			if not (squad.first_update) then break end
@@ -56,7 +56,7 @@ local function add_target_squads(entity)
 	entity.squads = {}
 	local smart = SIMBOARD.smarts[entity.id]
 	for sq_id in pairs(smart.squads) do
-		local se_squad = WorldState.objects[sq_id]
+		local se_squad = alife_object(sq_id)
 		local actor_faction = character_community(db.actor)
 		local sq_faction = se_squad:get_squad_community()
 		if is_squad_at_smart(se_squad, entity.id) and
@@ -71,10 +71,10 @@ function entity_on_first_run(entity)
 end
 
 local function mark_distant_squads(entity)
-	local smart_position = WorldState.objects[entity.id].position
+	local smart_position = alife_object(entity.id).position
 
 	for _, sq_id in pairs(entity.squads) do
-		local se_squad = WorldState.objects[sq_id]
+		local se_squad = alife_object(sq_id)
 		if se_squad then
 			local is_marked = level.map_has_object_spot(se_squad.id, "red_location") == 1
 			local is_nearby = smart_position:distance_to_sqr(se_squad.position) < 2500
@@ -103,7 +103,7 @@ function test(entity)
 		assert_test(se_obj, "Entity does not exist")
 		if igi_mcm.get_options_value("fast_tests") then
 			for _, sq_id in pairs(entity.squads) do
-				local se_squad = WorldState.objects[sq_id]
+				local se_squad = alife_object(sq_id)
 				if se_squad then
 					igi_tests.teleport_to_player(se_squad)
 				end
@@ -113,7 +113,7 @@ function test(entity)
 		end
 	elseif entity._test_stage == 2 then
 		for _, sq_id in pairs(entity.squads) do
-			local se_squad = WorldState.objects[sq_id]
+			local se_squad = alife_object(sq_id)
 			if se_squad then
 				for se_npc in se_squad:squad_members() do
 					local npc = get_object_by_id(se_npc.id)

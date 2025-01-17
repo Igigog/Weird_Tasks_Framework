@@ -23,14 +23,14 @@ function on_game_start()
 end
 
 local function is_around(target_id, radius)
-	local position_of_target = WorldState.objects[target_id].position
+	local position_of_target = alife_object(target_id).position
     local position_of_player = db.actor:position()
 	return distance_2d_sqr(position_of_target, position_of_player) < radius
 end
 
 
 function add_squad_to_tables(squad_id, object_data)
-	local squad = WorldState.objects[squad_id]
+	local squad = alife_object(squad_id)
 	if not object_data.ara_to_kill then object_data.ara_to_kill = {} end
 
 	for member in squad:squad_members() do

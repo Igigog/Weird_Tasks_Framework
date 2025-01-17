@@ -9,7 +9,7 @@ local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 
 function is_completed(obj_data)
-	local se_obj = WorldState.objects[obj_data.id]
+	local se_obj = alife_object(obj_data.id)
 	if not se_obj then return true end
 	if se_obj:section_name() ~= obj_data.section_name then return true end
 end
@@ -54,17 +54,17 @@ end
 
 function calculate_complexity(entity)
 	local reward = 0
-	local se_squad = WorldState.objects[entity.id]
+	local se_squad = alife_object(entity.id)
 	local faction = se_squad:get_squad_community()
 
 	if string.find(faction, "monster") then
 		for se_npc in se_squad:squad_members() do
-			se_npc = WorldState.objects[se_npc.id]
+			se_npc = alife_object(se_npc.id)
 			reward = reward + get_monster_value(se_npc)
 		end
 	else
 		for se_npc in se_squad:squad_members() do
-			se_npc = WorldState.objects[se_npc.id]
+			se_npc = alife_object(se_npc.id)
 			reward = reward + get_npc_value(se_npc)
 		end
 	end

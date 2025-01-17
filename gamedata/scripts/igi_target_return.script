@@ -18,20 +18,20 @@ function ready_to_finish(se_obj)
 end
 
 function status(entity)
-	local se_obj = WorldState.objects[entity.id]
+	local se_obj = alife_object(entity.id)
 	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
 	if ready_to_finish(se_obj) then return TASK_STATUSES.READY_TO_FINISH end
 	return TASK_STATUSES.RUNNING
 end
 
 function entity_on_complete(obj_data)
-	local obj = WorldState.objects[obj_data.id]
+	local obj = alife_object(obj_data.id)
 	alife_release(obj)
 	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
 end
 
 function quest_target(obj_data)
-	local se_obj = WorldState.objects[obj_data.id]
+	local se_obj = alife_object(obj_data.id)
 	if not se_obj then return end
 
 	return se_obj.parent_id == 65535 and obj_data.id or se_obj.parent_id

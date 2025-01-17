@@ -91,7 +91,7 @@ end
 
 function get_task_text(desc_key, field, tg_id)
 	desc_key = desc_key or ""
-	local se_tg = igi_world_state.WorldState.objects[tg_id]
+	local se_tg = igi_world_state.alife_object(tg_id)
 	local tg_name = se_tg:section_name() ~= "m_trader" and se_tg:section_name() or se_tg:name()
 
 	-- returns exclusive task text if exists

@@ -9,7 +9,7 @@ local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function force_parent_online(se_obj)
 	if se_obj.parent_id == 65535 then return end
-	local parent = WorldState.objects[se_obj.parent_id]
+	local parent = alife_object(se_obj.parent_id)
 	local p_clsid = parent:clsid()
 	if IsStalker(parent, p_clsid)
 			or IsMonster(parent, p_clsid)
@@ -28,21 +28,21 @@ end
 function get_location_description(entity)
 	return get_smart_name_by_id(entity.id)
 		or get_smart_name_by_id(entity.where)
-		or (entity.id and dynamic_news_helper.GetPointDescription(WorldState.objects[entity.id]))
+		or (entity.id and dynamic_news_helper.GetPointDescription(alife_object(entity.id)))
 		or nil
 end
 
 function get_smart_name_by_id(id)
 	if tonumber(id) and SIMBOARD.smarts[id] then
-		local smart = WorldState.objects[id]
+		local smart = alife_object(id)
 		return "st_" .. smart:name() .. "_name"
 	end
 end
 
 function get_description(entity)
 	if type(entity.id) == "number" then
-		local se_obj = WorldState.objects[entity.id]
-		local parent_npc = igi_helper.is_common_npc(se_obj.parent_id) and WorldState.objects[se_obj.parent_id]
+		local se_obj = alife_object(entity.id)
+		local parent_npc = igi_helper.is_common_npc(se_obj.parent_id) and alife_object(se_obj.parent_id)
 
 		return {
 			locations = {get_location_description(entity)},
@@ -82,7 +82,7 @@ function create_on_smart(section_name, smart_id)
 end
 
 function create_in_inventory(section_name, parent_id)
-	local parent = WorldState.objects[parent_id]
+	local parent = alife_object(parent_id)
 	local se_obj = alife_create_item(section_name, parent)
 	if (parent.id == 0) then
 		news_manager.relocate_item(db.actor, "in", section_name, 1)

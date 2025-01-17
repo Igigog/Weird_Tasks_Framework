@@ -37,7 +37,7 @@ end
 local function is_parent_enemy(se_obj)
 	if se_obj.parent_id == 65535 then return end
 	local my_faction = get_object_community(db.actor)
-	local npc_faction = get_object_community(WorldState.objects[se_obj.parent_id])
+	local npc_faction = get_object_community(alife_object(se_obj.parent_id))
 	return game_relations.is_factions_enemies(my_faction, npc_faction)
 end
 
@@ -47,7 +47,7 @@ function find_objects_in_world(lower_bound, higher_bound, sections)
 	local out = {}
 	for _, section in pairs(sections) do
 		for id in pairs(WorldState.objects_by_name[section] or {}) do
-			local se_obj = WorldState.objects[id]
+			local se_obj = alife_object(id)
 			if se_obj
 					and check_location(se_obj, lower_bound, higher_bound)
 					and object_in_world(se_obj) then
@@ -75,7 +75,7 @@ function find_items_in_enemy(lower_bound, higher_bound, sections)
 	local out = {}
 	for _, group in pairs(pool) do
 		for id in pairs(group) do
-			local se_obj = WorldState.objects[id]
+			local se_obj = alife_object(id)
 			if se_obj
 					and check_location(se_obj, lower_bound, higher_bound)
 					and igi_helper.is_common_npc(se_obj.parent_id)
@@ -106,7 +106,7 @@ function get_stashes(lower_bound, higher_bound)
 	local stashes = treasure_manager.caches
 	local returned_stashes = {}
 	for id, is_not_available in pairs(stashes) do
-		local se_obj = WorldState.objects[id]
+		local se_obj = alife_object(id)
 		local suitable = se_obj and check_location(se_obj, lower_bound, higher_bound)
 		if (not is_not_available) and suitable then
 			returned_stashes[#returned_stashes+1] = id

@@ -15,7 +15,7 @@ end
 
 function is_common_npc(id)
 	--Parameter is correct | not world map | not player |
-	local npc = id and (id ~= 65535) and (id ~= 0) and WorldState.objects[id]
+	local npc = id and (id ~= 65535) and (id ~= 0) and alife_object(id)
 	--Exist | is stalker | alive |
 	if not (npc and IsStalker(nil,npc:clsid()) and npc:alive()) then return false end
 	--section_name has "sim_default", not "zombied"
@@ -39,7 +39,7 @@ end
 
 function get_binded_object(entity)
 	trace_assert(entity.section_name and entity.id, "Entity is not binded or id was removed", entity)
-	local se_obj = WorldState.objects[entity.id]
+	local se_obj = alife_object(entity.id)
 	if (not se_obj) or se_obj:section_name() ~= entity.section_name then return end
 	return se_obj
 end
@@ -49,7 +49,7 @@ function get_object_level_id(se_obj)
 	trace_assert(se_obj, "No se_obj")
 	if se_obj.parent_id ~= 65535 then
 		-- inside inventory
-		se_obj = WorldState.objects[se_obj.parent_id]
+		se_obj = alife_object(se_obj.parent_id)
 	end
 
 	return game_graph():vertex(se_obj.m_game_vertex_id):level_id()
@@ -121,9 +121,9 @@ function trace_assert(val, err, ...)
 end
 
 function get_community_by_id(id)
-	local se_obj = WorldState.objects[id]
+	local se_obj = alife_object(id)
 	if se_obj:clsid() == clsid.online_offline_group_s then
-		se_obj = WorldState.objects[se_obj:commander_id()]
+		se_obj = alife_object(se_obj:commander_id())
 	end
 
 	if se_obj:section_name() == "m_trader" then

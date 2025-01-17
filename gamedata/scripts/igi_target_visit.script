@@ -20,8 +20,8 @@ local function get_level_id(se_obj)
 end
 
 function is_complete(obj_data)
-	local target = WorldState.objects[obj_data.id]
-	local actor = WorldState.objects[0]
+	local target = alife_object(obj_data.id)
+	local actor = alife_object(0)
 	if get_level_id(target) ~= get_level_id(actor) then
 		return false end
 	return distance(target.position, actor.position) < MAX_DISTANCE_SQR

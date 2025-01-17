@@ -101,7 +101,7 @@ function release_fetch_items(entity)
 		if obj:section() ~= entity.section_name then
 			give_arti_container(obj)
 		end
-		alife_release(igi_world_state.WorldState.objects[id])
+		alife_release(igi_world_state.alife_object(id))
 	end
 
 	if amount < 0 then
@@ -135,7 +135,7 @@ function test(entity)
 	entity._test_stage = (entity._test_stage or 0) + 1
 
 	if entity._test_stage == 1 then
-		local se_actor = WorldState.objects[0]
+		local se_actor = alife_object(0)
 		for _=1, (entity.amount or 1) do
 			alife_create_item(entity.section_name, se_actor)
 		end

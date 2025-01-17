@@ -9,11 +9,11 @@ local WorldState = igi_world_state.WorldState
 
 
 function make_companion(entity)
-	local squad = WorldState.objects[entity.id]
+	local squad = alife_object(entity.id)
 
 	axr_companions.companion_squads[squad.id] = squad
 	for k in squad:squad_members() do
-		local se_obj = k.object or k.id and WorldState.objects[k.id]
+		local se_obj = k.object or k.id and alife_object(k.id)
 		se_save_var(se_obj.id,se_obj:name(),"companion",true)
 		se_save_var(se_obj.id,se_obj:name(),"companion_cannot_dismiss",true)
 		se_save_var(se_obj.id,se_obj:name(),"companion_cannot_teleport",entity.cant_teleport == "true")
@@ -37,7 +37,7 @@ function test(entity)
 	local assert_test = igi_tests.assert_test
 	local se_squad = igi_helper.get_binded_object(entity)
 	for member in se_squad:squad_members() do
-		local se_npc = igi_world_state.WorldState.objects[member.id]
+		local se_npc = igi_world_state.alife_object(member.id)
 		assert_test(
 			se_load_var(se_npc.id, se_npc:name(), "companion"), "Not in actor's squad")
 	end

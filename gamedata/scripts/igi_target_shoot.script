@@ -62,7 +62,7 @@ local function create_callback_function(squad_id, target_ids, weapon, ammo_type)
 end
 
 local function get_target_ids(squad_id, only_commander)
-    local se_squad = WorldState.objects[squad_id]
+    local se_squad = alife_object(squad_id)
     local ids = {}
     ids[se_squad:commander_id()] = true
     if not only_commander then
@@ -118,7 +118,7 @@ function test(entity)
 	if entity._test_stage == 1 then
 		local se_obj = igi_helper.get_binded_object(entity)
 		assert_test(se_obj, "Entity does not exist")
-        local se_wpn = alife_create_item("wpn_mp133", WorldState.objects[0])
+        local se_wpn = alife_create_item("wpn_mp133", alife_object(0))
         entity._test_wpn_id = se_wpn.id
         if igi_mcm.get_options_value("fast_tests") then
 			igi_tests.teleport_to_player(se_obj)
@@ -143,7 +143,7 @@ function test(entity)
 
     elseif entity._test_stage == 5 then
 		assert_test(entity.status == "READY_TO_FINISH", "Quest did not complete")
-        alife():release(WorldState.objects[entity._test_wpn_id])
+        alife():release(alife_object(entity._test_wpn_id))
 		return true
 	end
 end

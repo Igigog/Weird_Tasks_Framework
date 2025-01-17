@@ -41,9 +41,7 @@ WorldState = {
 	objects_by_name = igi_utils.defaultdict(function () return {} end),
 	levels_by_distance = igi_utils.defaultdict(function () return {} end),
 	smarts_by_level = igi_utils.defaultdict(function () return {} end),
-	objects = {}, -- 3x slower access to se_objects that do not exist, 100x faster access to existing objects
 	distance_by_level = {},
-	factions = _g.squad_community_by_behaviour,
 }
 
 
@@ -79,12 +77,10 @@ function fill_objects()
 end
 
 function add_to_objects(se_obj)
-    WorldState.objects[se_obj.id] = se_obj
     WorldState.objects_by_name[se_obj:section_name()][se_obj.id] = se_obj
 end
 
 function remove_from_objects(se_obj)
-    WorldState.objects[se_obj.id] = nil
 	WorldState.objects_by_name[se_obj:section_name()][se_obj.id] = nil
 end
 
