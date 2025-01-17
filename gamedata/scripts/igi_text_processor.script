@@ -168,7 +168,7 @@ end
 
 function try_str_to_link(str)
 	trace_assert(not has_macro(str), "Macro found in link! That's not allowed.", str)
-	local link_id, sep, field = str:match("%[([^%.]+)([%.%:])(.+)%]")
+	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
 
 	if not (link_id and field) then
 		return nil
