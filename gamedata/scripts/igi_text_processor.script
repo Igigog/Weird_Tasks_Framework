@@ -2,6 +2,71 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert  = igi_helper.trace_assert
 local convert_type = igi_utils.convert_type
 
+Macro = {
+    new = function(str)
+		return setmetatable({str}, {__index = Macro})
+	end,
+
+	resolve = function(self)
+		return igi_helper.eval(self[1])
+	end
+}
+
+LinkContext  = {
+	new = function(self, CACHE)
+		local link_context = {
+			CACHE = CACHE,
+			this = {}
+		}
+		for _, entity in pairs(CACHE.entities) do
+			if entity.link_id then
+				trace_assert(link_context[entity.link_id] == nil, "Entity already in context", link_context, entity)
+				link_context[entity.link_id] = entity
+			end
+		end
+		return setmetatable(link_context, { __index = self })
+	end,
+
+	set_this = function(self, entity)
+		self.this = entity
+	end,
+
+	get = function(self, key)
+		return self[key]
+	end,
+}
+
+Link = {
+	new = function (link_id, field)
+		local t = {
+			link_id = link_id,
+			field = field,
+		}
+
+		return setmetatable(t, {__index = Link})
+	end,
+
+	is_pointed_to = function (self, entity)
+		return self.link_id == entity.link_id
+	end,
+
+	points_to_self = function (self)
+		return self.link_id == "this"
+	end,
+
+    resolve = function(self, link_context)
+		trace_dbg("Link resolve", self, link_context)
+		local entity = link_context:get(self.link_id)
+		trace_assert(entity, "Linker can't find entity for link:", self)
+		local out = self:resolve_field(entity)
+		return out and tostring(out) or nil
+	end,
+
+	resolve_field = function(self, entity)
+		return entity[self.field]
+    end,
+}
+
 local function str_to_link(str)
 	local link = try_str_to_link(str)
 	return trace_assert(link, "Link can't be resolved: " .. str)
@@ -58,7 +123,7 @@ end
 
 local function try_str_to_macro(str)
 	local macro = string.match(str, "%&(.-)%&")
-	return macro and igi_macros.Macro.new(macro)
+	return macro and Macro.new(macro)
 end
 
 local function str_to_macro(str)
@@ -103,7 +168,7 @@ local function inner_resolve_and_link_table(tbl, link_context, resolve_bangs)
 end
 
 function resolve_macros_and_link_variables(CACHE, resolve_bangs)
-	local link_context = igi_linker.LinkContext:new(CACHE)
+	local link_context = LinkContext:new(CACHE)
 	local has_changed = true
 	while has_changed do
 		has_changed = false
@@ -119,7 +184,7 @@ end
 function resolve_and_link_cache(CACHE, resolve_bangs)
 	trace_dbg("Before resolve_and_link_cache", CACHE)
 	resolve_macros_and_link_variables(CACHE, resolve_bangs)
-	inner_resolve_and_link_table(CACHE, igi_linker.LinkContext:new(CACHE), resolve_bangs)
+	inner_resolve_and_link_table(CACHE, LinkContext:new(CACHE), resolve_bangs)
 	trace_dbg("After resolve_and_link_cache", CACHE)
 end
 
@@ -131,7 +196,7 @@ function try_str_to_link(str)
 		return nil
 	end
 
-	return igi_linker.Link.new(link_id, field)
+	return Link.new(link_id, field)
 end
 
 function link_entity(str, entity)

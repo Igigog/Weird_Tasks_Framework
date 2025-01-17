@@ -9,7 +9,6 @@
         "igi_random",
         "igi_activities",
         "character_community",
-        "igi_linker",
         "RegisterScriptCallback",
         "igi_callbacks",
         "printf",

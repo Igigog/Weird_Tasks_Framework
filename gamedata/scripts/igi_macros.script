@@ -3,16 +3,6 @@ local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
 local Set = igi_utils.Set
 
-Macro = {
-    new = function(str)
-		return setmetatable({str}, {__index = Macro})
-	end,
-
-	resolve = function(self)
-		return igi_helper.eval(self[1])
-	end
-}
-
 function ScaleToPlayer(a, b)
 	-- will return integer from a to b (or from 1 to a) based
 	-- on player rank
