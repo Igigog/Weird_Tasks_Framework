@@ -1,7 +1,7 @@
 TARGET_NAME = "kill"
 PATTERN = "basic"
 FUNCTORS = {
-	create = {"igi_target_basic.create_squad", script_name()..".setup_rewards"},
+	create = {},
 	status = {script_name()..".status"},
 	cleanup = {},
 }
@@ -21,7 +21,7 @@ function status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
-function setup_rewards(entity)
+function entity_on_first_run(entity)
 	entity._complexity = calculate_complexity(entity)
 end
 

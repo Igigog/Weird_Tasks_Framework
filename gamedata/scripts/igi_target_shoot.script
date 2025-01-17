@@ -1,7 +1,7 @@
 TARGET_NAME = "shoot"
 PATTERN = "basic"
 FUNCTORS = {
-	create = {"igi_target_basic.create_squad"},
+	create = {},
 	status = {script_name()..".status"},
 	cleanup = {},
 }

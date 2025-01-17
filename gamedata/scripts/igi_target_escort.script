@@ -1,7 +1,7 @@
 TARGET_NAME = "escort"
 PATTERN = "basic"
 FUNCTORS = {
-	create = {"igi_target_basic.create_squad", script_name()..".make_companion"},
+	create = {},
 	status = {script_name()..".status"},
 	cleanup = {},
 }
