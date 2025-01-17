@@ -77,7 +77,7 @@ local function resolve_in_str(str, resolve_bangs)
 				trace_dbg("resolve macro", macro_str, macro)
 				local resolved = macro:resolve()
 				local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or tostring(resolved)
-				trace_dbg("resolved", igi_utils.escape_pattern(macro_str), resolved_str)
+				trace_dbg("resolved", macro_str, resolved_str)
 				str = str:gsub(igi_utils.escape_pattern(macro_str), resolved_str)
 				changes = true
 				has_changed = true
@@ -118,7 +118,7 @@ end
 
 function resolve_and_link_cache(CACHE, resolve_bangs)
 	trace_dbg("Before resolve_and_link_cache", CACHE)
-	resolve_macros_and_link_variables(CACHE)
+	resolve_macros_and_link_variables(CACHE, resolve_bangs)
 	inner_resolve_and_link_table(CACHE, igi_linker.LinkContext:new(CACHE), resolve_bangs)
 	trace_dbg("After resolve_and_link_cache", CACHE)
 end
