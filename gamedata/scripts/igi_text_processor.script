@@ -70,8 +70,12 @@ local function has_link(str)
 	return link_iterator(str)()
 end
 
-local function has_macro(str)
-	return str:match("%!?%$.*")
+local function str_to_macro(str)
+	return string.match(str, "%$(.*)")
+end
+
+local function resolve_macro(macro)
+	return igi_helper.eval(macro)
 end
 
 local function resolve_links_in_str(str, link_context)
@@ -79,7 +83,7 @@ local function resolve_links_in_str(str, link_context)
 	for dep in link_iterator(str) do
 		local link = str_to_link(dep)
 		local resolved = link:resolve(link_context)
-		if resolved and not has_macro(resolved) then
+		if resolved and not str_to_macro(resolved) then
 			str = convert_type(str:gsub(igi_utils.escape_pattern(dep), resolved))
 			has_changes = true
 		end
@@ -107,19 +111,10 @@ local function resolve_free_dependencies(link_context, tbl)
 	return has_changes
 end
 
-local function str_to_macro(str)
-	local macro_str = string.match(str, "%$(.*)")
-	return trace_assert(macro_str, "Macro can't be resolved: " .. str)
-end
-
-local function resolve_macro(macro)
-	return igi_helper.eval(macro)
-end
-
 local function resolve_in_str(str, resolve_bangs)
-	if has_macro(str) then
+	local macro = str_to_macro(str)
+	if macro ~= nil then
 		if not has_link(str) and (resolve_bangs or string.sub(str, 1, 1) ~= "!") then
-			local macro = str_to_macro(str)
 			trace_dbg("resolve macro", str, macro)
 			local resolved = resolve_macro(macro)
 			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or resolved
@@ -167,7 +162,6 @@ function resolve_and_link_cache(CACHE, resolve_bangs)
 end
 
 function try_str_to_link(str)
-	trace_assert(not has_macro(str), "Macro found in link! That's not allowed.", str)
 	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
 
 	if not (link_id and field) then
