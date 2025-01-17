@@ -1,6 +1,5 @@
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert  = igi_helper.trace_assert
-local convert_type = igi_utils.convert_type
 
 LinkContext  = {
 	_link_prefix = "__igi__link_",

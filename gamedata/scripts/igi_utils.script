@@ -132,18 +132,6 @@ function defaultdict(factory)
 	return tbl
 end
 
-function convert_type(str)
-	if tonumber(str) then
-		return tonumber(str)
-	elseif str == "true" then
-		return true
-	elseif str == "false" then
-		return false
-	else
-		return str
-	end
-end
-
 function lookup_path(path, origin)
 	local curr = origin
 	for k in string.gmatch(path, "[^%.]+") do
