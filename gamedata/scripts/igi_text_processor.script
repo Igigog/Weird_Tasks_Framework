@@ -2,16 +2,6 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert  = igi_helper.trace_assert
 local convert_type = igi_utils.convert_type
 
-Macro = {
-    new = function(str)
-		return setmetatable({str}, {__index = Macro})
-	end,
-
-	resolve = function(self)
-		return igi_helper.eval(self[1])
-	end
-}
-
 LinkContext  = {
 	new = function(self, CACHE)
 		local link_context = {
@@ -119,8 +109,11 @@ end
 
 local function str_to_macro(str)
 	local macro_str = string.match(str, "%$(.*)")
-	local macro = macro_str and Macro.new(macro_str)
-	return trace_assert(macro, "Macro can't be resolved: " .. str)
+	return trace_assert(macro_str, "Macro can't be resolved: " .. str)
+end
+
+local function resolve_macro(macro)
+	return igi_helper.eval(macro)
 end
 
 local function resolve_in_str(str, resolve_bangs)
@@ -128,7 +121,7 @@ local function resolve_in_str(str, resolve_bangs)
 		if not has_link(str) and (resolve_bangs or string.sub(str, 1, 1) ~= "!") then
 			local macro = str_to_macro(str)
 			trace_dbg("resolve macro", str, macro)
-			local resolved = macro:resolve()
+			local resolved = resolve_macro(macro)
 			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or resolved
 			trace_dbg("resolved", str, resolved_str)
 			return resolved_str
