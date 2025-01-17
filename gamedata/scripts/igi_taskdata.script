@@ -65,7 +65,6 @@ local function get_task_data(quest_id)
 	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, quest_id)
 	return task_tbl
 end
-get_task_data = igi_utils.memoize_one_variable(get_task_data, "task_data")
 
 -------------------------------------------------
 -- global functions
@@ -100,4 +99,3 @@ function get_target_table(target)
 	end
 	return target_tbl
 end
-get_target_table = igi_utils.memoize_one_variable(get_target_table, "target_table")
