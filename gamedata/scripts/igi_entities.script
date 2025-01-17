@@ -42,8 +42,6 @@ function create_entities(CACHE)
 			trace_assert(nil, "Entity not created")
 		end
 	end
-
-	igi_callbacks.invoke_callbacks("on_after_target_creation", CACHE)
 end
 
 function create(entity)

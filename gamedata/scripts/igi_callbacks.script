@@ -8,9 +8,6 @@ local callbacks = {
 	on_first_run = {},
 	entity_on_first_run = {},
 
-	on_after_target_creation = {},
-	entity_on_after_target_creation = {},
-
 	on_task_update = {},
 	entity_on_task_update = {},
 
