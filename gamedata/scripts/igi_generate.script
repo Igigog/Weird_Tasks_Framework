@@ -1,5 +1,22 @@
 local trace_assert = igi_helper.trace_assert
 
+function run_ML(CACHE)
+	igi_text_processor.resolve_and_link_cache(CACHE)
+
+	local new_entities = {}
+	for _, entity in pairs(CACHE.entities) do
+		local gen_entities = generate(entity)
+		for _, new_entity in pairs(gen_entities) do
+			new_entities[#new_entities+1] = new_entity
+		end
+	end
+	CACHE.entities = new_entities
+
+	igi_text_processor.resolve_and_link_cache(CACHE)
+	return CACHE
+end
+
+
 function generate(entity)
     if not entity.GEN then return {entity} end
     local gen = igi_helper.eval(entity.GEN)

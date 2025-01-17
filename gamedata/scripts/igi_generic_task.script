@@ -64,8 +64,10 @@ function try_prepare_quest(task_id, task_data, tg_id)
 		end
 	end
 
-	TASK_SETUP[task_id] = igi_entities.initialise_quest(task_data, task_id, tg_id)
-	trace_dbg("setup", TASK_SETUP[task_id])
+	trace_dbg("setup "..task_id, task_data)
+	local CACHE = igi_taskdata.finalize_task_cache(task_data, task_id, tg_id)
+	TASK_SETUP[task_id] = igi_generate.run_ML(CACHE)
+	trace_dbg("CACHE after setup "..task_id, TASK_SETUP[task_id])
 	return TASK_SETUP[task_id]
 end
 

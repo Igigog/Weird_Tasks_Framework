@@ -86,8 +86,6 @@ function finalize_task_cache(task_data, task_id, tg_id)
 			or {}
 	end
 
-	igi_text_processor.resolve_and_link_cache(CACHE)
-
 	trace_dbg("finalized CACHE", CACHE)
 	return CACHE
 end
