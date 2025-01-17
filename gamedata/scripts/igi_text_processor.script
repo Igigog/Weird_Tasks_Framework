@@ -145,19 +145,6 @@ function resolve_and_link_cache(CACHE, level)
 	trace_dbg("After resolve_and_link_cache", CACHE)
 end
 
-function link_entity(str, entity)
-	for dep in link_iterator(str) do
-		local link = str_to_link(dep)
-		if link:is_pointed_to(entity) then
-			local val = link:resolve_field(entity)
-			if val ~= nil then
-				str = str:gsub(igi_utils.escape_pattern(dep), val)
-			end
-		end
-	end
-	return convert_type(str)
-end
-
 function has_no_outer_links(tbl, entity)
 	for k,v in pairs(tbl) do
 		if type(v) == 'string' then
