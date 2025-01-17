@@ -209,8 +209,7 @@ function assert_test(successful, reason, ...)
 end
 
 local function get_level_id(se_obj)
-	local WorldState = igi_world_state.WorldState
-    return WorldState.gg:vertex(se_obj.m_game_vertex_id):level_id()
+    return game_graph():vertex(se_obj.m_game_vertex_id):level_id()
 end
 
 function teleport_to_player(se_obj)

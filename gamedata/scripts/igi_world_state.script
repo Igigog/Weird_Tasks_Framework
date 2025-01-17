@@ -16,8 +16,6 @@ function server_entity_on_unregister(se_obj)
 end
 
 function actor_on_first_update()
-    WorldState.sim = alife()
-    WorldState.gg = game_graph()
     CreateTimeEvent("igi_world_state", "fill_objects", 0, fill_objects)
     sort_levels_by_distance()
 	sort_smarts_by_level()
@@ -56,7 +54,7 @@ setmetatable(WorldState.objects, {__index = function (self, key)
 		igi_helper.trace_assert(nil, "Don't look at me, senpai, I'm "..tostring(key).." >//////<")
 	end
 
-    local se_obj = WorldState.sim:object(id)
+    local se_obj = alife():object(id)
     if not se_obj then return end
 
     add_to_objects(se_obj)
@@ -67,7 +65,7 @@ end})
 function fill_objects()
     -- Is about 3x slower than naive implementation for first run, gets up to 5x faster for non-first runs
     local add_to_objects, rawget = add_to_objects, rawget
-	local objects, sim = WorldState.objects, WorldState.sim
+	local objects, sim = WorldState.objects, alife()
     local sim_object = sim.object   -- this one access gives 25% performance boost
 	for i=1,65534 do
         if not rawget(objects, i) then
@@ -124,8 +122,8 @@ function sort_levels_by_distance()
 end
 
 function sort_smarts_by_level()
-	local sim = WorldState.sim
-	local gg = WorldState.gg
+	local sim = alife()
+	local gg = game_graph()
     local smarts_by_level = WorldState.smarts_by_level
 
 	for name, smart in pairs(SIMBOARD.smarts_by_names) do

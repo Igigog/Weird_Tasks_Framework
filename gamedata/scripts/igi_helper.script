@@ -56,7 +56,7 @@ function get_object_level_id(se_obj)
 end
 
 function get_object_level(obj)
-	return WorldState.sim:level_name(igi_helper.get_object_level_id(obj))
+	return alife():level_name(igi_helper.get_object_level_id(obj))
 end
 
 function get_faction_enemies(faction)
