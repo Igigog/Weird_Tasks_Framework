@@ -21,41 +21,6 @@ function initialise_quest(task_data, task_id, tg_id)
 	return CACHE
 end
 
-function create_entities(CACHE)
-	local entities = CACHE.entities
-	-- if it's not ready after n^2 tries, it won't be ready
-	for _=1, size_table(entities) do
-		for _,entity in pairs(entities) do
-			if (not entity.tags.CREATED) and igi_text_processor.has_no_outer_links(entity, entity) then
-				trace_dbg("entity_setup", entity)
-				create(entity)
-				igi_linker.broadcast_entity(entities, entity)
-				trace_dbg(
-					"After broadcasting "..tostring(entity.link_id), entities)
-			end
-		end
-	end
-
-	for _,entity in pairs(entities) do
-		if not entity.tags.CREATED then
-			trace_dbg("Creation failed", entities)
-			trace_assert(nil, "Entity not created")
-		end
-	end
-end
-
-function create(entity)
-	entity.tags.CREATED = true
-
-	igi_text_processor.resolve_macros(entity)
-	trace_dbg("processed entity", entity)
-
-	for _, functor_name in pairs(entity.functors.create or {}) do
-		igi_helper.lookup_functor(functor_name, _G)(entity)
-		trace_dbg("create after functor", functor_name, entity)
-	end
-end
-
 function get_binded_object(entity)
 	trace_assert(entity.section_name and entity.id, "Entity is not binded or id was removed", entity)
 	local se_obj = WorldState.objects[entity.id]

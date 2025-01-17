@@ -55,14 +55,3 @@ Link = {
 		return entity[self.field]
     end,
 }
-
-function broadcast_entity(entities, entity)
-	if not entity.link_id then return end
-	for k,v in pairs(entities) do
-		if type(v) == 'string' then
-			entities[k] = igi_text_processor.link_entity(v, entity)
-		elseif type(v) == 'table' then
-			broadcast_entity(v, entity)
-		end
-	end
-end

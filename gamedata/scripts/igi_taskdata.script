@@ -81,12 +81,9 @@ function finalize_task_cache(task_data, task_id, tg_id)
 	CACHE.task_giver_id = tg_id
 
 	for _, entity in pairs(CACHE.entities) do
-		entity.tags = entity.tags or {}
 		entity.functors = entity.functors
 			or get_target_table(entity.target or "basic").FUNCTORS
-			or (entity.entity_type and {
-				create = {"igi_target_basic.create_"..entity.entity_type},
-			}) or {}
+			or {}
 	end
 
 	igi_text_processor.resolve_and_link_cache(CACHE)
