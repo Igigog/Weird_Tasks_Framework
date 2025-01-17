@@ -63,11 +63,6 @@ end
 -- Called after getting a task to create/prepare actual game objects
 ------------------------------------------------
 
-function squad_create(smart_id, section)
-	assert(smart_id and section, "No smart_id or section")
-	return utils_obj.create_squad(section, alife_object(smart_id):name())
-end
-
 function init_squad(id)
 	local se_obj = alife_object(id)
 	se_obj.stay_time = game.get_game_time()
