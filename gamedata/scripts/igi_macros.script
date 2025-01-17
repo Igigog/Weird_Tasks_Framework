@@ -9,7 +9,7 @@ Macro = {
 	end,
 
 	resolve = function(self)
-		return assert(igi_helper.eval(self[1]))
+		return igi_helper.eval(self[1])
 	end
 }
 
