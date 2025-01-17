@@ -66,7 +66,7 @@ function try_prepare_quest(task_id, task_data, tg_id)
 
 	trace_dbg("setup "..task_id, task_data)
 	local CACHE = igi_taskdata.finalize_task_cache(task_data, task_id, tg_id)
-	TASK_SETUP[task_id] = igi_generate.run_ML(CACHE)
+	TASK_SETUP[task_id] = igi_generate.run_ML(CACHE, "")
 	trace_dbg("CACHE after setup "..task_id, TASK_SETUP[task_id])
 	return TASK_SETUP[task_id]
 end
@@ -87,7 +87,7 @@ function initialise_CACHE(task_id)
 	local CACHE = get_cache(task_id)
 
 	igi_subtask.initialise_subtasks(CACHE)
-	igi_text_processor.resolve_and_link_cache(CACHE, true)
+	igi_text_processor.resolve_and_link_cache(CACHE, "!")
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
 end
