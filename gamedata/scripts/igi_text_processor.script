@@ -117,13 +117,9 @@ local function resolve_free_dependencies(link_context, tbl)
 	return has_changes
 end
 
-local function try_str_to_macro(str)
-	local macro = string.match(str, "%$(.*)")
-	return macro and Macro.new(macro)
-end
-
 local function str_to_macro(str)
-	local macro = try_str_to_macro(str)
+	local macro_str = string.match(str, "%$(.*)")
+	local macro = macro_str and Macro.new(macro_str)
 	return trace_assert(macro, "Macro can't be resolved: " .. str)
 end
 
