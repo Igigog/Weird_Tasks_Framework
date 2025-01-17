@@ -76,16 +76,12 @@ local function link_iterator(str)
 	return str:gmatch("%b[]")
 end
 
-local function macro_iterator(str)
-	return str:gmatch("%!?%&[^%&]*%&")
-end
-
 local function has_link(str)
 	return link_iterator(str)()
 end
 
 local function has_macro(str)
-	return macro_iterator(str)()
+	return str:match("%!?%$.*")
 end
 
 local function resolve_links_in_str(str, link_context)
@@ -122,7 +118,7 @@ local function resolve_free_dependencies(link_context, tbl)
 end
 
 local function try_str_to_macro(str)
-	local macro = string.match(str, "%&(.-)%&")
+	local macro = string.match(str, "%$(.*)")
 	return macro and Macro.new(macro)
 end
 
@@ -133,20 +129,15 @@ end
 
 local function resolve_in_str(str, resolve_bangs)
 	local has_changed = false
-	local changes = true
-	while changes do
-		changes = false
-		for macro_str in macro_iterator(str) do
-			if not has_link(macro_str) and (resolve_bangs or string.sub(macro_str, 1, 1) ~= "!") then
-				local macro = str_to_macro(macro_str)
-				trace_dbg("resolve macro", macro_str, macro)
-				local resolved = macro:resolve()
-				local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or tostring(resolved)
-				trace_dbg("resolved", macro_str, resolved_str)
-				str = str:gsub(igi_utils.escape_pattern(macro_str), resolved_str)
-				changes = true
-				has_changed = true
-			end
+	if has_macro(str) then
+		if not has_link(str) and (resolve_bangs or string.sub(str, 1, 1) ~= "!") then
+			local macro = str_to_macro(str)
+			trace_dbg("resolve macro", str, macro)
+			local resolved = macro:resolve()
+			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or tostring(resolved)
+			trace_dbg("resolved", str, resolved_str)
+			str = str:gsub(igi_utils.escape_pattern(str), resolved_str)
+			has_changed = true
 		end
 	end
 
