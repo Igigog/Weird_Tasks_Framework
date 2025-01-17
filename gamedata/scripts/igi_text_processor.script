@@ -62,6 +62,10 @@ Link = {
 	end
 }
 
+function escape_pattern(text)
+    return text:gsub("([^%w])", "%%%1")
+end
+
 local function str_to_link(str)
 	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
 	trace_assert(link_id and field, "Link can't be resolved: " .. str)
@@ -87,7 +91,7 @@ local function resolve_links_in_str(str, link_context)
 		if (not resolved) or str_to_macro(resolved) then
 			return
 		end
-		str = str:gsub(igi_utils.escape_pattern(dep), link:as_variable())
+		str = str:gsub(escape_pattern(dep), link:as_variable())
 	end
 	return str
 end
