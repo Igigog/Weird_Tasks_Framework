@@ -24,12 +24,12 @@ function actor_on_first_update()
 end
 
 function is_entity_in_world(entity)
-	local se_obj = igi_entities.get_binded_object(entity)
+	local se_obj = igi_helper.get_binded_object(entity)
 	return se_obj and se_obj.parent_id == 65535
 end
 
 function release_entity(entity)
-	local se_obj = igi_entities.get_binded_object(entity)
+	local se_obj = igi_helper.get_binded_object(entity)
 	if not se_obj then return end
 
 	if entity.entity_type == 'item' then
