@@ -128,20 +128,18 @@ local function str_to_macro(str)
 end
 
 local function resolve_in_str(str, resolve_bangs)
-	local has_changed = false
 	if has_macro(str) then
 		if not has_link(str) and (resolve_bangs or string.sub(str, 1, 1) ~= "!") then
 			local macro = str_to_macro(str)
 			trace_dbg("resolve macro", str, macro)
 			local resolved = macro:resolve()
-			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or tostring(resolved)
+			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or resolved
 			trace_dbg("resolved", str, resolved_str)
-			str = str:gsub(igi_utils.escape_pattern(str), resolved_str)
-			has_changed = true
+			return resolved_str
 		end
 	end
 
-	return str, has_changed
+	return str
 end
 
 local function inner_resolve_and_link_table(tbl, link_context, resolve_bangs)
@@ -224,9 +222,9 @@ function resolve_macros(tbl, resolve_bangs)
 		if type(v) == 'table' then
 			has_changed = resolve_macros(v, resolve_bangs) or has_changed
 		elseif type(v) == 'string' then
-			local str, changes = resolve_in_str(v, resolve_bangs)
-			if changes then
-				tbl[k] = convert_type(str)
+			local out = resolve_in_str(v, resolve_bangs)
+			if out ~= v then
+				tbl[k] = out ~= nil and out or "nil"
 				has_changed = true
 			end
 
