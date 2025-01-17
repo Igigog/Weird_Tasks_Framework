@@ -19,21 +19,27 @@ end
 
 function generate(entity)
     if not entity.GEN then return {entity} end
-    local gen = igi_helper.eval(entity.GEN)
+
+    local gen_str = entity.GEN
+    local link_id = entity.link_id
+    entity.link_id = nil
     entity.GEN = nil
-    return gen(entity)
+
+    local new_entities = igi_helper.eval(gen_str)(entity)
+
+    new_entities[1].link_id = link_id
+    new_entities[1]._GEN = gen_str
+
+    return new_entities
 end
 
 function Amount(n)
     return function (entity)
-        local link_id = entity.link_id
-        entity.link_id = nil
         local new_entities = {}
         for _=1, n do
             local t = dup_table(entity)
             new_entities[#new_entities+1] = t
         end
-        new_entities[1].link_id = link_id
         return new_entities
     end
 end
@@ -50,8 +56,6 @@ function Split(field_in, field_out, count)
             return {entity}
         end
 
-        local link_id = entity.link_id
-        entity.link_id = nil
         local new_entities = {}
         for val in before:gmatch("[^,%s]+") do
             local t = dup_table(entity)
@@ -62,7 +66,6 @@ function Split(field_in, field_out, count)
                 break
             end
         end
-        new_entities[1].link_id = link_id
         return new_entities
     end
 end
