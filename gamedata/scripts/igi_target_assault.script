@@ -68,7 +68,7 @@ local function add_target_squads(entity)
 	end
 end
 
-function entity_on_after_target_creation(entity)
+function entity_on_first_run(entity)
 	add_target_squads(entity)
 end
 
