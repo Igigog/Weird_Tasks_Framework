@@ -37,8 +37,7 @@ function Amount(n)
     return function (entity)
         local new_entities = {}
         for _=1, n do
-            local t = dup_table(entity)
-            new_entities[#new_entities+1] = t
+            new_entities[#new_entities+1] = dup_table(entity)
         end
         return new_entities
     end
@@ -47,25 +46,23 @@ end
 function Split(field_in, field_out, count)
     return function (entity)
         local before = entity[field_in]
-        trace_assert(before ~= nil, "Split field is nil", entity)
+        trace_assert(type(before) == "table", "Split field is not a table", entity)
         trace_assert(field_out ~= nil, "Split out field is nil", entity)
 
         entity[field_in] = nil
-        if type(before) ~= "string" then -- probably single value converted to other type
-            entity[field_out] = before
-            return {entity}
-        end
 
         local new_entities = {}
-        for val in before:gmatch("[^,%s]+") do
+        for _, val in ipairs(before) do
             local t = dup_table(entity)
-            t[field_out] = igi_utils.convert_type(val)
+            t[field_out] = val
             new_entities[#new_entities+1] = t
 
             if count and #new_entities >= count then
                 break
             end
         end
+        
+        new_entities[1][field_in] = before
         return new_entities
     end
 end

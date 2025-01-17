@@ -97,11 +97,9 @@ local function resolve_in_str(str, level, link_context)
 	if macro and macro_level == level then
 		local without_links = resolve_links_in_str(macro, link_context)
 		if without_links then
-			trace_dbg("resolve macro", str, without_links)
 			local resolved = resolve_macro(without_links, link_context)
-			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or resolved
-			trace_dbg("resolved", str, resolved_str)
-			return resolved_str
+			trace_dbg("resolved macro", str, resolved)
+			return resolved
 		end
 	end
 
