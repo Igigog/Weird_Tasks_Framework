@@ -112,7 +112,8 @@ end
 update_mark = function(entity)
 	if not entity.mark then return end
 	local has_spot = level.map_has_object_spot(entity.id, entity.mark) == 1
-	local object_in_world = igi_world_state.is_entity_in_world(entity)
+	local se_obj = igi_helper.get_binded_object(entity)
+	local object_in_world = se_obj and se_obj.parent_id == 65535
 
 	if object_in_world and not has_spot then
 		level.map_add_object_spot(entity.id, entity.mark, game.translate_string(entity.mark))

@@ -6,14 +6,8 @@ function on_game_start()
 end
 
 function actor_on_first_update()
-    CreateTimeEvent("igi_world_state", "fill_objects", 0, fill_objects)
     sort_levels_by_distance()
 	sort_smarts_by_level()
-end
-
-function is_entity_in_world(entity)
-	local se_obj = igi_helper.get_binded_object(entity)
-	return se_obj and se_obj.parent_id == 65535
 end
 
 WorldState = {
