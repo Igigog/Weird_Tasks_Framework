@@ -65,7 +65,6 @@ function add_from_entity(description, entity, entities)
 	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
 	local desc = target_tbl.get_description(entity)
 	for k, tbl in pairs(desc) do
-		link_locations(tbl, entities)
 		add_all_values(description[k], tbl)
 	end
 end
@@ -74,18 +73,6 @@ function add_all_values(dest, src)
 	for _, v in pairs(src) do
 		if not table_find(dest, v) then
 			dest[#dest+1] = v
-		end
-	end
-end
-
-function link_locations(tbl, entities)
-	for k, v in pairs(tbl) do
-		if type(v) == "string" then
-			local link = igi_text_processor.try_str_to_link(v)
-			if link then
-				local loc = link:resolve(entities)
-				tbl[k] = igi_target_basic.get_location_description(loc)
-			end
 		end
 	end
 end

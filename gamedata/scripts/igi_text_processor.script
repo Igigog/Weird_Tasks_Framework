@@ -72,16 +72,13 @@ Link = {
 }
 
 local function str_to_link(str)
-	local link = try_str_to_link(str)
-	return trace_assert(link, "Link can't be resolved: " .. str)
+	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
+	trace_assert(link_id and field, "Link can't be resolved: " .. str)
+	return Link.new(link_id, field)
 end
 
 local function link_iterator(str)
 	return str:gmatch("%b[]")
-end
-
-local function has_link(str)
-	return link_iterator(str)()
 end
 
 local function str_to_macro(str)
@@ -93,44 +90,24 @@ local function resolve_macro(macro, link_context)
 end
 
 local function resolve_links_in_str(str, link_context)
-	local has_changes = false
 	for dep in link_iterator(str) do
 		local link = str_to_link(dep)
 		local resolved = link:resolve(link_context)
-		if resolved and not str_to_macro(resolved) then
-			str = str:gsub(igi_utils.escape_pattern(dep), link:as_variable())
-			has_changes = true
+		if (not resolved) or str_to_macro(resolved) then
+			return
 		end
+		str = str:gsub(igi_utils.escape_pattern(dep), link:as_variable())
 	end
-	return str, has_changes
-end
-
-local function resolve_free_dependencies(link_context, tbl)
-	-- trace_dbg("resolve before ", tbl)
-	local has_changes = false
-	for k, v in pairs(tbl) do
-		if type(v) == "table" then
-			if resolve_free_dependencies(link_context, v) then
-				has_changes = true
-			end
-		elseif type(v) == "string" then
-			local str, changes = resolve_links_in_str(v, link_context)
-			if changes then
-				tbl[k] = str
-				has_changes = true
-			end
-		end
-	end
-	-- trace_dbg("resolve after ", tbl, has_changes)
-	return has_changes
+	return str
 end
 
 local function resolve_in_str(str, level, link_context)
 	local macro_level, macro = str_to_macro(str)
-	if macro ~= nil then
-		if not has_link(str) and macro_level == level then
-			trace_dbg("resolve macro", str, macro)
-			local resolved = resolve_macro(macro, link_context)
+	if macro and macro_level == level then
+		local without_links = resolve_links_in_str(macro, link_context)
+		if without_links then
+			trace_dbg("resolve macro", str, without_links)
+			local resolved = resolve_macro(without_links, link_context)
 			local resolved_str = type(resolved) == "table" and table.concat(resolved, ',') or resolved
 			trace_dbg("resolved", str, resolved_str)
 			return resolved_str
@@ -142,14 +119,8 @@ end
 
 local function inner_resolve_and_link_table(tbl, link_context, level)
 	local made_changes = false
-
-	local has_changed = true
-	while has_changed do
-		has_changed = resolve_free_dependencies(link_context, tbl)
-		has_changed = resolve_macros(tbl, level, link_context) or has_changed
-		if has_changed then
-			made_changes = true
-		end
+	while resolve_macros(tbl, level, link_context) do
+		made_changes = true
 	end
 	return made_changes
 end
@@ -173,16 +144,6 @@ function resolve_and_link_cache(CACHE, level)
 	resolve_macros_and_link_variables(CACHE, level)
 	inner_resolve_and_link_table(CACHE, LinkContext:new(CACHE), level)
 	trace_dbg("After resolve_and_link_cache", CACHE)
-end
-
-function try_str_to_link(str)
-	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
-
-	if not (link_id and field) then
-		return nil
-	end
-
-	return Link.new(link_id, field)
 end
 
 function link_entity(str, entity)
