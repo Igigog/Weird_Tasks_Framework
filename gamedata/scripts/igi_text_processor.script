@@ -45,14 +45,6 @@ Link = {
 		return setmetatable(t, {__index = Link})
 	end,
 
-	is_pointed_to = function (self, entity)
-		return self.link_id == entity.link_id
-	end,
-
-	points_to_self = function (self)
-		return self.link_id == "this"
-	end,
-
     resolve = function(self, link_context)
 		trace_dbg("Link resolve", self, link_context)
 		local entity = link_context:get(self.link_id)
@@ -143,21 +135,6 @@ function resolve_and_link_cache(CACHE, level)
 	resolve_macros_and_link_variables(CACHE, level)
 	inner_resolve_and_link_table(CACHE, LinkContext:new(CACHE), level)
 	trace_dbg("After resolve_and_link_cache", CACHE)
-end
-
-function has_no_outer_links(tbl, entity)
-	for k,v in pairs(tbl) do
-		if type(v) == 'string' then
-			for str in link_iterator(v) do
-				if not str_to_link(str):points_to_self() then
-					return false
-				end
-			end
-		elseif type(v) == 'table' and not has_no_outer_links(v, entity) then
-			return false
-		end
-	end
-	return true
 end
 
 function resolve_macros(tbl, level, link_context)
