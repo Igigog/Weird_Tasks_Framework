@@ -99,7 +99,7 @@ function test(entity)
 	entity._test_stage = (entity._test_stage or 0) + 1
 
 	if entity._test_stage == 1 then
-		local se_obj = igi_entities.get_binded_object(entity)
+		local se_obj = igi_helper.get_binded_object(entity)
 		assert_test(se_obj, "Entity does not exist")
 		if igi_mcm.get_options_value("fast_tests") then
 			for _, sq_id in pairs(entity.squads) do

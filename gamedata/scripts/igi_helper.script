@@ -50,6 +50,13 @@ function is_common_npc(id)
 	return true
 end
 
+function get_binded_object(entity)
+	trace_assert(entity.section_name and entity.id, "Entity is not binded or id was removed", entity)
+	local se_obj = WorldState.objects[entity.id]
+	if (not se_obj) or se_obj:section_name() ~= entity.section_name then return end
+	return se_obj
+end
+
 
 function get_object_level_id(se_obj)
 	trace_assert(se_obj, "No se_obj")
@@ -144,7 +151,7 @@ function get_community_by_id(id)
 end
 
 function find_in_game_object(entity, field)
-	local se_obj = igi_entities.get_binded_object(entity)
+	local se_obj = igi_helper.get_binded_object(entity)
 	if type(se_obj[field]) == "function" then
 		return se_obj[field]()
 	end

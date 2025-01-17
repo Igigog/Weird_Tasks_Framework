@@ -29,13 +29,13 @@ function status(entity)
 end
 
 function entity_on_complete(entity)
-    local se_squad = igi_entities.get_binded_object(entity)
+    local se_squad = igi_helper.get_binded_object(entity)
     axr_companions.dismiss_special_squad(se_squad)
 end
 
 function test(entity)
 	local assert_test = igi_tests.assert_test
-	local se_squad = igi_entities.get_binded_object(entity)
+	local se_squad = igi_helper.get_binded_object(entity)
 	for member in se_squad:squad_members() do
 		local se_npc = igi_world_state.WorldState.objects[member.id]
 		assert_test(
