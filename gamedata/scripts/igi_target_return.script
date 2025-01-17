@@ -1,7 +1,7 @@
 TARGET_NAME = "return"
 PATTERN = "basic"
 FUNCTORS = {
-	create = {"igi_target_basic.create_item"},
+	create = {},
 	status = {script_name()..".status"},
 	cleanup = {},
 }
