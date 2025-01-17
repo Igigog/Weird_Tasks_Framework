@@ -102,10 +102,6 @@ function get_smarts(lower_bound, higher_bound)
 	return smart_list
 end
 
-function get_smarts_string(lower_bound, higher_bound)
-	return table.concat(get_smarts(lower_bound, higher_bound), ',')
-end
-
 function get_stashes(lower_bound, higher_bound)
 	local stashes = treasure_manager.caches
 	local returned_stashes = {}
@@ -118,8 +114,4 @@ function get_stashes(lower_bound, higher_bound)
 	end
 	trace_dbg("Stashes: ", returned_stashes)
 	return returned_stashes
-end
-
-function get_stashes_string(lower_bound, higher_bound)
-	return table.concat(get_smarts(lower_bound, higher_bound), ',')
 end
