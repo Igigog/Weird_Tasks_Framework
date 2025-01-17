@@ -4,15 +4,6 @@
 
 local WorldState = igi_world_state.WorldState
 
-function level_object(id)
-	id = tonumber(id)
-	if not id then
-		callstack()
-		trace_assert(nil, "Don't look at me, senpai >//////<\n")
-	end
-	return level.object_by_id(id)
-end
-
 function get_task_name(task_id)
 	return task_id[1], task_id[2]
 end

@@ -44,7 +44,7 @@ local function create_callback_function(squad_id, target_ids, weapon, ammo_type)
         if not target_ids[npc:id()] then return end
         if shit.draftsman:id() ~= 0 then return end
 
-        local wpn = igi_helper.level_object(shit.weapon_id)
+        local wpn = get_object_by_id(shit.weapon_id)
         if weapon and (wpn:section() ~= weapon) then return end
 
         if ammo_type then
@@ -127,7 +127,7 @@ function test(entity)
 		end
 
     elseif entity._test_stage == 2 then
-        local obj = igi_helper.level_object(entity._test_wpn_id)
+        local obj = get_object_by_id(entity._test_wpn_id)
 		db.actor:make_item_active(obj)
 
         local se_squad = igi_helper.get_binded_object(entity)
@@ -135,7 +135,7 @@ function test(entity)
 
 	elseif entity._test_stage == 4 then
 		local se_squad = igi_helper.get_binded_object(entity)
-        local npc = igi_helper.level_object(se_squad:commander_id())
+        local npc = get_object_by_id(se_squad:commander_id())
         local dir = npc:position():sub(db.actor:position())
         db.actor:set_actor_direction(-dir:getH())
         level.press_action(DIK_keys.MOUSE_1)

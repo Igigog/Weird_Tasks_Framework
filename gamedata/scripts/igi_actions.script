@@ -14,7 +14,7 @@ function update_actions(CACHE)
 end
 
 function repair(id, condition)
-	local item = igi_helper.level_object(id)
+	local item = get_object_by_id(id)
 	if not item then return end
 	item:set_condition(condition/100)
 end
@@ -23,7 +23,7 @@ function change_faction(id, faction)
 	local se_squad = WorldState.objects[id]
 	if not se_squad or not se_squad.squad_members then return end
 	for npc in se_squad:squad_members() do
-		local member = igi_helper.level_object(npc.id)
+		local member = get_object_by_id(npc.id)
 		if member then
 			member:set_character_community(faction, 0, 0)
 		end
@@ -47,7 +47,7 @@ function is_online(id)
 end
 
 function is_low_condition(id, max_condition)
-	local item = igi_helper.level_object(id)
+	local item = get_object_by_id(id)
 	if not item then return false end
 	return item:condition() < (max_condition / 100)
 end

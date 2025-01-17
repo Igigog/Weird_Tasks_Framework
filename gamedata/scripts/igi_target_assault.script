@@ -116,10 +116,10 @@ function test(entity)
 			local se_squad = WorldState.objects[sq_id]
 			if se_squad then
 				for se_npc in se_squad:squad_members() do
-					local npc = igi_helper.level_object(se_npc.id)
+					local npc = get_object_by_id(se_npc.id)
 					npc:kill(db.actor)
 				end
-				igi_helper.level_object(se_squad:commander_id()):kill(db.actor)
+				get_object_by_id(se_squad:commander_id()):kill(db.actor)
 			end
 		end
 	elseif entity._test_stage == 4 then
