@@ -50,8 +50,7 @@ local function build_task_page(task, prefix)
 end
 
 local function build_task_pack_tree(prefix, names)
-	local meta_ltx = igi_db.LtxView("tasks\\" .. prefix .. "\\meta.ltx")
-	local tree = Tree.new(prefix):text(meta_ltx.meta and meta_ltx.meta.name or prefix)
+	local tree = Tree.new(prefix):text(prefix)
 	for task_name in pairs(names) do
 		tree:add_page(build_task_page(task_name, prefix))
 	end

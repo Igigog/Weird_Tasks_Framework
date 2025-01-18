@@ -9,10 +9,6 @@ local trace_assert = igi_helper.trace_assert
 TEXT_HEADER = "igi_task_text_"
 local database_folder = "igi_tasks\\"
 
-function on_game_start()
-	ini_tables = LtxView("tables\\base.ltx")
-end
-
 function parse_values(str)
 	if not str then return nil end
 	local values = {}
@@ -57,31 +53,4 @@ function get_value(file, section, key)
 	if not ini:section_exist(section) then return nil end
 	if not ini:line_exist(section, key) then return nil end
 	return parse_values(ini:r_string(section, key))
-end
-
--------------------------------------------------------
-LtxView = {_cls = "LtxView"}
-local LtxView_mt = {}
-setmetatable(LtxView, LtxView_mt)
-
-function LtxView_mt:__call(file)
-	trace_assert(file, "LtxView: no file")
-	local ini = ini_file(database_folder..file)
-	if not ini then return end
-
-	local view = {
-		_filename = file,
-		_ini = ini,
-	}
-
-
-	setmetatable(view, LtxView_mt)
-	return view
-end
-
-function LtxView_mt:__index(key)
-	if rawget(LtxView, key) then return rawget(LtxView, key) end
-	local view = get_table(rawget(self, "_ini"), key)
-	self[key] = view
-	return view
 end
