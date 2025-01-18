@@ -79,6 +79,18 @@ function get_faction_enemies(faction)
 	return enemies_set
 end
 
+function pcall(f, ...)
+	if type(f) ~= "function" then
+		callstack()
+		return false, "Not a function"
+	end
+	local xf = coroutine.create(f)
+	local ok, res = coroutine.resume(xf, ...)
+	if not ok then
+		return ok, debug.traceback(xf, res .. "\\n")
+	end
+	return ok, res
+end
 
 function trace_dbg(title, ...)
 	if igi_mcm.get_options_value("debug") then

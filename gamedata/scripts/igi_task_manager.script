@@ -1,7 +1,3 @@
-local set = igi_utils.Set.from_list
-local trace_dbg = igi_helper.trace_dbg
-local trace_error = igi_helper.trace_error
-
 local function notnil(v)
 	if (v == nil) then
 		igi_generic_task.NIL_ERROR = true
@@ -9,6 +5,11 @@ local function notnil(v)
 	igi_helper.trace_assert(v ~= nil)
 	return v
 end
+
+local set = notnil(igi_utils.Set.from_list)
+local trace_dbg = notnil(igi_helper.trace_dbg)
+local trace_error = notnil(igi_helper.trace_error)
+local pcall = notnil(igi_helper.pcall)
 
 local Igi = {
 	is_subset = notnil(igi_utils.Set.is_subset),
@@ -114,7 +115,7 @@ NPC_TAGS = {
 	zat_stancia_trader_merc = set{"Trader", "Mercenary", "Zaton"},
 }
 
-local function pcall(f, ...)
+function pcall(f, ...)
 	if type(f) ~= "function" then
 		callstack()
 		return false, "Not a function"

@@ -1,5 +1,6 @@
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
+local pcall = igi_helper.pcall
 
 function on_game_start()
     RegisterScriptCallback("save_state", save_state)
