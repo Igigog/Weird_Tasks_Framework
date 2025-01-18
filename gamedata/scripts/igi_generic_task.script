@@ -59,13 +59,14 @@ function try_prepare_quest(task_id, task_data, tg_id)
 
 	if igi_mcm.get_task_value(task_data.quest_id, "disabled") then return end
 	if not igi_mcm.get_options_value("debug") then
-		if not igi_actions.check_conditions(task_data.preconditions or {}) then
-			return
+		for _, val in pairs(task_data.preconditions or {}) do
+			if not val then return end
 		end
 	end
 
 	trace_dbg("setup "..task_id, task_data)
 	local CACHE = igi_taskdata.finalize_task_cache(task_data, task_id, tg_id)
+	CACHE.preconditions = nil	-- not needed anymore
 	TASK_SETUP[task_id] = igi_generate.run_ML(CACHE, "")
 	trace_dbg("CACHE after setup "..task_id, TASK_SETUP[task_id])
 	return TASK_SETUP[task_id]

@@ -27,12 +27,6 @@ function process_actions(actions, link_context)
 	end
 end
 
-function repair(id, condition)
-	local item = get_object_by_id(id)
-	if not item then return end
-	item:set_condition(condition/100)
-end
-
 function change_faction(id, faction)
 	local se_squad = alife_object(id)
 	if not se_squad or not se_squad.squad_members then return end
@@ -64,23 +58,6 @@ function is_low_condition(id, max_condition)
 	local item = get_object_by_id(id)
 	if not item then return false end
 	return item:condition() < (max_condition / 100)
-end
-
-function goodwill(value)
-	local task_giver = mob_trade.GetTalkingNpc()
-	local community = igi_helper.get_community_by_id(task_giver:id())
-	return db.actor:community_goodwill(community) >= value
-end
-
-function rank(tier)
-	local lower_bound, higher_bound = igi_helper.db_ini:r_mult("player_tiers")
-	lower_bound, higher_bound = tonumber(lower_bound), tonumber(higher_bound)
-	if ranks.stalker_rank_intervals[tier] and not (lower_bound and higher_bound) then
-		lower_bound = ranks.stalker_rank_intervals[tier][1]
-		higher_bound = ranks.stalker_rank_intervals[tier][2]
-	end
-	local player_rank = db.actor:character_rank()
-	return player_rank >= lower_bound and player_rank <= higher_bound
 end
 
 update_mark = function(id, mark)
