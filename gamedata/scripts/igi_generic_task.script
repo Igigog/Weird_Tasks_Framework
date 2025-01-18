@@ -31,7 +31,7 @@ function actor_on_first_update()
 	if last_tasks_version ~= TASKS_VERSION then
 		printf("Weird Tasks Framework: Updating " .. (TASKS_CACHE.TASKS_VERSION or "nil")
 			.. " -> " .. TASKS_VERSION)
-		news_manager.send_tip(db.actor, "WTF: Update complete. Welcome to WTF " .. TASKS_VERSION, nil, nil, 30000)
+		news_manager.send_tip(db.actor, "WTF: Update complete. Glad to see you here. Welcome to WTF " .. TASKS_VERSION, nil, nil, 30000)
 	end
 end
 
