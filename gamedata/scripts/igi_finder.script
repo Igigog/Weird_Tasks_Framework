@@ -26,7 +26,7 @@ local function object_in_world(se_obj)
 end
 
 local function check_location(se_obj, lower_bound, higher_bound)
-	local obj_level = igi_helper.get_object_level(se_obj)
+	local obj_level = alife():level_name(igi_helper.get_object_level_id(se_obj))
 	if blacklist[obj_level] then return false end
 
 	local dist = WorldState.distance_by_level[obj_level]

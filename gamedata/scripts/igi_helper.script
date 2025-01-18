@@ -58,11 +58,6 @@ function get_object_level_id(se_obj)
 	return game_graph():vertex(se_obj.m_game_vertex_id):level_id()
 end
 
-function get_object_level(obj)
-	---@diagnostic disable-next-line: undefined-field
-	return alife():level_name(igi_helper.get_object_level_id(obj))
-end
-
 function get_faction_enemies(faction)
 	local excluded = {
 		monolith = true,
@@ -148,14 +143,6 @@ function get_community_by_id(id)
 		return db_ini:r_value("trader_faction", se_obj:section_name())
 	end
 	return community
-end
-
-function find_in_game_object(entity, field)
-	local se_obj = igi_helper.get_binded_object(entity)
-	if type(se_obj[field]) == "function" then
-		return se_obj[field]()
-	end
-	return se_obj[field]
 end
 
 local fCache = {}
