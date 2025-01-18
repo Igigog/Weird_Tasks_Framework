@@ -1,9 +1,3 @@
-TARGET_NAME = "get"
-PATTERN = "basic"
-FUNCTORS = {
-	status = {script_name()..".status"},
-}
-
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local WorldState = igi_world_state.WorldState
 
@@ -17,16 +11,16 @@ function is_failed(se_obj, section_name)
 	if se_obj:section_name() ~= section_name then return true end
 end
 
-
-function status(entity)
+Get = {}
+function Get.status(entity)
 	local se_obj = alife_object(entity.id)
 	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
 	if is_completed(se_obj) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
 end
 
-function quest_target(obj_data)
-	local se_obj = alife_object(obj_data.id)
+function Get.quest_target(obj_data)
+	local se_obj = assert(alife_object(obj_data.id))
 	if se_obj.parent_id == 65535 then
 		return obj_data.id
 	else
@@ -34,11 +28,11 @@ function quest_target(obj_data)
 	end
 end
 
-function get_complexity(entity)
+function Get.get_complexity(entity)
 	return 0
 end
 
-function test(entity)
+function Get.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1
 	if not entity._test_stage == 1 then

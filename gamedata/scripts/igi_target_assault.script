@@ -1,9 +1,3 @@
-TARGET_NAME = "assault"
-PATTERN = "basic"
-FUNCTORS = {
-	status = { script_name() .. ".status" },
-}
-
 local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
@@ -35,7 +29,7 @@ local function is_squad_at_smart(se_squad, smart_id)
 	return true
 end
 
-function is_completed(obj_data)
+local function is_completed(obj_data)
 	trace_assert(SIMBOARD.smarts[obj_data.id], "assault but not smart")
 
 	local cleared = true
@@ -66,7 +60,8 @@ local function add_target_squads(entity)
 	end
 end
 
-function entity_on_first_run(entity)
+Assault = {}
+function Assault.entity_on_first_run(entity)
 	add_target_squads(entity)
 end
 
@@ -88,13 +83,13 @@ local function mark_distant_squads(entity)
 	end
 end
 
-function status(entity)
+function Assault.status(entity)
 	mark_distant_squads(entity)
 	if is_completed(entity) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
 end
 
-function test(entity)
+function Assault.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1
 

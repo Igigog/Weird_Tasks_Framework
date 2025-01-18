@@ -34,12 +34,10 @@ local function send_target_callbacks(callback_name, CACHE, ...)
 	local target_set = {}
 
 	for k, entity in pairs(entity_table) do
-		if entity.target then
-			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			-- callback for every entity with target
-			if target_tbl['entity_'..callback_name] then
-				target_tbl['entity_'..callback_name](entity, CACHE, ...)
-			end
+		local controller = igi_taskdata.get_controller(entity)
+		-- callback for every entity with target
+		if controller['entity_'..callback_name] then
+			controller['entity_'..callback_name](entity, CACHE, ...)
 		end
 	end
 end

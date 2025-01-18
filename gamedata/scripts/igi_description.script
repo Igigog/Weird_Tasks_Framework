@@ -18,7 +18,7 @@ function get_description(CACHE)
 		}
 
 		for _, entity in pairs(CACHE.entities) do
-			add_from_entity(CACHE.description, entity, CACHE.entities)
+			add_from_entity(CACHE.description, entity)
 		end
 	end
 
@@ -59,11 +59,12 @@ function get_task_text_function(CACHE)
 	end
 end
 
-function add_from_entity(description, entity, entities)
+function add_from_entity(description, entity)
 	if entity.no_description then return end
 
-	local target_tbl = igi_taskdata.get_target_table(entity.target or "basic")
-	local desc = target_tbl.get_description(entity)
+	local controller = igi_taskdata.get_controller(entity)
+	if not controller.get_description then return end
+	local desc = controller.get_description(entity)
 	for k, tbl in pairs(desc) do
 		add_all_values(description[k], tbl)
 	end

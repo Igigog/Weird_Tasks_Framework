@@ -79,23 +79,14 @@ function finalize_task_cache(task_data, task_id, tg_id)
 	CACHE.task_id = task_id
 	CACHE.task_giver_id = tg_id
 
-	for _, entity in pairs(CACHE.entities) do
-		entity.functors = entity.functors
-			or get_target_table(entity.target or "basic").FUNCTORS
-			or {}
-	end
-
 	trace_dbg("finalized CACHE", CACHE)
 	return CACHE
 end
 
-function get_target_table(target)
-	if not target then return end
-	local target_tbl = _G["igi_target_"..target]
-	trace_assert(target_tbl, "No target tbl for target "..tostring(target or "nil"))
-
-	if target ~= 'basic' then
-		setmetatable(target_tbl, {__index = get_target_table(target_tbl.PATTERN or 'basic')})
-	end
-	return target_tbl
+local NO_CONTROLLER = {}
+function get_controller(entity)
+	if not entity.CONTROLLER then return NO_CONTROLLER end
+	local controller = igi_helper.eval(entity.CONTROLLER)
+	trace_assert(type(controller) == "table", "Controller is not a table", entity.CONTROLLER)
+	return controller
 end

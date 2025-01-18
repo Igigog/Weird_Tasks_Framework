@@ -13,7 +13,7 @@ TASK_STATUSES = {
 function initialise_subtasks(CACHE)
 	CACHE.status = TASK_STATUSES.RUNNING
 	for _, entity in pairs(CACHE.entities) do
-		if entity.target then
+		if entity.CONTROLLER then
 			entity.status = TASK_STATUSES.RUNNING
 		end
 	end
@@ -65,12 +65,12 @@ function get_quest_target(entities)
 	local min_order = 100000
 	local target_id
 	for _, entity in pairs(entities) do
-		if entity.target
+		local controller = igi_taskdata.get_controller(entity)
+		if controller.quest_target
 			and entity.status == TASK_STATUSES.RUNNING
 			and (entity.order or 1) < min_order then
 
-			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			local target = target_tbl.quest_target(entity)
+			local target = controller.quest_target(entity)
 			if target then
 				min_order = entity.order or 1
 				target_id = target
@@ -102,8 +102,9 @@ function get_task_status(entities)
 end
 
 function update_entity_status(entity)
-	local f = igi_helper.lookup_functor(entity.functors.status[1], _G)
-	local new_status = f(entity)
+	local controller = igi_taskdata.get_controller(entity)
+	if not controller.status then return false end
+	local new_status = controller.status(entity)
 	if new_status == entity.status then return false end
 	entity.status = new_status
 	return true

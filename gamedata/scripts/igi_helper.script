@@ -52,10 +52,12 @@ function get_object_level_id(se_obj)
 		se_obj = alife_object(se_obj.parent_id)
 	end
 
+	---@diagnostic disable-next-line: undefined-field
 	return game_graph():vertex(se_obj.m_game_vertex_id):level_id()
 end
 
 function get_object_level(obj)
+	---@diagnostic disable-next-line: undefined-field
 	return alife():level_name(igi_helper.get_object_level_id(obj))
 end
 
@@ -129,16 +131,17 @@ function trace_assert(val, err, ...)
 end
 
 function get_community_by_id(id)
-	local se_obj = alife_object(id)
+	local se_obj = assert(alife_object(id))
+	---@diagnostic disable-next-line: undefined-field
 	if se_obj:clsid() == clsid.online_offline_group_s then
-		se_obj = alife_object(se_obj:commander_id())
+		se_obj = assert(alife_object(se_obj:commander_id()))
 	end
 
 	if se_obj:section_name() == "m_trader" then
 		return "stalker"	-- Sid, Forester
 	end
 
-	local community = alife_character_community(se_obj)
+	local community = assert(alife_character_community(se_obj))
 	if community:find("trader") then
 		return igi_db.get_value("misc.ltx", "trader_faction", se_obj:section_name())
 	end

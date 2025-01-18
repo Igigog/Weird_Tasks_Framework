@@ -4,8 +4,8 @@ local WorldState = igi_world_state.WorldState
 killed_by_player = {}
 is_dead = {}
 ARA_TARGETS = {
-	kill = true,
-	assault = true,
+	["igi_target_kill.Kill"] = true,
+	['igi_target_assault.Assault'] = true,
 }
 
 function on_game_start()
@@ -125,7 +125,7 @@ end
 
 function entity_on_subtask_status_change(entity)
 	if not igi_mcm.get_options_value("realistic_assassinations") then return end
-	if not ARA_TARGETS[entity.target] then return end
+	if not ARA_TARGETS[entity.CONTROLLER] then return end
 	if entity.status ~= igi_subtask.TASK_STATUSES.COMPLETED then return end
 
 	if not is_updated(entity) then
@@ -138,12 +138,12 @@ function entity_on_subtask_status_change(entity)
 end
 
 function entity_on_complete(entity)
-	if not ARA_TARGETS[entity.target] then return end
+	if not ARA_TARGETS[entity.CONTROLLER] then return end
 	clear_ara_table(entity)
 end
 
 function entity_on_first_run(entity)
-	if not ARA_TARGETS[entity.target] then return end
+	if not ARA_TARGETS[entity.CONTROLLER] then return end
 
 	if entity.squads then
 		for _, squad_id in pairs(entity.squads) do

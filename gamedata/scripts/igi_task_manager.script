@@ -297,6 +297,7 @@ IgiTask = {
 
 		local t = CGameTask()
 		t:set_id(self.id)
+		---@diagnostic disable-next-line: undefined-field
 		t:set_type(self.storyline and task.storyline or task.additional)
 		t:set_title(self.current_title)
 		t:set_description(self.current_descr)

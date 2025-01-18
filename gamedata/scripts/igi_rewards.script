@@ -94,9 +94,9 @@ function get_reward_bounds(entities, allowed_statuses)
 	local lower_bound = 0
 	local higher_bound = 0
 	for _, entity in pairs(entities) do
-		if entity.target and allowed_statuses[entity.status or TASK_STATUSES.RUNNING] then
-			local target_tbl = igi_taskdata.get_target_table(entity.target)
-			local low, high = target_tbl.get_complexity(entity)
+		local controller = igi_taskdata.get_controller(entity)
+		if controller.get_complexity and allowed_statuses[entity.status or TASK_STATUSES.RUNNING] then
+			local low, high = controller.get_complexity(entity)
 			if high == nil then high = low end
 			lower_bound = lower_bound + low
 			higher_bound = higher_bound + high

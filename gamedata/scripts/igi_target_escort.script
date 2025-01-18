@@ -1,9 +1,3 @@
-TARGET_NAME = "escort"
-PATTERN = "basic"
-FUNCTORS = {
-	status = {script_name()..".status"},
-}
-
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local WorldState = igi_world_state.WorldState
 
@@ -23,17 +17,17 @@ function make_companion(entity)
 	sim_offline_combat.task_squads[squad.id] = true
 end
 
-
-function status(entity)
+Escort = {}
+function Escort.status(entity)
     return TASK_STATUSES.READY_TO_FINISH
 end
 
-function entity_on_complete(entity)
+function Escort.entity_on_complete(entity)
     local se_squad = igi_helper.get_binded_object(entity)
     axr_companions.dismiss_special_squad(se_squad)
 end
 
-function test(entity)
+function Escort.test(entity)
 	local assert_test = igi_tests.assert_test
 	local se_squad = igi_helper.get_binded_object(entity)
 	for member in se_squad:squad_members() do

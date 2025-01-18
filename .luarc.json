@@ -441,6 +441,9 @@
         "script_name",
         "TestsPopupMessages",
         "igi_tests_ui",
-        "ui_popup_messages"
+        "ui_popup_messages",
+        "alife_object",
+        "TeleportObject",
+        "TeleportSquad"
     ]
 }

@@ -1,9 +1,3 @@
-TARGET_NAME = "shoot"
-PATTERN = "basic"
-FUNCTORS = {
-	status = {script_name()..".status"},
-}
-
 ----------------- Consistency -------------
 entity_types = {
     "squad"
@@ -45,9 +39,9 @@ local function create_callback_function(squad_id, target_ids, weapon, ammo_type)
         if shit.draftsman:id() ~= 0 then return end
 
         local wpn = get_object_by_id(shit.weapon_id)
-        if weapon and (wpn:section() ~= weapon) then return end
+        if weapon and ((not wpn) or wpn:section() ~= weapon) then return end
 
-        if ammo_type then
+        if wpn and ammo_type then
 	        local ammo_type_number = wpn:get_ammo_type()
 	        local ammo_list = utils_item.get_ammo(wpn:section(), wpn:id())
 	        local ammo_section = ammo_list[ammo_type_number+1]
@@ -62,7 +56,7 @@ local function create_callback_function(squad_id, target_ids, weapon, ammo_type)
 end
 
 local function get_target_ids(squad_id, only_commander)
-    local se_squad = alife_object(squad_id)
+    local se_squad = assert(alife_object(squad_id))
     local ids = {}
     ids[se_squad:commander_id()] = true
     if not only_commander then
@@ -131,11 +125,12 @@ function test(entity)
 		db.actor:make_item_active(obj)
 
         local se_squad = igi_helper.get_binded_object(entity)
+        ---@diagnostic disable-next-line: undefined-field
         alife():teleport_object(se_squad:commander_id(),db.actor:game_vertex_id(),db.actor:level_vertex_id(),db.actor:position())
 
 	elseif entity._test_stage == 4 then
 		local se_squad = igi_helper.get_binded_object(entity)
-        local npc = get_object_by_id(se_squad:commander_id())
+        local npc = assert(get_object_by_id(se_squad:commander_id()))
         local dir = npc:position():sub(db.actor:position())
         db.actor:set_actor_direction(-dir:getH())
         level.press_action(DIK_keys.MOUSE_1)
@@ -143,7 +138,8 @@ function test(entity)
 
     elseif entity._test_stage == 5 then
 		assert_test(entity.status == "READY_TO_FINISH", "Quest did not complete")
-        alife():release(alife_object(entity._test_wpn_id))
+        ---@diagnostic disable-next-line: undefined-field
+        alife():release(assert(alife_object(entity._test_wpn_id)))
 		return true
 	end
 end

@@ -1,9 +1,3 @@
-TARGET_NAME = "fetch"
-PATTERN = "basic"
-FUNCTORS = {
-	status = {script_name()..".status"},
-}
-
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
@@ -45,29 +39,9 @@ function get_fetched_items(obj_data)
 	return ids, total
 end
 
-function status(entity)
-	if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
-	return TASK_STATUSES.RUNNING
-end
-
-function quest_target(entity)
-	return -1
-end
-
-function get_description(entity)
-	local item_name = ini_sys:r_string_ex(entity.section_name, "inv_name")
-	local str = game.translate_string(item_name)..", "..tostring(entity.amount or 1)
-	if igi_mcm.get_options_value("utjan_fetch_thing") then
-		local _, amount = get_fetched_items(entity)
-		str = str .. " " .. string.format(game.translate_string("igi_tasks_utjan_fetch_need"), amount)
-	end
-	return {
-		targets = {str}
-	}
-end
-
 function get_item_base_cost(section)
 	local max_uses = IsItem("multiuse",section) or 1
+	---@diagnostic disable-next-line: undefined-field
 	local cost = ini_sys:r_float_ex(section,"cost") * (1 / max_uses)
 	return cost
 end
@@ -97,7 +71,7 @@ function release_fetch_items(entity)
 	local amount = entity.amount or 1
 	for id, itm_amount in pairs(entity._ids) do
 		amount = amount - itm_amount
-		local obj = get_object_by_id(id)
+		local obj = assert(get_object_by_id(id))
 		if obj:section() ~= entity.section_name then
 			give_arti_container(obj)
 		end
@@ -109,7 +83,30 @@ function release_fetch_items(entity)
 	end
 end
 
-function get_complexity(entity)
+Fetch = {}
+function Fetch.status(entity)
+	if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
+	return TASK_STATUSES.RUNNING
+end
+
+function Fetch.quest_target(entity)
+	return -1
+end
+
+function Fetch.get_description(entity)
+	---@diagnostic disable-next-line: undefined-field
+	local item_name = ini_sys:r_string_ex(entity.section_name, "inv_name")
+	local str = game.translate_string(item_name)..", "..tostring(entity.amount or 1)
+	if igi_mcm.get_options_value("utjan_fetch_thing") then
+		local _, amount = get_fetched_items(entity)
+		str = str .. " " .. string.format(game.translate_string("igi_tasks_utjan_fetch_need"), amount)
+	end
+	return {
+		targets = {str}
+	}
+end
+
+function Fetch.get_complexity(entity)
 	local base_cost = get_item_base_cost(entity.section_name)
 	local scaled_by_condition = is_scaled_by_condition(entity.section_name)
 	if entity._ids and scaled_by_condition then
@@ -124,12 +121,12 @@ function get_complexity(entity)
 	return base_cost * (entity.amount or 1)
 end
 
-function entity_on_complete(entity)
+function Fetch.entity_on_complete(entity)
 	release_fetch_items(entity)
 	news_manager.relocate_item(db.actor, "out", entity.section_name, entity.amount or 1)
 end
 
-function test(entity)
+function Fetch.test(entity)
 	local assert_test = igi_tests.assert_test
 	local WorldState = igi_world_state.WorldState
 	entity._test_stage = (entity._test_stage or 0) + 1

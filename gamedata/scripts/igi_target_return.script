@@ -1,9 +1,3 @@
-TARGET_NAME = "return"
-PATTERN = "basic"
-FUNCTORS = {
-	status = {script_name()..".status"},
-}
-
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local trace_dbg = igi_helper.trace_dbg
 local WorldState = igi_world_state.WorldState
@@ -17,7 +11,8 @@ function ready_to_finish(se_obj)
 	return se_obj.parent_id == 0
 end
 
-function status(entity)
+Return = {}
+function Return.status(entity)
 	local se_obj = alife_object(entity.id)
 	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
 	if ready_to_finish(se_obj) then return TASK_STATUSES.READY_TO_FINISH end
@@ -30,7 +25,7 @@ function entity_on_complete(obj_data)
 	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
 end
 
-function quest_target(obj_data)
+function Return.quest_target(obj_data)
 	local se_obj = alife_object(obj_data.id)
 	if not se_obj then return end
 
@@ -38,6 +33,7 @@ function quest_target(obj_data)
 end
 
 function get_item_cost(entity)
+	---@diagnostic disable-next-line: undefined-field
 	config_cost = tonumber(ini_sys:r_string_ex(entity.section_name, "cost"))
 	if config_cost == 0 then
 		return 500
@@ -47,14 +43,15 @@ end
 
 
 function get_item_weight(entity)
+	---@diagnostic disable-next-line: undefined-field
 	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
 end
 
-function get_complexity(entity)
+function Return.get_complexity(entity)
 	return get_item_cost(entity) * get_item_weight(entity) / 32
 end
 
-function test(entity)
+function Return.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1
 

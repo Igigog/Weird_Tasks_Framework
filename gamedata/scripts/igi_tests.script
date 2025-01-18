@@ -142,7 +142,8 @@ local function choose_entity(CACHE)
     end
 
     local entity = CACHE.entities[CACHE._test_entity_id]
-    while entity.status ~= "RUNNING" or not entity.target do
+    local controller = igi_taskdata.get_controller(entity)
+    while entity.status ~= "RUNNING" or not controller.status do
         local k
         k, entity = next(CACHE.entities, CACHE._test_entity_id)
         CACHE._test_entity_id = k
@@ -170,10 +171,10 @@ function continue_test_worker()
         return true
     end
 
-    local target_tbl = igi_taskdata.get_target_table(entity.target)
-    trace_assert(target_tbl.test, "Test is not implemented for target "..entity.target)
+    local controller = igi_taskdata.get_controller(entity)
+    assert_test(controller.test, "Test is not implemented for controller " .. entity.CONTROLLER)
 
-    local ok, finished = pcall(target_tbl.test, entity)
+    local ok, finished = pcall(controller.test, entity)
     if not ok then
         assert_test(nil, finished)
         finish_test()
@@ -210,6 +211,7 @@ function assert_test(successful, reason, ...)
 end
 
 local function get_level_id(se_obj)
+    ---@diagnostic disable-next-line: undefined-field
     return game_graph():vertex(se_obj.m_game_vertex_id):level_id()
 end
 
@@ -224,6 +226,7 @@ function teleport_to_player(se_obj)
 end
 
 function travel_to_se_obj(se_obj)
+    ---@diagnostic disable-next-line: undefined-field
     if get_level_id(se_obj) == get_level_id(alife():object(0)) then
 		db.actor:set_actor_position(se_obj.position)
 	else
