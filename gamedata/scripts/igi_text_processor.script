@@ -65,13 +65,13 @@ function escape_pattern(text)
 end
 
 local function str_to_link(str)
-	local link_id, field = str:match("%[([^%.]+)%.(.+)%]")
+	local link_id, field = str:match("%|([^%.]+)%.(.+)%|")
 	trace_assert(link_id and field, "Link can't be resolved: " .. str)
 	return Link.new(link_id, field)
 end
 
 local function link_iterator(str)
-	return str:gmatch("%b[]")
+	return str:gmatch("%b||")
 end
 
 local function str_to_macro(str)
