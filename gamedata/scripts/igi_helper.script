@@ -82,22 +82,21 @@ end
 
 function trace_dbg(title, ...)
 	if igi_mcm.get_options_value("debug") then
-		printf("WTF DBG: "..title)
-		for k, v in pairs({...}) do
-			if type(v) == "table" then
-				printf(utils_data.print_table(v, k, true))
-			else
-				printf(tostring(v))
-			end
-		end
-		printf("-------------------------")
+		printf("WTF DBG: "..title .. "\n" .. format_log({...}))
 	end
 end
 
 function trace_error(title, ...)
+	local val = "WTF ERROR: " .. title .. "\n" .. format_log({...})
+	printf(val)
+	if igi_mcm.get_options_value("debug") then
+		news_manager.send_tip(db.actor, string.gsub(val, "\n", "\\n"), nil, nil, 30000)
+	end
+end
+
+function format_log(tbl)
 	local val = {}
-	val[#val + 1] = "WTF ERROR: " .. title
-	for k, v in pairs({ ... }) do
+	for k, v in pairs(tbl) do
 		if type(v) == "table" then
 			val[#val+1] = utils_data.print_table(v, k, true)
 		else
@@ -105,17 +104,14 @@ function trace_error(title, ...)
 		end
 	end
 	val[#val + 1] = "-------------------------"
-	printf(table.concat(val, "\n"))
-	if igi_mcm.get_options_value("debug") then
-		news_manager.send_tip(db.actor, string.gsub(table.concat(val, "\n"), "\n", "\\n"), nil, nil, 30000)
-	end
+	return table.concat(val, "\n")
 end
 
 function trace_assert(val, err, ...)
 	if not val then
 		callstack()
 		trace_dbg("Assertion failed! ", err, ...)
-		assert(nil, "WTF: "..err)
+		assert(nil, "WTF: "..err .. "\n" .. format_log({...}))
 	end
 	return val
 end
