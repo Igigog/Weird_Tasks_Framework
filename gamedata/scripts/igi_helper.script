@@ -107,7 +107,7 @@ function trace_error(title, ...)
 	val[#val + 1] = "-------------------------"
 	printf(table.concat(val, "\n"))
 	if igi_mcm.get_options_value("debug") then
-		news_manager.send_tip(db.actor, table.concat(val, "\\n"), nil, nil, 30000)
+		news_manager.send_tip(db.actor, string.gsub(table.concat(val, "\n"), "\n", "\\n"), nil, nil, 30000)
 	end
 end
 

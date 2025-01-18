@@ -122,7 +122,7 @@ local function pcall(f, ...)
 	local xf = coroutine.create(f)
 	local ok, res = coroutine.resume(xf, ...)
 	if not ok then
-		trace_error("Crash", debug.traceback(xf, res .. "\\n"))
+		return ok, debug.traceback(xf, res .. "\\n")
 	end
 	return ok, res
 end
