@@ -5,7 +5,6 @@
     ],
     "Lua.diagnostics.globals": [
         "igi_helper",
-        "igi_db",
         "igi_random",
         "igi_activities",
         "character_community",

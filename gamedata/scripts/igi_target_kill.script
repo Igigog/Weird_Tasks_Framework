@@ -21,17 +21,17 @@ end
 local function get_monster_value(se_npc)
 	local npc_section = se_npc:section_name()
 	local factor = 1
-	for k, new_factor in pairs(igi_db.get_table('tiers.ltx', 'monster_tier_factor')) do
+	for k, new_factor in pairs(igi_helper.db_ini:collect_section('monster_tier_factor')) do
 		if string.find(npc_section, k) then
-			factor = new_factor
+			factor = assert(tonumber(new_factor))
 			break
 		end
 	end
 
 	local value = 100
-	for k, new_value in pairs(igi_db.get_table('misc.ltx', 'money_reward_mutants')) do
+	for k, new_value in pairs(igi_helper.db_ini:collect_section('money_reward_mutants')) do
 		if string.find(npc_section, k) then
-			value = new_value
+			value = assert(tonumber(new_value))
 			break
 		end
 	end
@@ -42,9 +42,9 @@ local function get_npc_value(se_npc)
 	local value = 1000
 	local tier = string.match(se_npc:section_name(), "%d") or ""
 	igi_helper.trace_dbg(se_npc:section_name(), tier)
-	local factors = igi_db.get_table('tiers.ltx', 'npc_tier_factor')
+	local factor = igi_helper.db_ini:w_value('npc_tier_factor', tier, 2)
 
-	return value*(factors[tier] or 1)
+	return value*(factor or 1)
 end
 
 function calculate_complexity(entity)

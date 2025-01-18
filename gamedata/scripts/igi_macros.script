@@ -26,16 +26,12 @@ function ScaleToPlayer(a, b)
 end
 
 function TableValueRandom(tbl_name)
-	local tbl = igi_db.get(tbl_name)
+	local tbl = igi_helper.db_ini:collect_section(tbl_name)
 	local elem = igi_utils.random_table_element(tbl)
 	if type(elem) == "table" then
 		return table.concat(igi_utils.random_table_element(tbl), ",")
 	end
 	return elem
-end
-
-function TableValueByKey(tbl_name, key)
-	return igi_db.get(tbl_name)[key]
 end
 
 local current_tg_faction = nil

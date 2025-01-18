@@ -3,11 +3,10 @@
 local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
-local set = igi_utils.Set.from_list
 
 function on_game_start()
-	blacklist = set(igi_db.get_table("map_config.ltx", "blacklist"))
-	smart_blacklist = set(igi_db.get_table("map_config.ltx", "smart_blacklist"))
+	blacklist = igi_helper.db_ini:collect_section("map_blacklist")
+	smart_blacklist = igi_helper.db_ini:collect_section("smart_blacklist")
 end
 
 local function is_smart_good(smart_name, smart_level)
@@ -46,14 +45,12 @@ function find_objects_in_world(lower_bound, higher_bound, sections)
 	trace_assert(#sections > 0, "No sections were given for searching")
 
 	local out = {}
-	for _, section in pairs(sections) do
-		for id=1,65534 do
-			local se_obj = alife_object(id)
-			if se_obj and se_obj:section_name() == section
-					and check_location(se_obj, lower_bound, higher_bound)
-					and object_in_world(se_obj) then
-				out[#out+1] = id
-			end
+	for id=1,65534 do
+		local se_obj = alife_object(id)
+		if se_obj and sections[se_obj:section_name()]
+				and check_location(se_obj, lower_bound, higher_bound)
+				and object_in_world(se_obj) then
+			out[#out+1] = id
 		end
 	end
 
@@ -70,7 +67,7 @@ function find_items_in_enemy(lower_bound, higher_bound, sections)
 				and check_location(se_obj, lower_bound, higher_bound)
 				and igi_helper.is_common_npc(se_obj.parent_id)
 				and is_parent_enemy(se_obj) then
-			for _, section in pairs(sections) do
+			for section in pairs(sections) do
 				if string.find(se_obj:section_name(), section) then
 					out[#out+1] = id
 					break

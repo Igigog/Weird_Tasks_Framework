@@ -73,14 +73,9 @@ function goodwill(value)
 end
 
 function rank(tier)
-	local quest_tiers = igi_db.get_table("tiers.ltx", "player_tiers")
-	trace_assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
-		"Invalid quest tier")
-
-	if quest_tiers[tier] then
-		lower_bound = quest_tiers[tier][1]
-		higher_bound = quest_tiers[tier][2]
-	elseif ranks.stalker_rank_intervals[tier] then
+	local lower_bound, higher_bound = igi_helper.db_ini:r_mult("player_tiers")
+	lower_bound, higher_bound = tonumber(lower_bound), tonumber(higher_bound)
+	if ranks.stalker_rank_intervals[tier] and not (lower_bound and higher_bound) then
 		lower_bound = ranks.stalker_rank_intervals[tier][1]
 		higher_bound = ranks.stalker_rank_intervals[tier][2]
 	end
