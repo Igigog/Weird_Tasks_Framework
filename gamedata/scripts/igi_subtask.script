@@ -29,7 +29,6 @@ function finish_all_subtasks(CACHE)
 			entity.status = CACHE.status
 		end
 	end
-	unmark_all(CACHE.entities)
 end
 
 function update_current_map_target(CACHE)
@@ -57,7 +56,6 @@ function process_subtasks(CACHE)
 		CACHE.status = get_task_status(CACHE.entities)
 	end
 
-	update_marks(CACHE.entities)
 	return updated
 end
 
@@ -108,31 +106,4 @@ function update_entity_status(entity)
 	if new_status == entity.status then return false end
 	entity.status = new_status
 	return true
-end
-
-update_mark = function(entity)
-	if not entity.mark then return end
-	local has_spot = level.map_has_object_spot(entity.id, entity.mark) == 1
-	local se_obj = igi_helper.get_binded_object(entity)
-	local object_in_world = se_obj and se_obj.parent_id == 65535
-
-	if object_in_world and not has_spot then
-		level.map_add_object_spot(entity.id, entity.mark, game.translate_string(entity.mark))
-	elseif (not object_in_world) and has_spot then
-		level.map_remove_object_spot(entity.id, entity.mark)
-	end
-end
-
-update_marks = function(entities)
-	for _, entity in pairs(entities) do
-		update_mark(entity)
-	end
-end
-
-unmark_all = function(entities)
-	for _, entity in pairs(entities) do
-		if entity.mark then
-			level.map_remove_object_spot(entity.id, entity.mark)
-		end
-	end
 end

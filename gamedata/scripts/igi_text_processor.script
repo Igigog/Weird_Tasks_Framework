@@ -79,6 +79,10 @@ local function str_to_macro(str)
 	return string.match(str, "([^%$]*)%$(.*)")
 end
 
+function has_macro(str)
+	return str_to_macro(str) ~= nil
+end
+
 local function resolve_macro(macro, link_context)
 	return igi_helper.eval(macro, link_context:to_env())
 end
