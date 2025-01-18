@@ -46,7 +46,6 @@ Link = {
 	end,
 
     resolve = function(self, link_context)
-		trace_dbg("Link resolve", self, link_context)
 		local entity = link_context:get(self.link_id)
 		trace_assert(entity, "Linker can't find entity for link:", self)
 		local out = self:resolve_field(entity)
@@ -101,9 +100,7 @@ local function resolve_in_str(str, level, link_context)
 	if macro and macro_level == level then
 		local without_links = resolve_links_in_str(macro, link_context)
 		if without_links then
-			local resolved = resolve_macro(without_links, link_context)
-			trace_dbg("resolved macro", str, resolved)
-			return resolved
+			return resolve_macro(without_links, link_context)
 		end
 	end
 
@@ -124,19 +121,15 @@ function resolve_macros_and_link_variables(CACHE, level)
 	while has_changed do
 		has_changed = false
 		for _, entity in pairs(CACHE.entities) do
-			trace_dbg("Before resolve_and_link_entity", entity)
 			link_context:set_this(entity)
 			has_changed = inner_resolve_and_link_table(entity, link_context, level) or has_changed
-			trace_dbg("After resolve_and_link_entity", entity)
 		end
 	end
 end
 
 function resolve_and_link_cache(CACHE, level)
-	trace_dbg("Before resolve_and_link_cache", CACHE)
 	resolve_macros_and_link_variables(CACHE, level)
 	inner_resolve_and_link_table(CACHE, LinkContext:new(CACHE), level)
-	trace_dbg("After resolve_and_link_cache", CACHE)
 end
 
 function resolve_macros(tbl, level, link_context)

@@ -1,6 +1,7 @@
 local trace_assert = igi_helper.trace_assert
 
 function run_ML(CACHE, level)
+    trace_dbg("Before MLG run", level, CACHE)
 	igi_text_processor.resolve_and_link_cache(CACHE, level)
 
 	local new_entities = {}
@@ -13,6 +14,7 @@ function run_ML(CACHE, level)
 	CACHE.entities = new_entities
 
 	igi_text_processor.resolve_and_link_cache(CACHE, level)
+    trace_dbg("After MLG run", level, CACHE)
 	return CACHE
 end
 
