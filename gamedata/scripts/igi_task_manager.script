@@ -542,6 +542,7 @@ function on_task_crashed(err, task_id)
 				"Weird Tasks Framework crashed! Sorry :(. I've taken care of it, you can continue your playthrough.", nil,
 				nil, 30000)
 			crash_count = 0
+			exec_console_cmd("flush")
 			return true
 		end)
 	end
