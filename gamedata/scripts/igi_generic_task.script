@@ -3,7 +3,7 @@
 --	Anomaly 1.5.1
 --	Igigog
 -- =============================================================
-TASKS_VERSION = "3.9"
+TASKS_VERSION = "4.0"
 TASK_SETUP = {}
 TASKS_CACHE = {}
 
