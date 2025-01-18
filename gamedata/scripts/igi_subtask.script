@@ -2,22 +2,11 @@ local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
 TASK_STATUSES = {
-	RUNNING = "RUNNING",
+	RUNNING = nil,	-- no value means running
 	COMPLETED = "COMPLETED",
 	FAILED = "FAILED",
 	READY_TO_FINISH = "READY_TO_FINISH",
-	DISABLED = "DISABLED",
-	CANCELLED = "CANCELLED",
 }
-
-function initialise_subtasks(CACHE)
-	CACHE.status = TASK_STATUSES.RUNNING
-	for _, entity in pairs(CACHE.entities) do
-		if entity.CONTROLLER then
-			entity.status = TASK_STATUSES.RUNNING
-		end
-	end
-end
 
 function finish_all_subtasks(CACHE)
 	if CACHE.status ~= TASK_STATUSES.FAILED then
@@ -60,23 +49,14 @@ function process_subtasks(CACHE)
 end
 
 function get_quest_target(entities)
-	local min_order = 100000
-	local target_id
 	for _, entity in pairs(entities) do
 		local controller = igi_taskdata.get_controller(entity)
-		if controller.quest_target
-			and entity.status == TASK_STATUSES.RUNNING
-			and (entity.order or 1) < min_order then
+		if controller.status and controller.quest_target
+			and entity.status == TASK_STATUSES.RUNNING then
 
-			local target = controller.quest_target(entity)
-			if target then
-				min_order = entity.order or 1
-				target_id = target
-			end
+			return controller.quest_target(entity)
 		end
 	end
-
-	return target_id
 end
 
 function get_task_status(entities)

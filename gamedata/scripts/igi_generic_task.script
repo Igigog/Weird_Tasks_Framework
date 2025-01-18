@@ -87,7 +87,6 @@ function initialise_CACHE(task_id)
 
 	local CACHE = get_cache(task_id)
 
-	igi_subtask.initialise_subtasks(CACHE)
 	igi_text_processor.resolve_and_link_cache(CACHE, "1")
 
 	igi_callbacks.invoke_callbacks("on_first_run", CACHE)
