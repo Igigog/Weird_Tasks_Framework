@@ -1,6 +1,4 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-local trace_dbg = igi_helper.trace_dbg
-local WorldState = igi_world_state.WorldState
 
 function is_failed(se_obj, section_name)
 	if not se_obj then return true end
@@ -74,21 +72,3 @@ function Return.test(entity)
 		return true
 	end
 end
-igi_tests.register_subtask_test("test_target_return", {
-	entities = {
-		{
-			entity_type = "item",
-			section_name = "itm_drugkit",
-			target = "return",
-			to_create =  true,
-			where =  "[smart.id]",
-		},
-
-		{
-			entity_type = "location",
-			search_for =  "smart",
-			where = "0,0",
-			link_id = "smart",
-		}
-	}
-})

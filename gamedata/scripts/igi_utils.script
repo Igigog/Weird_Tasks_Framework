@@ -1,7 +1,3 @@
--- There are purely utility functions, not bound with tasks or STALKER
-
-local trace_assert = igi_helper.trace_assert
-
 Set = {
 	__cls = 'Set',
 

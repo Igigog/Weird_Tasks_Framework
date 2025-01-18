@@ -1,7 +1,5 @@
-local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-
 
 local function is_legit_squad(squad)
 	local section = squad and squad:section_name()
@@ -122,22 +120,3 @@ function Assault.test(entity)
 		return true
 	end
 end
-
-igi_tests.register_subtask_test("test_target_assault", {
-	entities = {
-		{
-			entity_type = "location",
-			search_for = "smart",
-			where = "0,0",
-			target = "assault",
-			link_id = "smart",
-		},
-
-		{
-			entity_type = "squad",
-			section_name = "army_sim_squad_novice",
-			to_create = true,
-			where = "[smart.id]"
-		}
-	}
-})

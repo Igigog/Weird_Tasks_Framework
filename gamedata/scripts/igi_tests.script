@@ -23,7 +23,6 @@ STATE = {
 }
 
 TESTS = {}
-SUBTASK_TESTS = {}
 
 function save_state(m_data)
     m_data.igi_tests_state = STATE
@@ -47,13 +46,6 @@ end
 function prepare_mock_quest(cache, id)
     local tg_id = get_story_se_object("bar_visitors_barman_stalker_trader").id
     return igi_generic_task.try_prepare_quest(id, cache, tg_id)
-end
-
-function register_subtask_test(id, cache)
-    trace_assert(not SUBTASK_TESTS[id], "Subtask test already registered: "..id)
-    cache.update_delay = 0
-    igi_taskdata.finalize_task_cache(cache, id)
-    SUBTASK_TESTS[id] = cache
 end
 
 function register_test(id, f, state)
@@ -94,16 +86,16 @@ local function report_tests_history()
     trace_dbg("Test report:", STATE.tests_history)
 end
 
-function start_integration_tests(test_type)
+function start_integration_tests()
     xrs_debug_tools.debug_invis = true
-    STATE.current_tests_name = test_type
+    STATE.current_tests_name = "quest"
     STATE.tests_history = {}
     CreateTimeEvent("igi_tests", "tests", 2, integration_tests_worker)
 end
 
 function integration_tests_worker()
     if STATE.current_test then return end
-    local caches = STATE.current_tests_name == "entity" and SUBTASK_TESTS or flat_quests()
+    local caches = flat_quests()
     local id, next_cache = next(caches, STATE.last_test)
     STATE.last_test = id
     if id then

@@ -1,8 +1,3 @@
--- =============================================================
---	Quest functions (igi_generic_task.script)
---	Anomaly 1.5.1
---	Igigog
--- =============================================================
 TASKS_VERSION = "4.0"
 TASK_SETUP = {}
 TASKS_CACHE = {}

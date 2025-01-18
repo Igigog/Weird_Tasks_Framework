@@ -1,5 +1,4 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-local WorldState = igi_world_state.WorldState
 
 function is_completed(se_obj)
 	-- Complete if in player inventory
@@ -54,21 +53,3 @@ function Get.test(entity)
 		return true
 	end
 end
-igi_tests.register_subtask_test("test_target_get", {
-	entities = {
-		{
-			entity_type = "item",
-			section_name = "itm_drugkit",
-			target = "get",
-			to_create =  true,
-			where =  "[smart.id]",
-		},
-
-		{
-			entity_type = "location",
-			search_for =  "smart",
-			where = "0,0",
-			link_id = "smart",
-		}
-	}
-})

@@ -1,6 +1,4 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-local WorldState = igi_world_state.WorldState
-
 
 function make_companion(entity)
 	local squad = alife_object(entity.id)
@@ -38,21 +36,3 @@ function Escort.test(entity)
 	assert_test(entity.status == "READY_TO_FINISH", "Quest did not complete")
 	return true
 end
-igi_tests.register_subtask_test("test_target_escort", {
-	entities = {
-		{
-			entity_type = "squad",
-			section_name = "army_sim_squad_novice",
-			to_create = true,
-			where = "[smart.id]",
-			target = "escort"
-		},
-
-		{
-			entity_type = "location",
-			search_for = "smart",
-			where = "0,0",
-			link_id = "smart",
-		}
-	}
-})

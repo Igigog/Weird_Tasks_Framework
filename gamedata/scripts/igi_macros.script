@@ -1,6 +1,4 @@
-local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
-local WorldState = igi_world_state.WorldState
 local Set = igi_utils.Set
 
 function ScaleToPlayer(a, b)

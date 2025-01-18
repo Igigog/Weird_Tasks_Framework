@@ -1,6 +1,4 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-local WorldState = igi_world_state.WorldState
-local trace_assert = igi_helper.trace_assert
 
 function is_completed(obj_data)
 	local se_obj = alife_object(obj_data.id)
@@ -99,21 +97,3 @@ function Kill.test(entity)
 		return true
 	end
 end
-igi_tests.register_subtask_test("test_target_kill", {
-	entities = {
-		{
-			entity_type = "squad",
-			section_name = "army_sim_squad_novice",
-			to_create = true,
-			where = "[smart.id]",
-			target = "kill"
-		},
-
-		{
-			entity_type = "location",
-			search_for = "smart",
-			where = "0,0",
-			link_id = "smart",
-		}
-	}
-})

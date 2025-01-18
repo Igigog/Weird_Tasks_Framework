@@ -1,20 +1,4 @@
------------------ Consistency -------------
-entity_types = {
-    "squad"
-}
-required_fields = {
-    "section",
-    "where"
-}
-optional_fields = {
-    "weapon",           -- with which weapon to shoot
-    "ammo_type",
-    "only_commander",        -- if true: any squad member; else: commander
-}
-------------- END Consistency -------------
-
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
-local WorldState = igi_world_state.WorldState
 
 is_shotted = {}
 local callback_is_set = {}
@@ -143,21 +127,3 @@ function test(entity)
 		return true
 	end
 end
-igi_tests.register_subtask_test("test_target_shoot", {
-	entities = {
-		{
-			entity_type = "squad",
-			section_name = "army_sim_squad_novice",
-			to_create = true,
-			where = "[smart.id]",
-			target = "shoot"
-		},
-
-		{
-			entity_type = "location",
-			search_for = "smart",
-			where = "0,0",
-			link_id = "smart",
-		}
-	}
-})

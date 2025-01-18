@@ -2,10 +2,6 @@
 -- LOCALS
 -- No actual grouping, these are used to lower other functions complexity
 ------------------------------------------------
-local trace_dbg = igi_helper.trace_dbg
-local trace_assert = igi_helper.trace_assert
-local WorldState = igi_world_state.WorldState
-local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 function force_parent_online(se_obj)
 	if se_obj.parent_id == 65535 then return end

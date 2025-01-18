@@ -1,6 +1,4 @@
 local trace_dbg = igi_helper.trace_dbg
-local trace_assert = igi_helper.trace_assert
-local WorldState = igi_world_state.WorldState
 
 function update_actions(CACHE)
 	local link_context = igi_text_processor.LinkContext:new(CACHE)
