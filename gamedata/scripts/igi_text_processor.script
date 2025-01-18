@@ -147,7 +147,8 @@ function resolve_macros(tbl, level, link_context)
 		elseif type(v) == 'string' then
 			local out = resolve_in_str(v, level, link_context)
 			if out ~= v then
-				tbl[k] = out ~= nil and out or "nil"
+				trace_assert(out ~= nil, "Macro returned nil", v)
+				tbl[k] = out
 				has_changed = true
 			end
 
