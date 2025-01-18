@@ -125,7 +125,7 @@ function quest_text(task_id,field)
 	--This function return a text for title_functor and descr_functor
 	local CACHE = get_cache(task_id)
 
-	if field == "descr" and CACHE.status ~= "RUNNING" then
+	if field == "descr" and CACHE.status ~= TASK_STATUSES.RUNNING then
 		field = "done"
 	end
 

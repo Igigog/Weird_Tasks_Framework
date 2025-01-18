@@ -128,16 +128,13 @@ end
 
 local function choose_entity(CACHE)
     trace_dbg("choose entity", CACHE)
-    if not CACHE._test_entity_id then
-        local k, entity = next(CACHE.entities, nil)
-        CACHE._test_entity_id = k
-    end
-
-    local entity = CACHE.entities[CACHE._test_entity_id]
+    local entity = CACHE.entities[CACHE._test_entity_id] or {}
     local controller = igi_taskdata.get_controller(entity)
-    while entity.status ~= "RUNNING" or not controller.status do
+    while entity.status ~= igi_subtask.TASK_STATUSES.RUNNING
+            or not controller.status do
         local k
         k, entity = next(CACHE.entities, CACHE._test_entity_id)
+        controller = igi_taskdata.get_controller(entity or {})
         CACHE._test_entity_id = k
         if not k then
             trace_dbg("chosen: ", "nil")
@@ -192,6 +189,7 @@ function finish_test()
     end
 
     STATE.current_test = nil
+    flush()
 end
 
 function assert_test(successful, reason, ...)
