@@ -3,11 +3,39 @@ local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
 local WorldState = igi_world_state.WorldState
 
-local function table_find(tbl, val)
-	for k, v in pairs(tbl) do
-		if v == val then return k end
+function get_location_description(entity)
+	return get_smart_name_by_id(entity.id)
+		or get_smart_name_by_id(entity.where)
+		or (entity.id and dynamic_news_helper.GetPointDescription(alife_object(entity.id)))
+		or nil
+end
+
+function get_smart_name_by_id(id)
+	if tonumber(id) and SIMBOARD.smarts[id] then
+		local smart = alife_object(id)
+		return "st_" .. smart:name() .. "_name"
 	end
 end
+
+function get_entity_description(entity)
+	if type(entity.id) == "number" then
+		local se_obj = alife_object(entity.id)
+		local parent_npc = igi_helper.is_common_npc(se_obj.parent_id) and alife_object(se_obj.parent_id)
+
+		return {
+			locations = {get_location_description(entity)},
+			factions = {se_obj.player_id or parent_npc and alife_character_community(parent_npc) or nil},
+			targets = {parent_npc and parent_npc:character_name() or nil}
+		}
+	else
+		return {
+			factions = {entity.faction or ini_sys:r_string_ex(entity.section_name, "faction")},
+			locations = { get_smart_name_by_id(entity.where) },
+			targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
+		}
+	end
+end
+
 
 function get_description(CACHE)
 	if not CACHE.description then
@@ -63,8 +91,8 @@ function add_from_entity(description, entity)
 	if entity.no_description then return end
 
 	local controller = igi_taskdata.get_controller(entity)
-	if not controller.get_description then return end
-	local desc = controller.get_description(entity)
+	local description_f = controller.get_description or get_entity_description
+	local desc = description_f(entity)
 	for k, tbl in pairs(desc) do
 		add_all_values(description[k], tbl)
 	end
@@ -72,9 +100,7 @@ end
 
 function add_all_values(dest, src)
 	for _, v in pairs(src) do
-		if not table_find(dest, v) then
-			dest[#dest+1] = v
-		end
+		dest[v] = true
 	end
 end
 
@@ -82,8 +108,8 @@ function item_to_string(item, label)
 	if not next(item) then return "" end
 
 	local details = {}
-	for i, value in ipairs(item) do
-		details[i] = game.translate_string(value)
+	for value in pairs(item) do
+		details[#details+1] = game.translate_string(value)
 	end
 
 	label = game.translate_string(igi_db.TEXT_HEADER..label)
