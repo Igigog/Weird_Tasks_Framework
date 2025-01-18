@@ -73,7 +73,7 @@ function goodwill(value)
 end
 
 function rank(tier)
-	local quest_tiers = igi_db.SectionView("tiers.ltx", "player_tiers")
+	local quest_tiers = igi_db.get_table("tiers.ltx", "player_tiers")
 	trace_assert(quest_tiers[tier] or ranks.stalker_rank_intervals[tier],
 		"Invalid quest tier")
 

@@ -3,10 +3,11 @@
 local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
+local set = igi_utils.Set.from_list
 
 function on_game_start()
-	blacklist = igi_db.SectionView("map_config.ltx", "blacklist"):as_set()
-	smart_blacklist = igi_db.SectionView("map_config.ltx", "smart_blacklist"):as_set()
+	blacklist = set(igi_db.get_table("map_config.ltx", "blacklist"))
+	smart_blacklist = set(igi_db.get_table("map_config.ltx", "smart_blacklist"))
 end
 
 local function is_smart_good(smart_name, smart_level)

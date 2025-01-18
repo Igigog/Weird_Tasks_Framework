@@ -21,7 +21,7 @@ end
 local function get_monster_value(se_npc)
 	local npc_section = se_npc:section_name()
 	local factor = 1
-	for k, new_factor in pairs(igi_db.SectionView('tiers.ltx', 'monster_tier_factor'):as_table()) do
+	for k, new_factor in pairs(igi_db.get_table('tiers.ltx', 'monster_tier_factor')) do
 		if string.find(npc_section, k) then
 			factor = new_factor
 			break
@@ -29,7 +29,7 @@ local function get_monster_value(se_npc)
 	end
 
 	local value = 100
-	for k, new_value in pairs(igi_db.SectionView('misc.ltx', 'money_reward_mutants'):as_table()) do
+	for k, new_value in pairs(igi_db.get_table('misc.ltx', 'money_reward_mutants')) do
 		if string.find(npc_section, k) then
 			value = new_value
 			break
@@ -42,7 +42,7 @@ local function get_npc_value(se_npc)
 	local value = 1000
 	local tier = string.match(se_npc:section_name(), "%d") or ""
 	igi_helper.trace_dbg(se_npc:section_name(), tier)
-	local factors = igi_db.SectionView('tiers.ltx', 'npc_tier_factor')
+	local factors = igi_db.get_table('tiers.ltx', 'npc_tier_factor')
 
 	return value*(factors[tier] or 1)
 end
