@@ -107,32 +107,7 @@ local function resolve_in_str(str, level, link_context)
 	return str
 end
 
-local function inner_resolve_and_link_table(tbl, link_context, level)
-	local made_changes = false
-	while resolve_macros(tbl, level, link_context) do
-		made_changes = true
-	end
-	return made_changes
-end
-
-function resolve_macros_and_link_variables(CACHE, level)
-	local link_context = LinkContext:new(CACHE)
-	local has_changed = true
-	while has_changed do
-		has_changed = false
-		for _, entity in pairs(CACHE.entities) do
-			link_context:set_this(entity)
-			has_changed = inner_resolve_and_link_table(entity, link_context, level) or has_changed
-		end
-	end
-end
-
-function resolve_and_link_cache(CACHE, level)
-	resolve_macros_and_link_variables(CACHE, level)
-	inner_resolve_and_link_table(CACHE, LinkContext:new(CACHE), level)
-end
-
-function resolve_macros(tbl, level, link_context)
+local function resolve_macros(tbl, level, link_context)
 	local has_changed = false
 	for k,v in pairs(tbl) do
 		if type(v) == 'table' then
@@ -148,4 +123,29 @@ function resolve_macros(tbl, level, link_context)
 		end
 	end
 	return has_changed
+end
+
+local function inner_resolve_and_link_table(tbl, link_context, level)
+	local made_changes = false
+	while resolve_macros(tbl, level, link_context) do
+		made_changes = true
+	end
+	return made_changes
+end
+
+local function resolve_macros_and_link_variables(CACHE, link_context, level)
+	local has_changed = true
+	while has_changed do
+		has_changed = false
+		for _, entity in pairs(CACHE.entities) do
+			link_context:set_this(entity)
+			has_changed = inner_resolve_and_link_table(entity, link_context, level) or has_changed
+		end
+	end
+end
+
+function resolve_and_link_cache(CACHE, level)
+	local link_context = LinkContext:new(CACHE)
+	resolve_macros_and_link_variables(CACHE, link_context, level)
+	inner_resolve_and_link_table(CACHE, link_context, level)
 end
