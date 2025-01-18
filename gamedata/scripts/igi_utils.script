@@ -106,11 +106,3 @@ function defaultdict(factory)
 	setmetatable(tbl, metatbl)
 	return tbl
 end
-
-function lookup_path(path, origin)
-	local curr = origin
-	for k in string.gmatch(path, "[^%.]+") do
-		curr = curr[k]
-	end
-	return curr
-end
