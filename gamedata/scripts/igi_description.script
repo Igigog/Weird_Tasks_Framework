@@ -74,18 +74,6 @@ function get_rewards_description(CACHE)
 		" " .. game.translate_string(TEXT_HEADER .. "goodwill")
 end
 
-function get_task_text_function(CACHE)
-	local mark = igi_mcm.get_options_value("wtf_task_mark") and "[WTF] " or ""
-	local title = mark .. get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
-	local text = get_description(CACHE)
-	local icon = CACHE.icon or "ui_iconsTotal_mutant"
-
-	return function ()
-		db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
-		return true
-	end
-end
-
 function add_from_entity(description, entity)
 	if not entity.to_description then return end
 
@@ -113,6 +101,24 @@ function item_to_string(item, label)
 
 	label = game.translate_string(TEXT_HEADER..label)
 	return label..": "..table.concat(details, ', ')
+end
+
+function show_description(CACHE)
+	local descr = CACHE.DESCRIPTION and igi_helper.eval(CACHE.DESCRIPTION) or DefaultDescription
+	return descr.show_description(CACHE)
+end
+
+DefaultDescription = {}
+function DefaultDescription.show_description(CACHE)
+	local mark = igi_mcm.get_options_value("wtf_task_mark") and "[WTF] " or ""
+	local title = mark .. get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
+	local text = get_description(CACHE)
+	local icon = CACHE.icon or "ui_iconsTotal_mutant"
+
+	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0, function ()
+		db.actor:give_talk_message2(title, text, icon, "iconed_answer_item")
+		return true
+	end)
 end
 
 function get_task_text(desc_key, field, tg_id)

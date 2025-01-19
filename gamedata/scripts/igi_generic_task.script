@@ -75,10 +75,7 @@ end
 --< Effect >--------------------------------------------------
 function setup_quest(task_id)
 	--This function will be called on_job_descr
-	local CACHE = get_setup_cache(task_id)
-	--Print the message
-	CreateTimeEvent(0, "igi_task_"..CACHE.task_id.."_setup", 0,
-		igi_description.get_task_text_function(CACHE))
+	igi_description.show_description(get_setup_cache(task_id))
 end
 --< Init >----------------------------------------------------
 function initialise_CACHE(task_id)
