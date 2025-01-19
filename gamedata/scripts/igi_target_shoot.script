@@ -72,13 +72,14 @@ function ready_to_finish(obj_data)
     return is_shotted[obj_data.id]
 end
 
-function status(entity)
+Shoot = {}
+function Shoot.status(entity)
     if is_failed(entity) then return TASK_STATUSES.FAILED end
     if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
     return TASK_STATUSES.RUNNING
 end
 
-function finish_subtask(obj_data)
+function Shoot.entity_on_complete(obj_data)
     local callback = callback_is_set[obj_data.id]
     if callback then
         UnregisterScriptCallback("npc_on_before_hit", callback)
@@ -88,7 +89,7 @@ function finish_subtask(obj_data)
     is_shotted[obj_data.id] = nil
 end
 
-function test(entity)
+function Shoot.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1
 
