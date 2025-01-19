@@ -57,10 +57,25 @@ function get_all_quests()
 	return IGI_QUESTS
 end
 
+function supported_wtf_versions()
+	return {
+		["4.0"] = true
+	}
+end
+
 local function get_task_data(quest_id)
 	local prefix, task_name = igi_helper.get_task_name(quest_id)
 	local task_tbl = get_task_table(task_name, prefix)
 	trace_assert(task_tbl, "No such task: " .. tostring(quest_id or "nil"))
+	if not supported_wtf_versions()[task_tbl.WTF_VERSION] then
+		local list = {}
+		for k in pairs(supported_wtf_versions()) do
+			list[#list+1] = k
+		end
+		igi_helper.trace_error("[" .. prefix .. ":" .. task_name .. 
+						']: Unsupported WTF_VERSION! Supported are: \\n"' .. table.concat(list, '", "') .. '"')
+		assert(nil)
+	end
 
 	igi_callbacks.invoke_callbacks("on_get_taskdata", task_tbl, quest_id)
 	return task_tbl

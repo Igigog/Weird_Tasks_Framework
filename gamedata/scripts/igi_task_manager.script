@@ -105,6 +105,9 @@ function get_valid_quests_for_npc(npc)
 		local task_id = quest_id[1] .. quest_id[2] .. tg_id
 		local _ = pcall(igi_random.set_seed, task_id)
 		local ok, task_data = pcall(Igi.get_task_cache, quest_id, task_id, tg_id)
+		if not ok then
+			igi_helper.trace_error("Task validation failed!", task_data)
+		end
 		if ok and is_valid_quest(npc:id(), task_data, task_id) then
 			quest_list[#quest_list+1] = task_id
 		end
