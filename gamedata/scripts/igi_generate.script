@@ -55,16 +55,12 @@ function Split(field_in, field_out, count)
         entity[field_in] = nil
 
         local new_entities = {}
-        for _, val in ipairs(before) do
+        for _, val in ipairs(igi_utils.get_random_items(before, count or 1)) do
             local t = dup_table(entity)
             t[field_out] = val
             new_entities[#new_entities+1] = t
-
-            if count and #new_entities >= count then
-                break
-            end
         end
-        
+
         new_entities[1][field_in] = before
         return new_entities
     end
