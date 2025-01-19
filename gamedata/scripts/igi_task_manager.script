@@ -6,7 +6,6 @@ local function notnil(v)
 	return v
 end
 
-local set = notnil(igi_utils.Set.from_list)
 local trace_dbg = notnil(igi_helper.trace_dbg)
 local trace_error = notnil(igi_helper.trace_error)
 local pcall = notnil(igi_helper.pcall)
@@ -34,86 +33,16 @@ function on_game_start()
 	RegisterScriptCallback("save_state", save_state)
 end
 
-NPC_TAGS = {
-	-- Agroprom
-	agr_smart_terrain_1_6_army_mechanic_stalker = set{"Mechanic", "Agroprom", "Army"},
-	agr_1_6_medic_army_mlr = set{"Medic", "Agroprom", "Army"},
-	agr_smart_terrain_1_6_near_2_military_colonel_kovalski = set{"Leader", "Agroprom", "Army", "Kuznetsov"},
-	-- Bar
-	bar_visitors_stalker_mechanic = set{"Mechanic", "Bar", "Duty"},
-	bar_dolg_medic = set{"Medic", "Bar", "Duty"},
-	bar_visitors_barman_stalker_trader = set{"Barman", "Trader", "Loner", "Bar", "Barkeep"},
-	bar_dolg_leader = set{"Trader", "Bar", "Duty", "Voronin"},
-	bar_dolg_general_petrenko_stalker = set{"Leader", "Bar", "Duty", "Petrenko"},
-	snitch = set{"Bar", "Loner", "Snitch"},
-	-- Darkscape
-	dasc_tech_mlr = set{"Mechanic", "Darkscape", "Loner"},
-	-- Dark Valley
-	val_smart_terrain_7_3_bandit_mechanic_stalker = set{"Mechanic", "DarkValley", "Bandit"},
-	bandit_main_base_medic_mlr = set{"Medic", "DarkValley", "Bandit"},
-	zat_b7_bandit_boss_sultan = set{"Leader", "DarkValley", "Bandit", "Sultan"},
-	val_smart_terrain_7_4_bandit_trader_stalker = set{"Trader", "DarkValley", "Bandit", "Olivius"},
-	-- Dead City
-	cit_killers_merc_mechanic_stalker = set{"Mechanic", "DeadCity", "Mercenary"},
-	cit_killers_merc_medic_stalker = set{"Medic", "DeadCity", "Mercenary"},
-	cit_killers_merc_trader_stalker = set{"Leader", "Trader", "DeadCity", "Mercenary", "Dushman"},
-	cit_killers_merc_barman_mlr = set{"Barman", "Trader", "DeadCity", "Mercenary", "Aslan"},
-	-- Escape
-	esc_smart_terrain_5_7_loner_mechanic_stalker = set{"Mechanic", "Escape", "Loner"},
-	army_south_mechan_mlr = set{"Mechanic", "Escape", "Army"},
-	esc_m_trader = set{"Trader", "Leader", "Escape", "Loner", "Sidorovich"},
-	esc_2_12_stalker_wolf = set{"TaskGiver", "Loner", "Escape", "Wolf"},
-	esc_2_12_stalker_nimble = set{"Trader", "Loner", "Escape", "Nimble"},
-	esc_3_16_military_trader = set{"Trader", "Army", "Escape"},
-	esc_2_12_stalker_fanat = set{"TaskGiver", "Loner", "Escape", "Fanatic"},
-	-- Garbage
-	hunter_gar_trader = set{"Hunter", "Loner", "Garbage", "Trader", "Butcher"},
-	baraholka_trader = set{"Trader", "Loner", "Garbage"},
-	baraholka_trader_night = set{"Trader", "Loner", "Garbage", "NightTrader"},
-	-- Jupiter
-	jup_b217_stalker_tech = set{"Mechanic", "Loner", "Jupiter"},
-	jup_cont_mech_bandit = set{"Mechanic", "Bandit", "Jupiter"},
-	mechanic_monolith_jup_depo = set{"Mechanic", "Monolith", "Jupiter"},
-	jup_a6_stalker_medik = set{"Medic", "Loner", "Jupiter"},
-	drx_sl_jup_a6_freedom_leader = set{"Leader", "Freedom", "Jupiter", "Loki"},
-	jup_b6_scientist_tech = set{"Mechanic", "Ecolog", "Jupiter", "Tukarev"},
-	jup_b220_trapper = set{"Hunter", "Loner", "Jupiter", "Trapper"},
-	jup_b19_freedom_yar = set{"TaskGiver", "Freedom", "Jupiter", "Yar"},
-	jup_b6_scientist_nuclear_physicist = set{"Leader", "Ecolog", "Jupiter", "Hermann"},
-	-- Marsh
-	mar_base_stalker_tech = set{"Mechanic", "ClearSky", "Marsh"},
-	mar_smart_terrain_base_doctor = set{"Medic", "ClearSky", "Marsh"},
-	mar_smart_terrain_base_stalker_leader_marsh = set{"Leader", "ClearSky", "Marsh", "Cold"},
-	mar_base_owl_stalker_trader = set{"Trader", "ClearSky", "Marsh", "Spore"},
-	mar_base_stalker_barmen = set{"Barman", "Trader", "ClearSky", "Marsh", "Librarian"},
-	-- Army Warehouses
-	mil_smart_terrain_7_7_freedom_mechanic_stalker = set{"Mechanic", "Freedom", "AW"},
-	mil_freedom_medic = set{"Medic", "Freedom", "AW"},
-	mil_smart_terrain_7_7_freedom_leader_stalker = set{"Leader", "Freedom", "AW", "Lukash"},
-	mil_smart_terrain_7_10_freedom_trader_stalker = set{"Trader", "Freedom", "AW", "Skinflint"},
-	-- Pripyat 2
-	pri_monolith_monolith_mechanic_stalker = set{"Mechanic", "Monolith", "Pripyat2"},
-	merc_pri_a18_mech_mlr = set{"Mechanic", "Mercenary", "Pripyat2"},
-	mechanic_monolith_kbo = set{"Mechanic", "Monolith", "Pripyat2"},
-	pri_monolith_monolith_trader_stalker = set{"Trader", "Monolith", "Pripyat2", "Rabbit"},
-	lider_monolith_haron = set{"Leader", "Monolith", "Pripyat2", "Haron"},
-	monolith_eidolon = set{"TaskGiver", "Monolith", "Pripyat2", "Eidolon"},
-	merc_pri_grifon_mlr = set{"Leader", "Mercenary", "Pripyat2", "Griffin"},
-	-- Red Forest
-	red_greh_tech = set{"Mechanic", "Greh", "RedForest"},
-	-- Truck Cemetery
-	trucks_cemetery_bandit_mechanic = set{"Mechanic", "Bandit", "TruckCemetery"},
-	-- Yantar
-	mechanic_army_yan_mlr = set{"Mechanic", "Army", "Yantar"},
-	yan_stalker_sakharov = set{"Leader", "Ecolog", "Yantar", "Sakharov"},
-	-- Zaton
-	zat_a2_stalker_mechanic = set{"Mechanic", "Loner", "Zaton"},
-	zat_stancia_mech_merc = set{"Mechanic", "Mercenary", "Zaton"},
-	zat_tech_mlr = set{"Mechanic", "Loner", "Zaton"},
-	zat_b22_stalker_medic = set{"Medic", "Loner", "Zaton"},
-	zat_a2_stalker_barmen = set{"Barman", "Trader", "Leader", "Loner", "Zaton", "Beard"},
-	zat_stancia_trader_merc = set{"Trader", "Mercenary", "Zaton"},
-}
+NPC_TAGS = {}
+function get_npc_tags()
+	if next(NPC_TAGS) then return NPC_TAGS end
+	local section = igi_helper.db_ini:collect_section("npc_tags")
+	for k, v in pairs(section) do
+		section[k] = igi_utils.Set.from_list(parse_names(v))
+	end
+	NPC_TAGS = section
+	return section
+end
 
 function pcall(f, ...)
 	if type(f) ~= "function" then
@@ -191,8 +120,8 @@ end
 
 
 function npc_has_quest(npc_name, quest)
-	if not NPC_TAGS[npc_name] then return false end
-	local npc_tags = NPC_TAGS[npc_name]
+	if not get_npc_tags()[npc_name] then return false end
+	local npc_tags = get_npc_tags()[npc_name]
 	for _, quest_tags in pairs(quest.quest_givers or {}) do
 		if Igi.is_subset(quest_tags, npc_tags) then
 			return true
