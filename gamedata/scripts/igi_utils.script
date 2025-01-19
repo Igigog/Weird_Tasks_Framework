@@ -1,10 +1,4 @@
 Set = {
-	__cls = 'Set',
-
-	new = function()
-		return setmetatable({}, {__index = Set})
-	end,
-
 	union = function(self, set2)
 		local new_set = dup_table(self)
 		for k in pairs(set2) do
@@ -48,8 +42,6 @@ Set = {
 }
 
 function random_table_element(tbl)
-	-- It's preffered to use lists with igi_random.rand rather
-	-- than this function bcs this function is slow
 	local keyset = {}
 	for k in pairs(tbl) do
 		table.insert(keyset, k)
