@@ -265,6 +265,11 @@ List = {
         return t
     end,
 
+    content = function (self, tbl)
+        self.content = tbl
+        return self
+    end,
+
     input_type = AbstractOption.input_type,
     cmd = AbstractOption.cmd,
     dont_translate = AbstractOption.dont_translate,

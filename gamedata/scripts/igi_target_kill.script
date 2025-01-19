@@ -40,7 +40,7 @@ local function get_npc_value(se_npc)
 	local value = 1000
 	local tier = string.match(se_npc:section_name(), "%d") or ""
 	igi_helper.trace_dbg(se_npc:section_name(), tier)
-	local factor = igi_helper.db_ini:w_value('npc_tier_factor', tier, 2)
+	local factor = igi_helper.db_ini:r_value('npc_tier_factor', tier, 2)
 
 	return value*(factor or 1)
 end

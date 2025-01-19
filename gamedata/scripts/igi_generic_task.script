@@ -4,7 +4,6 @@ TASKS_CACHE = {}
 
 local trace_dbg = igi_helper.trace_dbg
 local trace_assert = igi_helper.trace_assert
-local WorldState = igi_world_state.WorldState
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 local last_tasks_version
 NIL_ERROR = false

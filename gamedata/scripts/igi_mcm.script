@@ -39,13 +39,6 @@ local function build_task_page(task, prefix)
 		Checkbox.new("disabled")
 			:hint("igi_tasks_disable_task")
 	)
-	page:add(
-		Checkbox.new("cancel_all")
-			:hint("igi_tasks_cancel_all")
-			:current_value({function() return false end})
-			:callback({reset_all_tasks, task, prefix})
-	)
-	page:add(Line.new())
 	return page
 end
 
@@ -80,6 +73,21 @@ local function get_options_page()
 
 	page:add(Line.new())
 	page:add(Title.new("devzone"):text("ui_mcm_igi_tasks_devzone"))
+	page:add(igi_mcm_builder.List.new("cancel_task")
+		:dont_translate()
+		:content({ function ()
+			local out = {{1, "-"}}
+			for k in pairs(igi_generic_task.TASKS_CACHE) do
+				out[#out+1] = k ~= "TASKS_VERSION" and {k, k} or nil
+			end
+			return out
+		end})
+		:current_value({ function ()
+			return {1, "-"}
+		end})
+		:callback({ function (task_id)
+			task_manager.get_task_manager():set_task_completed(task_id)
+		end}))
 	page:add(Checkbox.new("debug"):default(false))
 	page:add(Checkbox.new("fast_tests"):default(false))
 	page:add(Checkbox.new("integration_tests_quest")
@@ -90,7 +98,7 @@ local function get_options_page()
 		:callback({ function() igi_tests.start_normal_tests() end, }))
 	page:add(Checkbox.new("flush_logs")
 		:current_value({ function() return false end })
-		:callback({ function() exec_console_cmd("flush") end, }))
+		:callback({ function() flush() end, }))
 	return page
 end
 
