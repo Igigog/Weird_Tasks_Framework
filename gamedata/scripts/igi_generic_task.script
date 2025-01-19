@@ -57,17 +57,22 @@ function try_prepare_quest(task_id, task_data, tg_id)
 	trace_dbg("validate "..task_id, task_data)
 	trace_assert(task_data, "WTF: validate_task: no task data")
 
-	if igi_mcm.get_task_value(task_data.quest_id, "disabled") then return end
+	local CACHE = igi_taskdata.finalize_task_cache(task_data, task_id, tg_id)
+	igi_generate.run_ML(CACHE, "")
+	if igi_mcm.get_task_value(CACHE.quest_id, "disabled") then return end
 	if not igi_mcm.get_options_value("debug") then
-		for _, val in pairs(task_data.preconditions or {}) do
+		for _, val in pairs(CACHE.preconditions or {}) do
 			if not val then return end
 		end
 	end
 
+	for _, val in pairs(CACHE.requirements or {}) do
+		if not val then return end
+	end
+
 	trace_dbg("setup "..task_id, task_data)
-	local CACHE = igi_taskdata.finalize_task_cache(task_data, task_id, tg_id)
 	CACHE.preconditions = nil	-- not needed anymore
-	TASK_SETUP[task_id] = igi_generate.run_ML(CACHE, "")
+	TASK_SETUP[task_id] = CACHE
 	trace_dbg("CACHE after setup "..task_id, TASK_SETUP[task_id])
 	return TASK_SETUP[task_id]
 end

@@ -1,20 +1,10 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-function is_completed(se_obj)
-	-- Complete if in player inventory
-	return se_obj.parent_id == 0
-end
-
-function is_failed(se_obj, section_name)
-	if not se_obj then return true end
-	if se_obj:section_name() ~= section_name then return true end
-end
-
 Get = {}
 function Get.status(entity)
 	local se_obj = alife_object(entity.id)
-	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
-	if is_completed(se_obj) then return TASK_STATUSES.COMPLETED end
+	if not se_obj then return TASK_STATUSES.FAILED end
+	if se_obj.parent_id == 0 then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
 end
 

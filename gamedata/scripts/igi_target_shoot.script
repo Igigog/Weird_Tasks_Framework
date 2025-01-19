@@ -89,6 +89,10 @@ function Shoot.entity_on_complete(obj_data)
     is_shotted[obj_data.id] = nil
 end
 
+function Shoot.quest_target(entity)
+    return entity.id
+end
+
 function Shoot.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1

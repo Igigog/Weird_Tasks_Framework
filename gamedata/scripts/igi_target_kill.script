@@ -16,6 +16,10 @@ function Kill.entity_on_first_run(entity)
 	entity._complexity = calculate_complexity(entity)
 end
 
+function Kill.quest_target(entity)
+	return entity.id
+end
+
 local function get_monster_value(se_npc)
 	local npc_section = se_npc:section_name()
 	local factor = 1

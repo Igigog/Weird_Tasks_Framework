@@ -147,7 +147,7 @@ function eval(v, env)
 		f = loadstring("return " .. v)
 		fCache[v] = f
 	end
-	assert(f, "Unreachable")
+	assert(f, "Function cannot be compiled: " .. (v or nil))
 
 	setfenv(f, setmetatable(env or {}, {__index = _G}))
 	return f()

@@ -4,6 +4,7 @@ local trace_dbg = igi_helper.trace_dbg
 function run_ML(CACHE, level)
     trace_dbg("Before MLG run", level, CACHE)
 	igi_text_processor.resolve_and_link_cache(CACHE, level)
+    trace_dbg("MLG: after resolving", level, CACHE)
 
 	local new_entities = {}
 	for _, entity in pairs(CACHE.entities) do
@@ -13,6 +14,7 @@ function run_ML(CACHE, level)
 		end
 	end
 	CACHE.entities = new_entities
+    trace_dbg("MLG: after generation", level, CACHE)
 
 	igi_text_processor.resolve_and_link_cache(CACHE, level)
     trace_dbg("After MLG run", level, CACHE)
@@ -51,11 +53,14 @@ function Split(field_in, field_out, count)
         local before = entity[field_in]
         trace_assert(type(before) == "table", "Split field is not a table", entity)
         trace_assert(field_out ~= nil, "Split out field is nil", entity)
+        if #before < (count or #before) then
+            return {entity}
+        end
 
         entity[field_in] = nil
 
         local new_entities = {}
-        for _, val in ipairs(igi_utils.get_random_items(before, count or 1)) do
+        for _, val in ipairs(igi_utils.get_random_items(before, count or #before)) do
             local t = dup_table(entity)
             t[field_out] = val
             new_entities[#new_entities+1] = t

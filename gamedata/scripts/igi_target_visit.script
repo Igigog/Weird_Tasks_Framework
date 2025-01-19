@@ -25,6 +25,10 @@ function Visit.status(subtask)
     return igi_subtask.TASK_STATUSES.RUNNING
 end
 
+function Visit.quest_target(entity)
+	return entity.id
+end
+
 function Visit.get_complexity(entity)
 	return 500
 end
@@ -34,7 +38,7 @@ function Visit.test(entity)
 	entity._test_stage = (entity._test_stage or 0) + 1
 
 	if entity._test_stage == 1 then
-		local se_obj = igi_helper.get_binded_object(entity)
+		local se_obj = alife_object(entity.id)
 		assert_test(se_obj, "Entity does not exist")
 		db.actor:set_actor_position(se_obj.position)
 

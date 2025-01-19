@@ -60,14 +60,17 @@ function get_task_status(entities)
 	local ready_to_finish = false
 	local running = false
 	for _, entity in pairs(entities) do
-		if entity.status == TASK_STATUSES.FAILED and not entity.optional then
-			return TASK_STATUSES.FAILED
-		end
-
-		if entity.status == TASK_STATUSES.RUNNING then
-			running = true
-		elseif entity.status == TASK_STATUSES.READY_TO_FINISH then
-			ready_to_finish = true
+		local controller = igi_taskdata.get_controller(entity)
+		if controller.status then
+			if entity.status == TASK_STATUSES.FAILED and not entity.optional then
+				return TASK_STATUSES.FAILED
+			end
+	
+			if entity.status == TASK_STATUSES.RUNNING then
+				running = true
+			elseif entity.status == TASK_STATUSES.READY_TO_FINISH then
+				ready_to_finish = true
+			end
 		end
 	end
 

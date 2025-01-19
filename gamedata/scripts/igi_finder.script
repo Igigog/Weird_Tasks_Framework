@@ -84,7 +84,6 @@ local function check_location(se_obj, lower_bound, higher_bound)
 	if blacklist[obj_level] then return false end
 
 	local dist = WorldState.distance_by_level[obj_level]
-	trace_dbg("Bounds", lower_bound, higher_bound, dist)
 	return dist >= lower_bound and dist <= higher_bound
 end
 
@@ -96,7 +95,7 @@ local function is_parent_enemy(se_obj)
 end
 
 function find_objects_in_world(lower_bound, higher_bound, sections)
-	trace_assert(#sections > 0, "No sections were given for searching")
+	trace_assert(next(sections), "No sections were given for searching")
 
 	local out = {}
 	for id=1,65534 do
@@ -112,7 +111,7 @@ function find_objects_in_world(lower_bound, higher_bound, sections)
 end
 
 function find_items_in_enemy(lower_bound, higher_bound, sections)
-	trace_assert(#sections > 0, "No sections were given for searching")
+	trace_assert(next(sections)	, "No sections were given for searching")
 	
 	local out = {}
 	for id=1,65534 do

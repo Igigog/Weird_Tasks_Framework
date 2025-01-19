@@ -52,6 +52,16 @@ function random_table_element(tbl)
 	return random_elem, random_key
 end
 
+function random_table_value(tbl)
+	local val, _ = random_table_element(tbl)
+	return val
+end
+
+function random_table_key(tbl)
+	local _, k = random_table_element(tbl)
+	return k
+end
+
 function choose(...)
 	local list = { ... }
 	return list[igi_random.rand(#list)]

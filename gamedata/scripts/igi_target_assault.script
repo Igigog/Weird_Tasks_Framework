@@ -87,6 +87,14 @@ function Assault.status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
+function Assault.quest_target(entity)
+	return entity.id
+end
+
+function Assault.get_complexity(entity)
+	return 5000
+end
+
 function Assault.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1
