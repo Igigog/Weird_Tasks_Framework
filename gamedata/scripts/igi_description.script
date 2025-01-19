@@ -87,7 +87,7 @@ function get_task_text_function(CACHE)
 end
 
 function add_from_entity(description, entity)
-	if entity.no_description then return end
+	if not entity.to_description then return end
 
 	local controller = igi_taskdata.get_controller(entity)
 	local description_f = controller.get_description or get_entity_description
