@@ -1,28 +1,6 @@
 local trace_dbg = igi_helper.trace_dbg
 local Set = igi_utils.Set
 
-function ScaleToPlayer(a, b)
-	-- will return integer from a to b (or from 1 to a) based
-	-- on player rank
-	local endgame_rank = 8000	-- TODO: move to settings
-	local rank = db.actor:character_rank()
-
-	local function s(section, total_sections)
-		if section == 1 then return 0 end
-		local koeff = (section/total_sections)^2
-		return endgame_rank*koeff
-	end
-
-	local total_sections = b and (b-a+1) or a
-	local offset = b and a-1 or 0
-	for section=total_sections,1,-1 do
-		if rank > s(section, total_sections) then
-			return section + offset
-		end
-	end
-	return b and a or 1
-end
-
 function TableValueRandom(tbl_name)
 	local tbl = igi_helper.db_ini:collect_section(tbl_name)
 	local elem = igi_utils.random_table_element(tbl)
