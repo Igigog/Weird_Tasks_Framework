@@ -463,6 +463,9 @@ function on_task_crashed(err, task_id)
 		task_manager.get_task_manager():set_task_failed(task_id)
 	end
 	trace_error("Task crashed: ", err, callstack(false, true))
+	trace_error("Task " .. (task_id and task_id .. " " or "") 
+					.. "crashed! Check PDA Messages or logs for full stack trace. Error:\\n"
+					.. (string.match(err, "^(.-)\nstack traceback:.*$") or '??'))
 	crash_count = crash_count + 1
 
 	if (crash_count == 1 and igi_mcm.get_options_value("wtf_crash_message")) then
