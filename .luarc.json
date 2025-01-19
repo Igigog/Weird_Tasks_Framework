@@ -14,7 +14,6 @@
         "igi_mcm",
         "db",
         "distance_2d_sqr",
-        "igi_world_state",
         "igi_target",
         "alife_character_community",
         "CreateTimeEvent",

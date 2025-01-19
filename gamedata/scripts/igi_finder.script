@@ -1,12 +1,66 @@
 -- Object finder functions
-
-local WorldState = igi_world_state.WorldState
 local trace_assert = igi_helper.trace_assert
 local trace_dbg = igi_helper.trace_dbg
 
 function on_game_start()
+    RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 	blacklist = igi_helper.db_ini:collect_section("map_blacklist")
 	smart_blacklist = igi_helper.db_ini:collect_section("smart_blacklist")
+end
+
+function actor_on_first_update()
+    sort_levels_by_distance()
+	sort_smarts_by_level()
+end
+
+WorldState = {
+	levels_by_distance = igi_utils.defaultdict(function () return {} end),
+	smarts_by_level = igi_utils.defaultdict(function () return {} end),
+	distance_by_level = {},
+}
+
+------------------------------
+
+function sort_levels_by_distance()
+	local actor_level = level.name()
+    local levels_by_distance = WorldState.levels_by_distance
+    local distance_by_level = WorldState.distance_by_level
+
+	levels_by_distance[0] = {[actor_level] = true}
+	distance_by_level[actor_level] = 0
+	local visited = {[actor_level] = true}
+
+	local cur_distance = 0
+	local changes = true
+	while changes do
+		cur_distance = cur_distance + 1
+		changes = false
+
+		for start_level in pairs(levels_by_distance[cur_distance-1]) do
+			local connected_levels = simulation_objects.config:r_value(
+				start_level, "target_maps", 0, "")
+
+			for con_level in connected_levels:gmatch("[^ ,]+") do
+				if not visited[con_level] then
+					visited[con_level] = true
+					changes = true
+					levels_by_distance[cur_distance][con_level] = true
+					distance_by_level[con_level] = cur_distance
+				end
+			end
+		end
+	end
+end
+
+function sort_smarts_by_level()
+	local sim = alife()
+	local gg = game_graph()
+    local smarts_by_level = WorldState.smarts_by_level
+
+	for name, smart in pairs(SIMBOARD.smarts_by_names) do
+		local smart_level = sim:level_name(gg:vertex(smart.m_game_vertex_id):level_id())
+		smarts_by_level[smart_level][name] = true
+	end
 end
 
 local function is_smart_good(smart_name, smart_level)

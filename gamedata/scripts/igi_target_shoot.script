@@ -93,7 +93,6 @@ function Shoot.test(entity)
 	local assert_test = igi_tests.assert_test
 	entity._test_stage = (entity._test_stage or 0) + 1
 
-    local WorldState = igi_world_state.WorldState
 	if entity._test_stage == 1 then
 		local se_obj = igi_helper.get_binded_object(entity)
 		assert_test(se_obj, "Entity does not exist")
