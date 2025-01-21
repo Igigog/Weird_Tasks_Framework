@@ -714,7 +714,7 @@ Looks a bit better. Still, these pesky `on_complete` and `on_fail` are kind of a
 A bit better, but it's still kinda problematic that we manage rewards in callbacks. A lot of fancy stuff can be done with rewards, so let's make them WTF-native. Field `rewarder` can help us here:
 
 ```json
-"rewarder": "igi_rewards.STATIC_REWARDER(10000, 50)"
+"rewarder": "igi_rewards.Static(10000, 50)"
 ```
 Good ol' static rewarder, giving us 10 000 RUB (corrected for inflation) and 50 goodwill. Three good things about rewarders:
 1. They know the faction of your task giver, you don't need to type it.

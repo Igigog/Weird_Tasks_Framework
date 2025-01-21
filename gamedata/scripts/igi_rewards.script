@@ -50,7 +50,7 @@ _STATIC_REWARDER = {
 		return s, s
 	end
 }
-function STATIC_REWARDER(money, goodwill)
+function Static(money, goodwill)
 	return setmetatable({
 		_money = money,
 		_goodwill = goodwill
