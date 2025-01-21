@@ -29,7 +29,8 @@ function get_task_table(task_name, prefix)
 	if not content then return {} end
 	local task_table = json.decode(content)
 
-	task_table.description_key = task_table.description_key or (prefix.."_"..task_name)
+	task_table.description_key = task_table.description_key
+									or (igi_description.TEXT_HEADER..prefix.."_"..task_name)
 	task_table.quest_id = {prefix, task_name}
 	return task_table
 end
