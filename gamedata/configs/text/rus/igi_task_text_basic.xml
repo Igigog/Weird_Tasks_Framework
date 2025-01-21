@@ -6,16 +6,16 @@
 
 	<!-- basic text -->
 	<string id="igi_task_text_title">
-		<text>Igi Tasks: Название не найдено</text>
+		<text>WTF: Название не найдено</text>
 	</string>
 	<string id="igi_task_text_descr">
-		<text>Igi Tasks: Описание не найдено</text>
+		<text>WTF: Описание не найдено</text>
 	</string>
 	<string id="igi_task_text_job_descr">
-		<text>Igi Tasks: Описание задания не найдено</text>
+		<text>WTF: Описание задания не найдено</text>
 	</string>
 	<string id="igi_task_text_finish">
-		<text>Igi Tasks: Поздравляю! Текст завершения не найден.</text>
+		<text>WTF: Поздравляю! Текст завершения не найден.</text>
 	</string>
 
 	<!-- UI -->

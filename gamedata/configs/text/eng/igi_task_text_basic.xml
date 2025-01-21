@@ -5,16 +5,16 @@
 	</string>
 	<!-- basic text -->
 	<string id="igi_task_text_title">
-		<text>Igi Tasks: Title not found</text>
+		<text>WTF: Title not found</text>
 	</string>
 	<string id="igi_task_text_descr">
-		<text>Igi Tasks: Description not found</text>
+		<text>WTF: Description not found</text>
 	</string>
 	<string id="igi_task_text_job_descr">
-		<text>Igi Tasks: Job description not found</text>
+		<text>WTF: Job description not found</text>
 	</string>
 	<string id="igi_task_text_finish">
-		<text>Igi Tasks: Finish not found, but congrats anyway</text>
+		<text>WTF: Finish not found, but congrats anyway</text>
 	</string>
 
 	<!-- UI -->
