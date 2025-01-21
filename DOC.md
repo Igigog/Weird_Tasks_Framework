@@ -112,9 +112,9 @@ So, remember how each task in vanilla needed a ltx section for each task giver? 
 To define which task giver will have your task, you need to add `quest_givers` field to the definition:
 
 ```json
-"quest_givers": {
+"quest_givers": [
     {"Petrenko": true}
-}
+]
 ```
 
 Task givers are defined by sets of `tags`. What we wrote above means
@@ -122,10 +122,10 @@ Task givers are defined by sets of `tags`. What we wrote above means
 
 Here is how you give your task to every Medic in the game and every Mechanic in the Bar:
 ```json
-"quest_givers": {
+"quest_givers": [
     {"Medic": true},
     {"Mechanic": true, "Bar": true}
-}
+]
 ```
 
 You can check tags for every task giver in `gamedata/configs/igi_tasks/base.ltx`. Let's take a peek:
@@ -392,7 +392,13 @@ function igi_assault.get_squads(def, enemy_faction_list)
             end
         end
     end
-    return #targets > 0 and targets[math.random(#targets)]
+
+    local out = {}
+	for squad_id in pairs(targets) do
+		out[#out+1] = squad_id
+	end
+
+    return #out > 0 and out[math.random(#out)]
 end
 ```
 
@@ -490,13 +496,18 @@ function igi_assault.get_smarts(scan)
     return smarts
 end
 
-function igi_assault.get_squads(smarts, enemy_faction_list)
+function get_squads(smarts, enemy_faction_list)
     local targets = {}
-    for _, name in pairs(smarts)
-        local smrt = SIMBOARD.smarts_by_names[name]
-        evaluate_smarts_squads(task_id, targets, smrt, def, enemy_faction_list)
+    for _, id in pairs(smarts) do
+        local smrt = alife_object(id)
+        tasks_assault.evaluate_smarts_squads(nil, targets, smrt, {num = 0}, enemy_faction_list)
     end
-    return targets
+
+	local out = {}
+	for squad_id in pairs(targets) do
+		out[#out+1] = squad_id
+	end
+    return out
 end
 ```
 
@@ -504,7 +515,7 @@ end
 {
     "CONTROLLER": ...,
     "smart_names": "$ igi_assault.get_smarts(2)",
-    "squad_ids": "$ igi_assault.get_squads(|this.smart_names|, {'killer', 'bandit'})",
+    "squad_ids": "$ igi_assault.get_squads(|this.smart_names|, {killer = true, bandit = true})",
     "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
     "smart_id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
     "is_enemy": true,
@@ -532,7 +543,7 @@ end
 {
     "CONTROLLER": ...,
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
     "smart_id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
     "is_enemy": true,
@@ -551,7 +562,7 @@ Look, I won't sugar-coat it. I already implemented assault-type controller. In 2
 {
     "CONTROLLER": "igi_target_assault.Assault",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
     "link_id": "squad"
@@ -631,7 +642,7 @@ entities: [
 {
     "CONTROLLER": "igi_target_assault.Assault",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "squad_id": "$ #|this.squad_ids| > 1 and |this.squad_ids|[1]",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
     "link_id": "squad"
@@ -681,7 +692,7 @@ entities: [
     "CONTROLLER": "igi_target_assault.Assault",
     "GEN": "igi_generate.Split('squad_ids', 'squad_id')",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
     "link_id": "squad"
 }
@@ -695,7 +706,7 @@ entities: [
     "CONTROLLER": "igi_target_assault.Assault",
     "GEN": "igi_generate.Split('squad_ids', 'squad_id', 5)",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+    "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
     "link_id": "squad"
 }
@@ -718,7 +729,7 @@ So, what are we left with?
         {
             "CONTROLLER": "igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
             "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
             "link_id": "squad"
@@ -726,14 +737,15 @@ So, what are we left with?
     ],
     "on_complete": "xr_effects.reward_random_money(9500:11000) xr_effects.reward_stash(true) xr_effects.complete_task_inc_goodwill(50:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
     "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
-    "quest_givers": {
+    "quest_givers": [
         {"Petrenko": true}
-    },
+    ],
     "actions": [
     {
-        "when": "not xr.conditions.task_giver_alive(|CACHE.task_id|)",
-        "run": "task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
-    },
+        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
+        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+    }
+    ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
     "description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
 ]
@@ -773,22 +785,23 @@ Let's just have WTF defaults do their job.
         {
             "CONTROLLER": "igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
             "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
             "link_id": "squad"
         }
     ],
-    "on_complete": "xr_effects.reward_stash(true)",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg)",
-    "quest_givers": {
+    "on_complete": "xr_effects.reward_stash(nil, nil, {'true'})",
+    "on_fail": "xr_effects.fail_task_dec_goodwill(nil, nil, {'25','dolg'})",
+    "quest_givers": [
         {"Petrenko": true}
-    },
+    ],
     "actions": [
     {
-        "when": "not xr.conditions.task_giver_alive(|CACHE.task_id|)",
-        "run": "task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
-    },
+        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
+        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+    }
+    ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
     "description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
 ]
@@ -811,22 +824,23 @@ Description field is the only eyesore left here. Let's just remove it.
         {
             "CONTROLLER": "igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
             "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
             "link_id": "squad"
         }
     ],
-    "on_complete": "xr_effects.reward_stash(true)",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg)",
-    "quest_givers": {
+    "on_complete": "xr_effects.reward_stash(nil, nil, {'true'})",
+    "on_fail": "xr_effects.fail_task_dec_goodwill(nil, nil, {'25','dolg'})",
+    "quest_givers": [
         {"Petrenko": true}
-    },
+    ],
     "actions": [
     {
-        "when": "not xr.conditions.task_giver_alive(|CACHE.task_id|)",
-        "run": "task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
-    },
+        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
+        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+    }
+    ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
 ]
 }
@@ -848,7 +862,7 @@ In fact, in the same way, if you have an entity with `id` of a squad, its factio
         {
             "CONTROLLER": "igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
-            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {'killer', 'bandit'})",
+            "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
             "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
             "link_id": "squad",
@@ -857,20 +871,20 @@ In fact, in the same way, if you have an entity with `id` of a squad, its factio
         {
             "id": "|squad.squad_id|",
             "to_description": true
-        },
+        }
     ],
-    "on_complete": "xr_effects.reward_stash(true)",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg)",
+    "on_complete": "xr_effects.reward_stash(nil, nil, {'true'})",
+    "on_fail": "xr_effects.fail_task_dec_goodwill(nil, nil, {'25','dolg'})",
     "actions": [
     {
-        "when": "not xr.conditions.task_giver_alive(|CACHE.task_id|)",
-        "run": "task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
+        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
+        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
     }
     ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
-    "quest_givers": {
+    "quest_givers": [
         {"Petrenko": true}
-    }
+    ]
 }
 ```
 
