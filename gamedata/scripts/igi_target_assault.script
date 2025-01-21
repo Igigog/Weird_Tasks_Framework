@@ -91,7 +91,7 @@ function Assault.quest_target(entity)
 	return entity.id
 end
 
-function Assault.get_complexity(entity)
+function Assault.complexity(entity)
 	return 5000
 end
 

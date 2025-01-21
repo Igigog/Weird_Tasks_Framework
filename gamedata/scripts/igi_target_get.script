@@ -17,7 +17,7 @@ function Get.quest_target(obj_data)
 	end
 end
 
-function Get.get_complexity(entity)
+function Get.complexity(entity)
 	return 0
 end
 

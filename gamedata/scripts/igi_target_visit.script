@@ -29,7 +29,7 @@ function Visit.quest_target(entity)
 	return entity.id
 end
 
-function Visit.get_complexity(entity)
+function Visit.complexity(entity)
 	return 500
 end
 

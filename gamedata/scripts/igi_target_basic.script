@@ -38,16 +38,3 @@ function create_on_smart(section_name, smart_id)
 		location, smart.m_level_vertex_id, smart.m_game_vertex_id)
 	return se_obj.id
 end
-
-------------------------------------------------
--- OTHER FUNCTIONS
--- Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-------------------------------------------------
-
-function quest_target(entity)
-	return entity.id
-end
-
-function get_complexity(entity)
-	return 4000
-end

@@ -45,7 +45,7 @@ function get_item_weight(entity)
 	return tonumber(ini_sys:r_string_ex(entity.section_name, "inv_weight"))
 end
 
-function Return.get_complexity(entity)
+function Return.complexity(entity)
 	return get_item_cost(entity) * get_item_weight(entity) / 32
 end
 

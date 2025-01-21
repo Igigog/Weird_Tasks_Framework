@@ -104,7 +104,7 @@ function Fetch.get_description(entity)
 	}
 end
 
-function Fetch.get_complexity(entity)
+function Fetch.complexity(entity)
 	local base_cost = get_item_base_cost(entity.section_name)
 	local scaled_by_condition = is_scaled_by_condition(entity.section_name)
 	if entity._ids and scaled_by_condition then

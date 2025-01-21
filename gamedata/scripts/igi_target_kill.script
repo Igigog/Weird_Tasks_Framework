@@ -69,7 +69,7 @@ function calculate_complexity(entity)
 	return reward
 end
 
-function Kill.get_complexity(entity)
+function Kill.complexity(entity)
 	if entity._complexity then return entity._complexity end
 	return 1000, 5000
 end
