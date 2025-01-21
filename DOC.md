@@ -175,13 +175,13 @@ task_complete_descr = $KEY_finish
 
 Where `$KEY` is either of these:
 ```
-igi_task_text_$TASKGIVER_$FOLDER_$FILENAME
+igi_task_text_$FOLDER_$FILENAME_$TASKGIVER
 igi_task_text_$FOLDER_$FILENAME
 ```
 
 which, in case of `gamedata/configs/igi_tasks/tasks/MyMod/my_task.json`, corresponds to (notice the folder is lowercase):
 ```
-igi_task_text_bar_dolg_general_petrenko_stalker_mymod_my_task
+igi_task_text_mymod_my_task_bar_dolg_general_petrenko_stalker
 igi_task_text_mymod_my_task
 ```
 
