@@ -33,8 +33,8 @@ function reset_all_tasks(task, prefix)
 end
 
 local function build_task_page(task, prefix)
-	local page = Page.new(task):text("igi_task_text_"..prefix.."_"..task.."_title")
-	page:add(Title.new(task):text("igi_task_text_"..prefix.."_"..task.."_title"))
+	local page = Page.new(task):text("igi_task_text_"..prefix.."_"..task.."_name")
+	page:add(Title.new(task):text("igi_task_text_"..prefix.."_"..task.."_name"))
 	page:add(
 		Checkbox.new("disabled")
 			:hint("igi_tasks_disable_task")
