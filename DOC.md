@@ -511,7 +511,7 @@ end
 }
 ```
 
-Which is quite a bit less code to debug, WITH better logging than before. For free. More than free; it's as if WTF is giving you money at this point.
+Which is quite a bit less code to debug, WITH better logging than before. For free. More than for free; it's as if WTF is giving you money at this point.
 
 ## Controller
 
