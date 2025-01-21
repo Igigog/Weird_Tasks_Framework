@@ -1,7 +1,7 @@
 TASK_STATUSES = {
 	RUNNING = nil,	-- no value means running
-	COMPLETED = "COMPLETED",
-	FAILED = "FAILED",
+	COMPLETED = "complete",
+	FAILED = "fail",
 	READY_TO_FINISH = "READY_TO_FINISH",
 }
 
