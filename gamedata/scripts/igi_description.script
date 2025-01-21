@@ -96,6 +96,7 @@ function item_to_string(item, label)
 	for value in pairs(item) do
 		details[#details+1] = game.translate_string(value)
 	end
+	table.sort(details)
 
 	label = game.translate_string(TEXT_HEADER..label)
 	return label..": "..table.concat(details, ', ')
