@@ -4,7 +4,6 @@ local trace_dbg = igi_helper.trace_dbg
 TEXT_HEADER = "igi_task_text_"
 function get_location_description(entity)
 	return get_smart_name_by_id(entity.id)
-		or get_smart_name_by_id(entity.where)
 		or (entity.id and dynamic_news_helper.GetPointDescription(alife_object(entity.id)))
 		or nil
 end
@@ -28,9 +27,8 @@ function get_entity_description(entity)
 		}
 	else
 		return {
-			factions = {entity.faction or ini_sys:r_string_ex(entity.section_name, "faction")},
-			locations = { get_smart_name_by_id(entity.where) },
-			targets = {ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
+			factions = {entity.faction or (entity.section_name and ini_sys:r_string_ex(entity.section_name, "faction"))},
+			targets = {entity.section_name and ini_sys:r_string_ex(entity.section_name, "inv_name_short")}
 		}
 	end
 end
@@ -65,7 +63,7 @@ function get_rewards_description(CACHE)
 	end
 
 	return game.translate_string(TEXT_HEADER .. "rewards")
-		..
+		.. ' ' ..
 		tostring(low.money) ..
 		(high.money ~= low.money and "-" .. tostring(high.money) or "") ..
 		" " .. game.translate_string(TEXT_HEADER .. "money") .. ", "

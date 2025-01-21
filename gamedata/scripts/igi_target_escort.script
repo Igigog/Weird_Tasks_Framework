@@ -21,13 +21,13 @@ function Escort.status(entity)
 end
 
 function Escort.entity_on_finish(entity)
-    local se_squad = igi_helper.get_binded_object(entity)
-    axr_companions.dismiss_special_squad(se_squad)
+    local se_squad = alife_object(entity.id)
+    local _ = se_squad and axr_companions.dismiss_special_squad(se_squad)
 end
 
 function Escort.test(entity)
 	local assert_test = igi_tests.assert_test
-	local se_squad = igi_helper.get_binded_object(entity)
+	local se_squad = alife_object(entity.id)
 	for member in se_squad:squad_members() do
 		local se_npc = alife_object(member.id)
 		assert_test(

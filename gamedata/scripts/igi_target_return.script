@@ -1,19 +1,10 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-function is_failed(se_obj, section_name)
-	if not se_obj then return true end
-	return se_obj:section_name() ~= section_name
-end
-
-function ready_to_finish(se_obj)
-	return se_obj.parent_id == 0
-end
-
 Return = {}
 function Return.status(entity)
 	local se_obj = alife_object(entity.id)
-	if is_failed(se_obj, entity.section_name) then return TASK_STATUSES.FAILED end
-	if ready_to_finish(se_obj) then return TASK_STATUSES.READY_TO_FINISH end
+	if not se_obj then return TASK_STATUSES.FAILED end
+	if se_obj.parent_id == 0 then return TASK_STATUSES.READY_TO_FINISH end
 	return TASK_STATUSES.RUNNING
 end
 
@@ -54,7 +45,7 @@ function Return.test(entity)
 	entity._test_stage = (entity._test_stage or 0) + 1
 
 	if entity._test_stage == 1 then
-		local se_obj = igi_helper.get_binded_object(entity)
+		local se_obj = alife_object(entity.id)
 		assert_test(se_obj, "Entity does not exist")
 		if igi_mcm.get_options_value("fast_tests") then
 			igi_tests.teleport_to_player(se_obj)
@@ -63,7 +54,7 @@ function Return.test(entity)
 		end
 
 	elseif entity._test_stage == 2 then
-		local se_obj = igi_helper.get_binded_object(entity)
+		local se_obj = alife_object(entity.id)
 		local obj = get_object_by_id(se_obj.id)
 		db.actor:transfer_item(obj, db.actor)
 

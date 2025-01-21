@@ -1,14 +1,8 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
-function is_completed(obj_data)
-	local se_obj = alife_object(obj_data.id)
-	if not se_obj then return true end
-	if se_obj:section_name() ~= obj_data.section_name then return true end
-end
-
 Kill = {}
 function Kill.status(entity)
-	if is_completed(entity) then return TASK_STATUSES.COMPLETED end
+	if not alife_object(entity.id) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
 end
 
@@ -79,7 +73,7 @@ function Kill.test(entity)
 	entity._test_stage = (entity._test_stage or 0) + 1
 
 	if entity._test_stage == 1 then
-		local se_obj = igi_helper.get_binded_object(entity)
+		local se_obj = alife_object(entity.id)
 		assert_test(se_obj, "Kill entity does not exist")
 		assert_test(se_obj:squad_members(), "Kill entity is not a squad")
 		if igi_mcm.get_options_value("fast_tests") then
@@ -89,7 +83,7 @@ function Kill.test(entity)
 		end
 
 	elseif entity._test_stage == 2 then
-		local se_obj = igi_helper.get_binded_object(entity)
+		local se_obj = alife_object(entity.id)
 		for se_npc in se_obj:squad_members() do
 			local npc = assert(get_object_by_id(se_npc.id))
 			npc:kill(db.actor)
