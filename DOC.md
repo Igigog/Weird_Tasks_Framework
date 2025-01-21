@@ -498,8 +498,8 @@ end
 
 function get_squads(smarts, enemy_faction_list)
     local targets = {}
-    for _, id in pairs(smarts) do
-        local smrt = alife_object(id)
+    for _, name in pairs(smarts) do
+        local smrt = SIMBOARD.smarts_by_names(name)
         tasks_assault.evaluate_smarts_squads(nil, targets, smrt, {num = 0}, enemy_faction_list)
     end
 
@@ -529,13 +529,18 @@ Better? Yes, but you don't understand yet, why. Two reasons:
 2. It just so happens, that "all suitable smarts by distance" is kinda common thing to want, so there is a built-in function in WTF for that. Which means, it transforms to: 
 
 ```lua
-function igi_assault.get_squads(smarts, enemy_faction_list)
+function get_squads(smarts, enemy_faction_list)
     local targets = {}
-    for _, id in pairs(smarts)
+    for _, id in pairs(smarts) do
         local smrt = alife_object(id)
-        evaluate_smarts_squads(task_id, targets, smrt, def, enemy_faction_list)
+        tasks_assault.evaluate_smarts_squads(nil, targets, smrt, {num = 0}, enemy_faction_list)
     end
-    return targets
+
+	local out = {}
+	for squad_id in pairs(targets) do
+		out[#out+1] = squad_id
+	end
+    return out
 end
 ```
 
@@ -556,7 +561,7 @@ Which is quite a bit less code to debug, WITH better logging than before. For fr
 
 ## Controller
 
-Look, I won't sugar-coat it. I already implemented assault-type controller. In 2022.
+Look, I won't sugar-coat it. I already implemented assault-type controller. In 2021.
 
 ```json
 {
@@ -682,7 +687,7 @@ There are two built-in generator functions in WTF:
 `igi_generate.Amount(n)` - make an entity into n copies of itself
 
 
-`igi_generate.Split(in, out, amount?)` - take one value from field in, put in field out, repeat until done or until `amount` is reached. Values are taken in random order.
+`igi_generate.Split(in, out, amount?)` - take one value from field in, put in field out, repeat until done or until (optional) `amount` is reached. Values are taken in random order.
 
 Which means, if you want ALL THE SMARTS, here's what you need:
 
@@ -712,8 +717,6 @@ entities: [
 }
 ]
 ```
-
-`igi_generate.Split` does not do anything, if there are not enough values to reach `amount`. It's actually kinda nice to use it to pull random items from tables.
 
 ### Rewards
 
