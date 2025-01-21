@@ -66,8 +66,6 @@ function invoke_callbacks(callback_name, CACHE, ...)
 	send_custom_callbacks(callback_name, CACHE, ...)
 
 	if CACHE[callback_name] then
-		for _, f in ipairs(CACHE[callback_name]) do
-			igi_helper.eval(f)
-		end
+		igi_helper.eval(CACHE[callback_name])
 	end
 end
