@@ -246,17 +246,47 @@ With this, we are done.
     ],
     "on_complete": "xr_effects.reward_random_money(9500:11000) xr_effects.reward_stash(true) xr_effects.complete_task_inc_goodwill(50:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
     "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
-    "quest_givers": {
+    "quest_givers": [
         {"Petrenko": true}
-    },
+    ],
     "actions": [
     {
         "when": "not xr.conditions.task_giver_alive('bar_dolg_general_petrenko_stalker_task_1')",
         "run": "task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
-    },
+    }
+    ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
     "description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
-]
+}
+```
+
+Well... Not really, since it doesn't work. If you really want to run something like this under WTF, you need a few more terrible hacks. I also set Lukash as the task giver to not mess with the original. Here's how a runnable version looks like:
+
+```json
+{
+	"WTF_VERSION": "4.0",
+    "icon": "ui_inGame2_Issledovanie_anomaliy",
+    "requirements": [
+        "$ xr_conditions.validate_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1','2','1','nil','false','true','nil'})"
+    ],
+    "entities": [
+        {
+            "CONTROLLER": "{status = function(tsk) if tsk.stage == 1 then return 'complete' end return task_status_functor.assault_task_status_functor(tsk, 'bar_dolg_general_petrenko_stalker_task_1') end, quest_target = function(tsk) return task_functor.assault_task_target_functor('bar_dolg_general_petrenko_stalker_task_1', 'target', nil, tsk) end}"
+        }
+    ],
+    "on_complete": "(function () xr_effects.reward_random_money(nil, nil, {'9500','11000'}) xr_effects.reward_stash(nil, nil, {'true'}) xr_effects.complete_task_inc_goodwill(nil, nil, {'50', 'dolg'}) end)()",
+    "on_fail": "(function () xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}))()",
+    "quest_givers": [
+        {"Lukash": true}
+    ],
+    "actions": [
+    {
+        "when": "not xr_conditions.task_giver_alive(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'})",
+        "run": "task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
+    }
+    ],
+    "description_key": "bar_dolg_general_petrenko_stalker_task_1",
+    "DESCRIPTION": "{show_description = function() xr_effects.setup_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'}) end}"
 }
 ```
 
