@@ -443,6 +443,9 @@ function dialogs.text_npc_has_task(a,b)
 			Igi.setup_quest(task_id)
 			return Igi.get_task_text(CACHE.description_key, "about", CACHE.task_giver_id)
 		end)
+		if not ok then
+			on_task_crashed(text)
+		end
 		return ok and text or "Uhh... Something went wrong. Sorry :) - Igi"
 	end
 
