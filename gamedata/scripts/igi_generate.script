@@ -53,14 +53,20 @@ function Split(field_in, field_out, count)
         local before = entity[field_in]
         trace_assert(type(before) == "table", "Split field is not a table", entity)
         trace_assert(field_out ~= nil, "Split out field is nil", entity)
-        if #before < (count or #before) then
+        
+        count = (count or #before)
+        if #before < count then
+            count = #before
+        end
+
+        if count < 1 then
             return {entity}
         end
 
         entity[field_in] = nil
 
         local new_entities = {}
-        for _, val in ipairs(igi_utils.get_random_items(before, count or #before)) do
+        for _, val in ipairs(igi_utils.get_random_items(before, count)) do
             local t = dup_table(entity)
             t[field_out] = val
             new_entities[#new_entities+1] = t
