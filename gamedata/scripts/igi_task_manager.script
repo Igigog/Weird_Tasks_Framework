@@ -198,6 +198,7 @@ IgiTask = {
 			icon			= task_table.icon,
 			storyline		= task_table.storyline,
 			update_delay	= task_table.update_delay,
+			task_giver_id	= task_table.task_giver_id
 		}
 		if task_table.storyline then
 			t.spot = "storyline_task_location"
