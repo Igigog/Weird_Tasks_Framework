@@ -47,8 +47,7 @@ Link = {
     resolve = function(self, link_context)
 		local entity = link_context:get(self.link_id)
 		trace_assert(entity, "Linker can't find entity for link:", self)
-		local out = self:resolve_field(entity)
-		return out and tostring(out) or nil
+		return self:resolve_field(entity)
 	end,
 
 	resolve_field = function(self, entity)
@@ -90,7 +89,7 @@ local function resolve_links_in_str(str, link_context)
 	for dep in link_iterator(str) do
 		local link = str_to_link(dep)
 		local resolved = link:resolve(link_context)
-		if (not resolved) or str_to_macro(resolved) then
+		if (resolved == nil) or (type(resolved) == "string" and str_to_macro(resolved)) then
 			return
 		end
 		str = str:gsub(escape_pattern(dep), link:as_variable())
