@@ -17,10 +17,10 @@ function Return.status(entity)
 	return TASK_STATUSES.RUNNING
 end
 
-function entity_on_complete(obj_data)
-	local obj = alife_object(obj_data.id)
+function Return.entity_on_complete(obj_data)
+	local obj = assert(alife_object(obj_data.id))
+	news_manager.relocate_item(db.actor, "out", obj:section_name(), 1)
 	alife_release(obj)
-	news_manager.relocate_item(db.actor, "out", obj_data.section_name, 1)
 end
 
 function Return.quest_target(obj_data)
