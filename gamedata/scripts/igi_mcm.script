@@ -127,7 +127,7 @@ end
 
 function autosave_on_first_run(CACHE)
 	if not get_options_value("autosave_before") then return end
-	local title = igi_description.get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
+	local title = igi_description.get_task_text(CACHE.description_key, "name", CACHE.task_giver_id)
 	CreateTimeEvent("igi_mcm_features", "autosave_before", 0, function()
 		exec_console_cmd("save " .. "task " .. title .. " started")
 		return true
@@ -136,7 +136,7 @@ end
 
 function autosave_on_complete(CACHE)
 	if not get_options_value("autosave_after") then return end
-	local title = igi_description.get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
+	local title = igi_description.get_task_text(CACHE.description_key, "name", CACHE.task_giver_id)
 	CreateTimeEvent("igi_mcm_features", "autosave_after", 0, function()
 		exec_console_cmd("save " .. "task " .. title .. " finished")
 		return true

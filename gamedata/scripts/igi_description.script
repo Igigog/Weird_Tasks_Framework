@@ -111,7 +111,7 @@ end
 DefaultDescription = {}
 function DefaultDescription.show_description(CACHE)
 	local mark = igi_mcm.get_options_value("wtf_task_mark") and "[WTF] " or ""
-	local title = mark .. get_task_text(CACHE.description_key, "title", CACHE.task_giver_id)
+	local title = mark .. get_task_text(CACHE.description_key, "name", CACHE.task_giver_id)
 	local text = get_description(CACHE)
 	local icon = CACHE.icon or "ui_iconsTotal_mutant"
 
@@ -137,6 +137,8 @@ function get_task_text(desc_key, field, tg_id)
 	if text ~= basic_text_id then return text end
 
 	-- fallback to basic field
-	igi_helper.trace_error("No description for key: "..desc_key, text_id, basic_text_id)
+	if (field ~= "done") then
+		igi_helper.trace_error("No description for key: "..desc_key, text_id, basic_text_id)
+	end
 	return game.translate_string(TEXT_HEADER..field)
 end

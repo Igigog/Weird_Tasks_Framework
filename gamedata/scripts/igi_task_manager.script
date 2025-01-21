@@ -165,7 +165,7 @@ function dialogs.drx_sl_text_mechanic_has_ordered_task_to_give( a, b )
 		dialogs.last_task_id = task_id
 		local ok = pcall(Igi.setup_quest, task_id)
 		if ok then
-			local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "job_descr", CACHE.task_giver_id)
+			local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "about", CACHE.task_giver_id)
 			if ok then
 				return text
 			else
@@ -217,8 +217,8 @@ IgiTask = {
 		local ok, err = pcall(function(id)
 			Igi.initialise_CACHE(id)
 			Igi.quest_status(id) -- run once to setup current target
-			self.current_title = Igi.quest_text(id, "title")
-			self.current_descr = Igi.quest_text(id, "descr")
+			self.current_title = Igi.quest_text(id, "name")
+			self.current_descr = Igi.quest_text(id, "text")
 			self.current_target = Igi.quest_target(id)
 		end, self.id)
 		if not ok then
@@ -261,7 +261,7 @@ IgiTask = {
 
 		local task_updated = false
 
-		local ok, t_title = pcall(Igi.quest_text, self.id, "title")
+		local ok, t_title = pcall(Igi.quest_text, self.id, "name")
 		if not ok then
 			on_task_crashed(t_title, self.id)
 			return
@@ -272,7 +272,7 @@ IgiTask = {
 			self.t:set_title(t_title)
 		end
 
-		local ok, t_descr = pcall(Igi.quest_text, self.id, "descr")
+		local ok, t_descr = pcall(Igi.quest_text, self.id, "text")
 		if not ok then
 			on_task_crashed(t_descr, self.id)
 			return
@@ -425,7 +425,7 @@ old_get_task_job_description = axr_task_manager.get_task_job_description
 function axr_task_manager.get_task_job_description( task_id )
 	local CACHE = Igi.get_cache(task_id) or Igi.get_setup(task_id)
 	if CACHE then
-		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "job_descr", CACHE.task_giver_id)
+		local ok, text = pcall(Igi.get_task_text, CACHE.description_key, "about", CACHE.task_giver_id)
 		return ok and text or ""
 	end
 
@@ -441,7 +441,7 @@ function dialogs.text_npc_has_task(a,b)
 	if CACHE then
 		local ok, text = pcall(function()
 			Igi.setup_quest(task_id)
-			return Igi.get_task_text(CACHE.description_key, "job_descr", CACHE.task_giver_id)
+			return Igi.get_task_text(CACHE.description_key, "about", CACHE.task_giver_id)
 		end)
 		return ok and text or "Uhh... Something went wrong. Sorry :) - Igi"
 	end
