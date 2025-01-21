@@ -29,19 +29,19 @@ DEFAULT_REWARDER = {
 }
 
 _STATIC_REWARDER = {
-	_money = 0,
-	_goodwill = 0,
+	money = 0,
+	goodwill = 0,
 
 	has_material_rewards = function (self, CACHE)
-		return self._money > 0
+		return self.money > 0
 	end,
 
 	split_to_rewards = function (self, points)
 		-- Ignores points, manually adjust to economy
 		local multi = game_difficulties.get_eco_factor("rewards") or 1
 		return {
-			money = math.floor(self._money * multi * igi_mcm.get_options_value("money_reward_coeff")),
-			goodwill = math.ceil(self._goodwill * multi * igi_mcm.get_options_value("goodwill_reward_coeff"))
+			money = math.floor(self.money * multi * igi_mcm.get_options_value("money_reward_coeff")),
+			goodwill = math.ceil(self.goodwill * multi * igi_mcm.get_options_value("goodwill_reward_coeff"))
 		}
 	end,
 
@@ -50,11 +50,10 @@ _STATIC_REWARDER = {
 		return s, s
 	end
 }
-function Static(money, goodwill)
-	return setmetatable({
-		_money = money,
-		_goodwill = goodwill
-	}, {__index = _STATIC_REWARDER})
+function Static(money_and_goodwill)
+	igi_helper.trace_assert(money_and_goodwill.money, "Static rewarder without money set")
+	igi_helper.trace_assert(money_and_goodwill.goodwill, "Static rewarder without goodwill set")
+	return setmetatable(money_and_goodwill, {__index = _STATIC_REWARDER})
 end
 
 local function get_rewarder(CACHE)
