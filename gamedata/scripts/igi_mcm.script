@@ -134,7 +134,7 @@ function autosave_on_first_run(CACHE)
 	end)
 end
 
-function autosave_on_complete(CACHE)
+function autosave_on_finish(CACHE)
 	if not get_options_value("autosave_after") then return end
 	local title = igi_description.get_task_text(CACHE.description_key, "name", CACHE.task_giver_id)
 	CreateTimeEvent("igi_mcm_features", "autosave_after", 0, function()
@@ -145,7 +145,7 @@ end
 
 function autosave_on_game_start()
 	igi_callbacks.add_callback("on_first_run", autosave_on_first_run)
-	igi_callbacks.add_callback("on_complete", autosave_on_complete)
+	igi_callbacks.add_callback("on_finish", autosave_on_finish)
 end
 
 ---------------- AUTOCOMPLETE -------------------

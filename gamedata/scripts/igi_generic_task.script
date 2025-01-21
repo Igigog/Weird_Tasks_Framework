@@ -143,7 +143,13 @@ end
 function finish_quest(task_id)
 	local CACHE = get_cache(task_id)
 
-	igi_callbacks.invoke_callbacks("on_complete", CACHE)
+	if (CACHE.status ~= igi_subtask.TASK_STATUSES.FAILED) then
+		igi_callbacks.invoke_callbacks("on_complete", CACHE)
+	else 
+		igi_callbacks.invoke_callbacks("on_fail", CACHE)
+	end
+
+	igi_callbacks.invoke_callbacks("on_finish", CACHE)
 	igi_subtask.finish_all_subtasks(CACHE)
 	igi_rewards.collect_and_give_rewards(CACHE)
 

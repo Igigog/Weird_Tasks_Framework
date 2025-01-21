@@ -13,6 +13,12 @@ local callbacks = {
 	on_complete = {},
 	entity_on_complete = {},
 
+	on_fail = {},
+	entity_on_fail = {},
+
+	on_finish = {},
+	entity_on_finish = {},
+
 	on_subtask_status_change = {},
 	entity_on_subtask_status_change = {},
 

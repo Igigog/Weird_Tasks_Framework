@@ -20,7 +20,7 @@ function Escort.status(entity)
     return TASK_STATUSES.READY_TO_FINISH
 end
 
-function Escort.entity_on_complete(entity)
+function Escort.entity_on_finish(entity)
     local se_squad = igi_helper.get_binded_object(entity)
     axr_companions.dismiss_special_squad(se_squad)
 end

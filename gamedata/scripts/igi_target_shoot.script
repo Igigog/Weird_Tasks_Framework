@@ -79,7 +79,7 @@ function Shoot.status(entity)
     return TASK_STATUSES.RUNNING
 end
 
-function Shoot.entity_on_complete(obj_data)
+function Shoot.entity_on_finish(obj_data)
     local callback = callback_is_set[obj_data.id]
     if callback then
         UnregisterScriptCallback("npc_on_before_hit", callback)
