@@ -64,8 +64,4 @@ function invoke_callbacks(callback_name, CACHE, ...)
 	trace_dbg(callback_name, CACHE)
 	send_target_callbacks(callback_name, CACHE, ...)
 	send_custom_callbacks(callback_name, CACHE, ...)
-
-	if CACHE[callback_name] then
-		igi_helper.eval(CACHE[callback_name])
-	end
 end
