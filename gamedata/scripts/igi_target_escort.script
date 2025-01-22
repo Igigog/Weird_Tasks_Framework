@@ -1,4 +1,5 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local trace_assert = igi_helper.trace_assert
 
 function make_companion(entity)
 	local squad = alife_object(entity.id)
@@ -16,6 +17,12 @@ function make_companion(entity)
 end
 
 Escort = {}
+function Escort.entity_on_first_run(entity)
+	trace_assert(type(entity.id) == "number", "Escort: entity.id is not a number", entity)
+	trace_assert(alife_object(entity.id), "Escort: no server object for this id", entity)
+	trace_assert(alife_object(entity.id):commander_id(), "Escort: entity.id is not a squad", entity)
+end
+
 function Escort.status(entity)
     return TASK_STATUSES.READY_TO_FINISH
 end

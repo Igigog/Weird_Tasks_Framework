@@ -1,4 +1,5 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local trace_assert = igi_helper.trace_assert
 
 is_shotted = {}
 local callback_is_set = {}
@@ -73,6 +74,12 @@ function ready_to_finish(obj_data)
 end
 
 Shoot = {}
+function Shoot.entity_on_first_run(entity)
+	trace_assert(type(entity.id) == "number", "Shoot: entity.id is not a number", entity)
+	trace_assert(alife_object(entity.id), "Shoot: no server object for this id", entity)
+	trace_assert(alife_object(entity.id):commander_id(), "Shoot: entity.id is not a squad", entity)
+end
+
 function Shoot.status(entity)
     if is_failed(entity) then return TASK_STATUSES.FAILED end
     if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end

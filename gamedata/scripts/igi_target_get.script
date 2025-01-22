@@ -1,6 +1,12 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local trace_assert = igi_helper.trace_assert
 
 Get = {}
+function Get.entity_on_first_run(entity)
+	trace_assert(type(entity.id) == "number", "Get: entity.id is not a number", entity)
+	trace_assert(alife_object(entity.id), "Get: no server object for this id", entity)
+end
+
 function Get.status(entity)
 	local se_obj = alife_object(entity.id)
 	if not se_obj then return TASK_STATUSES.FAILED end

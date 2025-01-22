@@ -1,13 +1,18 @@
+local trace_assert = igi_helper.trace_assert
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
 
 Kill = {}
+function Kill.entity_on_first_run(entity)
+	trace_assert(type(entity.id) == "number", "Kill: entity.id is not a number", entity)
+	trace_assert(alife_object(entity.id), "Kill: no server object for this id", entity)
+	trace_assert(alife_object(entity.id):commander_id(), "Kill: entity.id is not a squad", entity)
+
+	entity._complexity = calculate_complexity(entity)
+end
+
 function Kill.status(entity)
 	if not alife_object(entity.id) then return TASK_STATUSES.COMPLETED end
 	return TASK_STATUSES.RUNNING
-end
-
-function Kill.entity_on_first_run(entity)
-	entity._complexity = calculate_complexity(entity)
 end
 
 function Kill.quest_target(entity)

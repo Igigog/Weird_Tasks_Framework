@@ -1,4 +1,5 @@
 local TASK_STATUSES = igi_subtask.TASK_STATUSES
+local trace_assert = igi_helper.trace_assert
 
 function ready_to_finish(obj_data)
 	local ids = get_fetched_items(obj_data)
@@ -82,6 +83,12 @@ function release_fetch_items(entity)
 end
 
 Fetch = {}
+function Fetch.entity_on_first_run(entity)
+	trace_assert(type(entity.section_name) == "string", "Fetch: entity.section_name is not a string", entity)
+	---@diagnostic disable-next-line: undefined-field
+	trace_assert(ini_sys:section_exist(entity.section_name), "Fetch: entity section does not exist", entity)
+end
+
 function Fetch.status(entity)
 	if ready_to_finish(entity) then return TASK_STATUSES.READY_TO_FINISH end
 	return TASK_STATUSES.RUNNING
