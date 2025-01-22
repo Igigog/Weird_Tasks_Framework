@@ -1,22 +1,4 @@
 ------------------------------------------------
--- LOCALS
--- No actual grouping, these are used to lower other functions complexity
-------------------------------------------------
-
-function force_parent_online(se_obj)
-	if se_obj.parent_id == 65535 then return end
-	local parent = alife_object(se_obj.parent_id)
-	local p_clsid = parent:clsid()
-	if IsStalker(parent, p_clsid)
-			or IsMonster(parent, p_clsid)
-			or p_clsid == clsid.online_offline_group_s
-			then
-		parent.force_online = true
-		parent.stay_time = game.get_game_time()
-	end
-end
-
-------------------------------------------------
 -- CREATE FUNCTIONS
 -- Called after getting a task to create/prepare actual game objects
 ------------------------------------------------
@@ -25,6 +7,7 @@ function init_squad(id)
 	local se_obj = alife_object(id)
 	se_obj.stay_time = game.get_game_time()
 	se_obj.force_online = true
+	return true
 end
 
 function create_on_smart(section_name, smart_id)
