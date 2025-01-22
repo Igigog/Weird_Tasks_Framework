@@ -75,10 +75,6 @@ local function is_smart_good(smart_name, smart_level)
 end
 ------------
 
-local function object_in_world(se_obj)
-	return se_obj.parent_id == 65535
-end
-
 local function check_location(se_obj, lower_bound, higher_bound)
 	local obj_level = alife():level_name(igi_helper.get_object_level_id(se_obj))
 	if blacklist[obj_level] then return false end
@@ -97,12 +93,14 @@ end
 function find_objects_in_world(lower_bound, higher_bound, sections)
 	trace_assert(next(sections), "No sections were given for searching")
 
+	local sim = alife()
+	local sim_object = sim.object
 	local out = {}
 	for id=1,65534 do
-		local se_obj = alife_object(id)
-		if se_obj and sections[se_obj:section_name()]
-				and check_location(se_obj, lower_bound, higher_bound)
-				and object_in_world(se_obj) then
+		local se_obj = sim_object(sim, id)
+		if se_obj and se_obj.parent_id == 65535 
+				and sections[se_obj:section_name()]
+				and check_location(se_obj, lower_bound, higher_bound) then
 			out[#out+1] = id
 		end
 	end
@@ -113,9 +111,11 @@ end
 function find_items_in_enemy(lower_bound, higher_bound, sections)
 	trace_assert(next(sections)	, "No sections were given for searching")
 	
+	local sim = alife()
+	local sim_object = sim.object
 	local out = {}
 	for id=1,65534 do
-		local se_obj = alife_object(id)
+		local se_obj = sim_object(sim, id)
 		if se_obj
 				and check_location(se_obj, lower_bound, higher_bound)
 				and igi_helper.is_common_npc(se_obj.parent_id)
