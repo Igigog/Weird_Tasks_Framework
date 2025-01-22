@@ -33,6 +33,25 @@ function is_common_npc(id)
 	return true
 end
 
+function init_squad(id)
+	local se_obj = alife_object(id)
+	se_obj.stay_time = game.get_game_time()
+	se_obj.force_online = true
+	return true
+end
+
+function create_on_smart(section_name, smart_id)
+	local smart = SIMBOARD.smarts[smart_id].smrt
+	local location = vector():set(
+		smart.position.x,
+		smart.position.y+1,
+		smart.position.z)
+
+	local se_obj = alife_create(section_name,
+		location, smart.m_level_vertex_id, smart.m_game_vertex_id)
+	return se_obj.id
+end
+
 
 function get_object_level_id(se_obj)
 	trace_assert(se_obj, "No se_obj")
