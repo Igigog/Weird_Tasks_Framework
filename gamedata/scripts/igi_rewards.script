@@ -19,7 +19,7 @@ DEFAULT_REWARDER = {
 	end,
 
 	guess_rewards = function (self, CACHE)
-		local low, high = get_reward_bounds(CACHE.entities)
+		local low, high = get_reward_bounds(CACHE.entities, false, CACHE)
 		trace_assert(low ~= nil, "Low reward bound is nil")
 		if high == nil then
 			high = low
@@ -60,7 +60,8 @@ local function get_rewarder(CACHE)
 	if not CACHE.rewarder then
 		return DEFAULT_REWARDER
 	end
-	return igi_helper.eval(CACHE.rewarder)
+	local link_context = igi_text_processor.get_link_context(CACHE)
+	return igi_text_processor.eval_logic_macro(CACHE.rewarder, link_context)
 end
 
 function has_material_rewards(CACHE)
@@ -72,7 +73,7 @@ function guess_rewards(CACHE)
 end
 
 function collect_and_give_rewards(CACHE)
-	local total = collect_rewards(CACHE.entities)
+	local total = collect_rewards(CACHE.entities, CACHE)
 	local rewards = get_rewarder(CACHE):split_to_rewards(total)
 
 	trace_dbg("rewards", CACHE.rewarder or "DEFAULT_REWARDER", rewards)
@@ -81,19 +82,19 @@ function collect_and_give_rewards(CACHE)
 	give_rewards(rewards, faction)
 end
 
-function collect_rewards(entities)
-	local low, high = get_reward_bounds(entities, true)
+function collect_rewards(entities, CACHE)
+	local low, high = get_reward_bounds(entities, true, CACHE)
 	if (low ~= high) then
 		igi_helper.trace_error("Rewards did not converge, low: " .. low .. " high: " .. high)
 	end
 	return low
 end
 
-function get_reward_bounds(entities, only_completed)
+function get_reward_bounds(entities, only_completed, CACHE)
 	local lower_bound = 0
 	local higher_bound = 0
 	for _, entity in pairs(entities) do
-		local controller = igi_taskdata.get_controller(entity)
+		local controller = igi_taskdata.get_controller(entity, CACHE)
 		if controller.complexity and ((not only_completed) or entity.status == TASK_STATUSES.COMPLETED) then
 			local low, high = controller.complexity(entity)
 			if high == nil then high = low end

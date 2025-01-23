@@ -129,12 +129,12 @@ end
 local function choose_entity(CACHE)
     trace_dbg("choose entity", CACHE)
     local entity = CACHE.entities[CACHE._test_entity_id] or {}
-    local controller = igi_taskdata.get_controller(entity)
+    local controller = igi_taskdata.get_controller(entity, CACHE)
     while entity.status ~= igi_subtask.TASK_STATUSES.RUNNING
             or not controller.status do
         local k
         k, entity = next(CACHE.entities, CACHE._test_entity_id)
-        controller = igi_taskdata.get_controller(entity or {})
+        controller = igi_taskdata.get_controller(entity or {}, CACHE)
         CACHE._test_entity_id = k
         if not k then
             trace_dbg("chosen: ", "nil")
@@ -160,7 +160,7 @@ function continue_test_worker()
         return true
     end
 
-    local controller = igi_taskdata.get_controller(entity)
+    local controller = igi_taskdata.get_controller(entity, CACHE)
     assert_test(controller.test, "Test is not implemented for controller " .. entity.CONTROLLER)
 
     local ok, finished = pcall(controller.test, entity)

@@ -1,25 +1,20 @@
 local trace_dbg = igi_helper.trace_dbg
 
 function update_actions(CACHE)
-	local link_context = igi_text_processor.LinkContext:new(CACHE)
-
 	for _, entity in pairs(CACHE.entities) do
-		link_context:set_this(entity)
-		process_actions(entity.actions, link_context)
+		process_actions(entity.actions, igi_text_processor.get_link_context(CACHE, entity))
 	end
-	link_context:set_this({})
 
-	process_actions(CACHE.actions, link_context)
+	process_actions(CACHE.actions, igi_text_processor.get_link_context(CACHE))
 end
 
 function process_actions(actions, link_context)
 	if type(actions) ~= "table" then return end
 	for _, action in pairs(actions) do
 		if (not action._done) and (not igi_text_processor.has_macro(action.when)) then
-			local env = link_context:to_env()
-			if igi_helper.eval(action.when, env) then
+			if igi_text_processor.eval_logic_macro(action.when, link_context) then
 				trace_dbg("Run action", action)
-				action._done = not igi_helper.eval(action.run, env)
+				action._done = not igi_text_processor.eval_logic_macro(action.run, link_context)
 			end
 		end
 	end

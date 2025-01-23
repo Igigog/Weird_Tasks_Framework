@@ -2,11 +2,12 @@ local trace_assert  = igi_helper.trace_assert
 
 LinkContext  = {
 	_link_prefix = "__igi__link_",
+	_NO_THIS = {},
 
 	new = function(self, CACHE)
 		local link_context = {
 			CACHE = CACHE,
-			this = {}
+			this = self._NO_THIS
 		}
 		for _, entity in pairs(CACHE.entities) do
 			if entity.link_id then
@@ -18,7 +19,7 @@ LinkContext  = {
 	end,
 
 	set_this = function(self, entity)
-		self.this = entity
+		self.this = entity or self._NO_THIS
 	end,
 
 	get = function(self, key)
@@ -59,6 +60,26 @@ Link = {
 	end
 }
 
+local fCache = {}
+local function eval(v, env)
+	local f = fCache[v]
+	if f == nil then
+		f = loadstring("return " .. v)
+		fCache[v] = f
+	end
+	assert(f, "Function cannot be compiled: " .. (v or nil))
+
+	setfenv(f, setmetatable(env or {}, {__index = _G}))
+	return f()
+end
+
+-- Careful if you want to cache it: generate step invalidates link context
+function get_link_context(CACHE, entity)
+	local link_context = LinkContext:new(CACHE)
+	link_context:set_this(entity)
+	return link_context
+end
+
 function escape_pattern(text)
     return text:gsub("([^%w])", "%%%1")
 end
@@ -82,7 +103,7 @@ function has_macro(str)
 end
 
 local function resolve_macro(macro, link_context)
-	return igi_helper.eval(macro, link_context:to_env())
+	return eval(macro, link_context:to_env())
 end
 
 local function resolve_links_in_str(str, link_context)
@@ -147,7 +168,13 @@ local function resolve_macros_and_link_variables(CACHE, link_context, level)
 end
 
 function resolve_and_link_cache(CACHE, level)
-	local link_context = LinkContext:new(CACHE)
+	local link_context = igi_text_processor.get_link_context(CACHE)
 	resolve_macros_and_link_variables(CACHE, link_context, level)
 	inner_resolve_and_link_table(CACHE, link_context, level)
+end
+
+function eval_logic_macro(str, link_context)
+	local level, macro = str_to_macro(str)
+	trace_assert(level == "@", "String is not a @$ macro", str)
+	return resolve_macro(macro, link_context)
 end

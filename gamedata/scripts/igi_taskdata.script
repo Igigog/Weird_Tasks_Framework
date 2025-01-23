@@ -100,9 +100,11 @@ function finalize_task_cache(task_data, task_id, tg_id)
 end
 
 local NO_CONTROLLER = {}
-function get_controller(entity)
+function get_controller(entity, CACHE)
 	if not entity.CONTROLLER then return NO_CONTROLLER end
-	local controller = igi_helper.eval(entity.CONTROLLER)
+	trace_assert(CACHE, "get_controller: no cache")
+	local link_context = igi_text_processor.get_link_context(CACHE, entity)
+	local controller = igi_text_processor.eval_logic_macro(entity.CONTROLLER, link_context)
 	trace_assert(type(controller) == "table", "Controller is not a table", entity.CONTROLLER)
 	return controller
 end

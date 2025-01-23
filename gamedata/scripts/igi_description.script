@@ -43,7 +43,7 @@ function get_description(CACHE)
 		}
 
 		for _, entity in pairs(CACHE.entities) do
-			add_from_entity(CACHE.description, entity)
+			add_from_entity(CACHE.description, entity, CACHE)
 		end
 	end
 
@@ -72,10 +72,10 @@ function get_rewards_description(CACHE)
 		" " .. game.translate_string(TEXT_HEADER .. "goodwill")
 end
 
-function add_from_entity(description, entity)
+function add_from_entity(description, entity, CACHE)
 	if not entity.to_description then return end
 
-	local controller = igi_taskdata.get_controller(entity)
+	local controller = igi_taskdata.get_controller(entity, CACHE)
 	local description_f = controller.get_description or get_entity_description
 	local desc = description_f(entity)
 	for k, tbl in pairs(desc) do
@@ -103,7 +103,12 @@ function item_to_string(item, label)
 end
 
 function show_description(CACHE)
-	local descr = CACHE.DESCRIPTION and igi_helper.eval(CACHE.DESCRIPTION) or DefaultDescription
+	if not CACHE.DESCRIPTION then
+		return DefaultDescription.show_description(CACHE)
+	end
+
+	local link_context = igi_text_processor.get_link_context(CACHE)
+	local descr = igi_text_processor.eval_logic_macro(CACHE.DESCRIPTION, link_context)
 	return descr.show_description(CACHE)
 end
 

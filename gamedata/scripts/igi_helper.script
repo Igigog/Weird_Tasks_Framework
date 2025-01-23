@@ -150,17 +150,3 @@ function get_community_by_id(id)
 	end
 	return community
 end
-
-local fCache = {}
-
-function eval(v, env)
-	local f = fCache[v]
-	if f == nil then
-		f = loadstring("return " .. v)
-		fCache[v] = f
-	end
-	assert(f, "Function cannot be compiled: " .. (v or nil))
-
-	setfenv(f, setmetatable(env or {}, {__index = _G}))
-	return f()
-end

@@ -8,7 +8,7 @@ function run_ML(CACHE, level)
 
 	local new_entities = {}
 	for _, entity in pairs(CACHE.entities) do
-		local gen_entities = generate(entity)
+		local gen_entities = generate(entity, igi_text_processor.get_link_context(CACHE, entity))
 		for _, new_entity in pairs(gen_entities) do
 			new_entities[#new_entities+1] = new_entity
 		end
@@ -22,7 +22,7 @@ function run_ML(CACHE, level)
 end
 
 
-function generate(entity)
+function generate(entity, link_context)
     if not entity.GEN then return {entity} end
 
     local gen_str = entity.GEN
@@ -30,7 +30,7 @@ function generate(entity)
     entity.link_id = nil
     entity.GEN = nil
 
-    local new_entities = igi_helper.eval(gen_str)(entity)
+    local new_entities = igi_text_processor.eval_logic_macro(gen_str, link_context)(entity)
 
     new_entities[1].link_id = link_id
     new_entities[1]._GEN = gen_str

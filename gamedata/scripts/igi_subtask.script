@@ -22,7 +22,7 @@ function update_current_map_target(CACHE)
 		or CACHE.status == TASK_STATUSES.READY_TO_FINISH then
 		CACHE.current_target_id = CACHE.task_giver_id
 	else
-		CACHE.current_target_id = get_quest_target(CACHE.entities)
+		CACHE.current_target_id = get_quest_target(CACHE.entities, CACHE)
 	end
 end
 
@@ -31,7 +31,7 @@ function process_subtasks(CACHE)
 	for _, entity in pairs(CACHE.entities) do
 		if entity.status == TASK_STATUSES.RUNNING
 				or entity.status == TASK_STATUSES.READY_TO_FINISH then
-			if update_entity_status(entity) then
+			if update_entity_status(entity, CACHE) then
 				igi_callbacks.invoke_callbacks("on_subtask_status_change", CACHE, entity)
 				updated = true
 			end
@@ -39,15 +39,15 @@ function process_subtasks(CACHE)
 	end
 
 	if updated then
-		CACHE.status = get_task_status(CACHE.entities)
+		CACHE.status = get_task_status(CACHE.entities, CACHE)
 	end
 
 	return updated
 end
 
-function get_quest_target(entities)
+function get_quest_target(entities, CACHE)
 	for _, entity in pairs(entities) do
-		local controller = igi_taskdata.get_controller(entity)
+		local controller = igi_taskdata.get_controller(entity, CACHE)
 		if controller.status and controller.quest_target
 			and entity.status == TASK_STATUSES.RUNNING then
 
@@ -56,11 +56,11 @@ function get_quest_target(entities)
 	end
 end
 
-function get_task_status(entities)
+function get_task_status(entities, CACHE)
 	local ready_to_finish = false
 	local running = false
 	for _, entity in pairs(entities) do
-		local controller = igi_taskdata.get_controller(entity)
+		local controller = igi_taskdata.get_controller(entity, CACHE)
 		if controller.status then
 			if entity.status == TASK_STATUSES.FAILED and not entity.optional then
 				return TASK_STATUSES.FAILED
@@ -79,8 +79,8 @@ function get_task_status(entities)
 	else return TASK_STATUSES.COMPLETED end
 end
 
-function update_entity_status(entity)
-	local controller = igi_taskdata.get_controller(entity)
+function update_entity_status(entity, CACHE)
+	local controller = igi_taskdata.get_controller(entity, CACHE)
 	if not controller.status then return false end
 	local new_status = controller.status(entity)
 	if new_status == entity.status then return false end
