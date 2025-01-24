@@ -50,6 +50,7 @@ end
 function process_macros(task_id, macro_level)
 	local CACHE = get_cache(task_id)
 	trace_assert(CACHE and macro_level, "No CACHE or macro_level in process_macros call")
+	trace_assert(macro_level ~= "@", "@$ macros may not be processed manually.")
 	return igi_generate.run_ML(CACHE, macro_level)
 end
 ---------------------------< Precondition >---------------------------
