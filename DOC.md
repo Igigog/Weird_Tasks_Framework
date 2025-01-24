@@ -37,7 +37,7 @@ on_complete = %=reward_random_money(9500:11000) =reward_stash(true) =complete_ta
 on_fail = %=fail_task_dec_goodwill(25:dolg) =drx_sl_unregister_task_giver(bar_dolg_general_petrenko_stalker_task_1) =drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)%
 ```
 
-There is quite a lot happening here, huh? Let's try to move this task to WTF. These fields are not interesting:
+There is quite a lot happening here, huh? You can actually directly move this quest to WTF without rewriting any functions, and it will (mostly) work. Let's start with just that. These fields are not interesting:
 
 ```ini
 storyline = false       ; false is default in WTF
@@ -70,19 +70,21 @@ Now, we will need a bit of stuff to make quest logic happen. We are adding the p
 	"WTF_VERSION": "4.0",
     "icon": "ui_inGame2_Issledovanie_anomaliy",
     "requirements": [
-        "$ xr_conditions.validate_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1',2,1,nil,false,true,nil})"
+        "$ xr_conditions.validate_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1','2','1','nil','false','true','nil'})"
     ],
     "entities": [
         {
-            "CONTROLLER": "{status = function(tsk) return task_status_functor.assault_task_status_functor(tsk, 'bar_dolg_general_petrenko_stalker_task_1') end, quest_target = function(tsk) task_functor.assault_task_target_functor('bar_dolg_general_petrenko_stalker_task_1', 'target', tsk) end}"
+            "CONTROLLER": "@$ {status = function(tsk) if tsk.stage == 1 then return 'complete' end return task_status_functor.assault_task_status_functor(tsk, 'bar_dolg_general_petrenko_stalker_task_1') end, quest_target = function(tsk) return task_functor.assault_task_target_functor('bar_dolg_general_petrenko_stalker_task_1', 'target', nil, tsk) end}"
         }
     ],
-    "on_complete": "xr_effects.reward_random_money(9500:11000) xr_effects.reward_stash(true) xr_effects.complete_task_inc_goodwill(50:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)"
+    "reward_money": "on_complete$ xr_effects.reward_random_money(nil, nil, {'9500','11000'}) or 1",
+    "reward_goodwill": "on_complete$ xr_effects.complete_task_inc_goodwill(nil, nil, {'50', 'dolg'}) or 1",
+    "reward_stash": "on_complete$ xr_effects.reward_stash(nil, nil, {'true'}) or 1",
+    "on_fail": "on_fail$ xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}) or 1",
 }
 ```
 
-This... sucks, to be quite honest. Looks like atrocious, unreadable mess. It will get better once we make it WTF-native.
+This... sucks, to be quite honest. Looks like atrocious, unreadable mess, and not all of it is on WTF. The calling conventions of vanilla condlists are cringe - you see how we need to bend over backwards to make arguments into string arrays. It will get better once we make it WTF-native.
 
 Still, there is something to learn here. These lines are removed from `on_complete` and `on_fail` - WTF takes care of it for us.
 ```
@@ -147,20 +149,20 @@ Nice. A few things left: condlist, on_job_descr and description. Let's start wit
 
 There are no condlists in WTF. Next.
 
-#### Stop but for real?
+__Stop but for real?__
 
 There kinda are. WTF calls them `actions`. We'll be writing pure lua instead of condlists. Here's how it will look:
 
 ```json
 "actions": [
     {
-        "when": "not xr.conditions.task_giver_alive('bar_dolg_general_petrenko_stalker_task_1')",
-        "run": "task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
+        "when": "@$ not xr.conditions.task_giver_alive('bar_dolg_general_petrenko_stalker_task_1')",
+        "run": "@$ task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
     }
 ]
 ```
 
-Notice the "or true" at the end of `run`: Every action will run only once, unless you return true. Other that that, it's just lua, kinda self-explanatory.
+I will explain the `@$` convention in section on macros; for now just know that this indicates runnable lua code. Notice the "or true" at the end of `run`: Every action will run only once, unless you return true. Other that that, it's just lua, kinda self-explanatory.
 
 ### Description
 
@@ -226,42 +228,12 @@ Moves stuff around, but, more importantly, shows a message to the player.
 WTF has a default function, which will show this message to the player. It plays nicely with WTF-native entities, but it will absolutely choke on this vanilla-style mess. Let's override it too:
 
 ```json
-"description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
+"DESCRIPTION": "@$ {show_description = function() xr_effects.setup_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'}) end}"
 ```
 
-With this, we are done.
+With this, we are done. Kinda. I don't really know why, but it fails when you change levels; it works as expected otherwise. Whatever, we are not debugging vanilla tasks here.
 
 `gamedata/configs/igi_tasks/tasks/MyMod/my_task.json:`
-```json
-{
-	"WTF_VERSION": "4.0",
-    "icon": "ui_inGame2_Issledovanie_anomaliy",
-    "requirements": [
-        "$ xr_conditions.validate_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1',2,1,nil,false,true,nil})"
-    ],
-    "entities": [
-        {
-            "CONTROLLER": "{status = function() return task_status_functor.assault_task_status_functor({}, 'bar_dolg_general_petrenko_stalker_task_1') end, quest_target = function() task_functor.assault_task_target_functor('bar_dolg_general_petrenko_stalker_task_1', 'target', {}) end}"
-        }
-    ],
-    "on_complete": "xr_effects.reward_random_money(9500:11000) xr_effects.reward_stash(true) xr_effects.complete_task_inc_goodwill(50:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
-    "quest_givers": [
-        {"Petrenko": true}
-    ],
-    "actions": [
-    {
-        "when": "not xr.conditions.task_giver_alive('bar_dolg_general_petrenko_stalker_task_1')",
-        "run": "task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
-    }
-    ],
-    "description_key": "bar_dolg_general_petrenko_stalker_task_1",
-    "description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
-}
-```
-
-Well... Not really, since it doesn't work. If you really want to run something like this under WTF, you need a few more terrible hacks. I also set Lukash as the task giver to not mess with the original. Here's how a runnable version looks like:
-
 ```json
 {
 	"WTF_VERSION": "4.0",
@@ -271,22 +243,24 @@ Well... Not really, since it doesn't work. If you really want to run something l
     ],
     "entities": [
         {
-            "CONTROLLER": "{status = function(tsk) if tsk.stage == 1 then return 'complete' end return task_status_functor.assault_task_status_functor(tsk, 'bar_dolg_general_petrenko_stalker_task_1') end, quest_target = function(tsk) return task_functor.assault_task_target_functor('bar_dolg_general_petrenko_stalker_task_1', 'target', nil, tsk) end}"
+            "CONTROLLER": "@$ {status = function(tsk) if tsk.stage == 1 then return 'complete' end return task_status_functor.assault_task_status_functor(tsk, 'bar_dolg_general_petrenko_stalker_task_1') end, quest_target = function(tsk) return task_functor.assault_task_target_functor('bar_dolg_general_petrenko_stalker_task_1', 'target', nil, tsk) end}"
         }
     ],
-    "on_complete": "(function () xr_effects.reward_random_money(nil, nil, {'9500','11000'}) xr_effects.reward_stash(nil, nil, {'true'}) xr_effects.complete_task_inc_goodwill(nil, nil, {'50', 'dolg'}) end)()",
-    "on_fail": "(function () xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}))()",
+    "reward_money": "on_complete$ xr_effects.reward_random_money(nil, nil, {'9500','11000'}) or 1",
+    "reward_goodwill": "on_complete$ xr_effects.complete_task_inc_goodwill(nil, nil, {'50', 'dolg'}) or 1",
+    "reward_stash": "on_complete$ xr_effects.reward_stash(nil, nil, {'true'}) or 1",
+    "on_fail": "on_fail$ xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}) or 1",
     "quest_givers": [
         {"Lukash": true}
     ],
     "actions": [
     {
-        "when": "not xr_conditions.task_giver_alive(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'})",
-        "run": "task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
+        "when": "@$ not xr_conditions.task_giver_alive(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'})",
+        "run": "@$ task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
     }
     ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
-    "DESCRIPTION": "{show_description = function() xr_effects.setup_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'}) end}"
+    "DESCRIPTION": "@$ {show_description = function() xr_effects.setup_assault_task(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'}) end}"
 }
 ```
 
@@ -304,9 +278,9 @@ Now, let's also make it not terrible.
 ## Macros
 You may have understood already, but inline lua is a central piece of WTF. Well, guess what?
 
-#### we didn't even start
+__we didn't even start__
 
-Notice how the requirement we have is the only lua line starting with `$`. Lines starting with `$` are very special - they will be __evaluated inline__. This means, that if you write
+Notice how every runnable line contains `$`. Lines containing `$` are very special - they will be __evaluated inline__. This means, that if you write
 
 ```json
 "id": "$ db.actor:id()"
@@ -402,7 +376,7 @@ function igi_assault.get_squads(def, enemy_faction_list)
 end
 ```
 
-I made it shorter. It wasn't really a nice function like this. Whatever, just proves my point. There is more state! `def.scan` is defined in ltx section of this task, except it's just one of unnamed parameters and you need to count to know what it is. It is `2`. Thank me later. Unless I counted it wrong. By the way, `blacklisted_maps` is a `local` in `tasks_assault`. `enemy_faction_list` is defined in `status_functor_params` in task section. Naturally.
+I made it shorter. It wasn't really a nice function like this. Whatever, just proves my point. There is more state! `def.scan` is defined in ltx section of this task, except it's just one of unnamed parameters and you need to count to know what it is. It is `2`. Thank me later. By the way, `blacklisted_maps` is a `local` in `tasks_assault`. `enemy_faction_list` is defined in `status_functor_params` in task section. Naturally.
 
 We can actually work with that already! See, see?
 
@@ -458,11 +432,20 @@ Nice.
 There is still a bit to say about macros and linker. 
 1. Other than `this`, there is also a special link_id called `CACHE`, which refers to the whole task table. CACHE has a few values set automatically, most interesting of which are `|CACHE.task_id|` and `|CACHE.task_giver_id|`
 
-2. You can name your macros. Macro name is a prefix before `$`, meaning `1$ true` has the name "1". In fact, the name "" (empty string) is a special macro name which will be evaluated automatically as part of precondition function.
+2. You can name your macros. Macro name (level) is a prefix before `$`, meaning `1$ true` has the name "1". In fact, the name "" (empty string) is a special macro name which will be evaluated automatically as part of precondition function.
 
-3. Macros with the name "1" will be evaluated automatically after the player accepted the task. Use them to create game objects.
+Here's a list of special macro names:
 
-4. You can invoke macro evaluation by calling `igi_generic_task.process_macros(task_id, macro_name)`
+```
+"" (empty string) - evaluates while checking preconditions
+"1" - evaluates on first run
+"on_finish" - evaluates after the task is done, regardless of outcome
+"on_complete" - evaluates when task is completed successfully
+"on_fail" - evaluates when task is failed
+"@" - will be evaluated more than once. Used by WTF internally for special fields. You may not process these macros manually.
+```
+
+3. You can invoke macro evaluation by calling `igi_generic_task.process_macros(task_id, macro_name)`
 
 ### Let's finish with this entity
 
@@ -561,11 +544,11 @@ Which is quite a bit less code to debug, WITH better logging than before. For fr
 
 ## Controller
 
-Look, I won't sugar-coat it. I already implemented assault-type controller. In 2021.
+Look, I won't beat around the bush. I've already implemented assault-type controller. In 2021.
 
 ```json
 {
-    "CONTROLLER": "igi_target_assault.Assault",
+    "CONTROLLER": "@$ igi_target_assault.Assault",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
     "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
@@ -634,7 +617,7 @@ local callbacks = {
 }
 ```
 
-Two sets. The ones without `entity_` you can add to your CACHE, like we did with `on_complete`. The ones with `entity_` will be sent to the controller, if it has corresponding function.
+Two sets. The ones with `entity_` will be sent to the controller, if it has corresponding function. Other ones are purely for your scripting needs, WTF does not interact with them directly.
 
 ## Addendum. What if I want more?
 
@@ -645,7 +628,7 @@ Turns out, it's quiet easy in WTF. Just use two entities.
 ```json
 entities: [
 {
-    "CONTROLLER": "igi_target_assault.Assault",
+    "CONTROLLER": "@$ igi_target_assault.Assault",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
     "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "squad_id": "$ #|this.squad_ids| > 1 and |this.squad_ids|[1]",
@@ -653,7 +636,7 @@ entities: [
     "link_id": "squad"
 },
 {
-    "CONTROLLER": "igi_target_assault.Assault",
+    "CONTROLLER": "@$ igi_target_assault.Assault",
     "squad_id": "$ #|squad.squad_ids| > 1 and |squad.squad_ids|[2]",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
 }
@@ -662,7 +645,7 @@ entities: [
 
 Kinda trivial. What if I want more? One more. Two more.
 
-#### ALL THE SMARTS.
+__ALL THE SMARTS.__
 
 You can manually create entities all you want, but you will never know how many smarts there actually are, so you can't target all smarts.
 
@@ -694,8 +677,8 @@ Which means, if you want ALL THE SMARTS, here's what you need:
 ```json
 entities: [
 {
-    "CONTROLLER": "igi_target_assault.Assault",
-    "GEN": "igi_generate.Split('squad_ids', 'squad_id')",
+    "CONTROLLER": "@$ igi_target_assault.Assault",
+    "GEN": "@$ igi_generate.Split('squad_ids', 'squad_id')",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
     "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
@@ -708,8 +691,8 @@ Or, if you only want 5:
 ```json
 entities: [
 {
-    "CONTROLLER": "igi_target_assault.Assault",
-    "GEN": "igi_generate.Split('squad_ids', 'squad_id', 5)",
+    "CONTROLLER": "@$ igi_target_assault.Assault",
+    "GEN": "@$ igi_generate.Split('squad_ids', 'squad_id', 5)",
     "smart_ids": "$ igi_finder.get_smarts(0, 1)",
     "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
     "id": "$ |this.squad_id| and alife_object(|this.squad_id|).current_target_id",
@@ -718,7 +701,7 @@ entities: [
 ]
 ```
 
-### Rewards
+## Rewards
 
 So, what are we left with?
 
@@ -730,7 +713,7 @@ So, what are we left with?
     "requirements": ["$ |squad.squad_id|"],
     "entities": [
         {
-            "CONTROLLER": "igi_target_assault.Assault",
+            "CONTROLLER": "@$ igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
             "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
@@ -738,34 +721,30 @@ So, what are we left with?
             "link_id": "squad"
         }
     ],
-    "on_complete": "xr_effects.reward_random_money(9500:11000) xr_effects.reward_stash(true) xr_effects.complete_task_inc_goodwill(50:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg) xr_effects.drx_sl_reset_stored_task(bar_dolg_general_petrenko_stalker_task_1)",
+    "reward_money": "on_complete$ xr_effects.reward_random_money(nil, nil, {'9500','11000'}) or 1",
+    "reward_goodwill": "on_complete$ xr_effects.complete_task_inc_goodwill(nil, nil, {'50', 'dolg'}) or 1",
+    "reward_stash": "on_complete$ xr_effects.reward_stash(nil, nil, {'true'}) or 1",
+    "on_fail": "on_fail$ xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}) or 1",
     "quest_givers": [
         {"Petrenko": true}
     ],
     "actions": [
     {
-        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
-        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+        "when": "@$ not xr_conditions.task_giver_alive(nil, nil, {'bar_dolg_general_petrenko_stalker_task_1'})",
+        "run": "@$ task_manager.get_task_manager():set_task_failed('bar_dolg_general_petrenko_stalker_task_1') or true"
     }
     ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
     "description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
-]
 }
 ```
 
-Looks a bit better. Still, these pesky `on_complete` and `on_fail` are kind of an eyesore. Since WTF manages our state for us now, we don't need these `xr_effects.drx_sl_reset_stored_task`. Let's remove them.
+Since WTF manages our state for us now, I have removed these `xr_effects.drx_sl_reset_stored_task`. Don't need them anyway. Still, these pesky `on_complete` and `on_fail` are an eyesore.
+
+We don't really want to manage rewards in callbacks. A lot of fancy stuff can be done with rewards, so let's make them WTF-native. Field `rewarder` can help us here:
 
 ```json
-"on_complete": "xr_effects.reward_random_money(9500:11000) xr_effects.reward_stash(true) xr_effects.complete_task_inc_goodwill(50:dolg)",
-"on_fail": "xr_effects.fail_task_dec_goodwill(25:dolg)",
-```
-
-A bit better, but it's still kinda problematic that we manage rewards in callbacks. A lot of fancy stuff can be done with rewards, so let's make them WTF-native. Field `rewarder` can help us here:
-
-```json
-"rewarder": "igi_rewards.Static({money = 10000, goodwill = 50})"
+"rewarder": "@$ igi_rewards.Static({money = 10000, goodwill = 50})"
 ```
 Good ol' static rewarder, giving us 10 000 RUB (corrected for inflation) and 50 goodwill. Three good things about rewarders:
 1. They know the faction of your task giver, you don't need to type it.
@@ -794,24 +773,23 @@ Let's just have WTF defaults do their job.
             "link_id": "squad"
         }
     ],
-    "on_complete": "xr_effects.reward_stash(nil, nil, {'true'})",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(nil, nil, {'25','dolg'})",
+    "reward_stash": "on_complete$ xr_effects.reward_stash(nil, nil, {'true'}) or 1",
+    "on_fail": "on_fail$ xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}) or 1",
     "quest_givers": [
         {"Petrenko": true}
     ],
     "actions": [
     {
-        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
-        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+        "when": "@$ not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})",
+        "run": "@$ task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
     }
     ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
     "description": "{show_description = function() xr.effects.setup_assault_task('bar_dolg_general_petrenko_stalker_task_1') end}"
-]
 }
 ```
 
-What about on_fail, you ask? Nothing. I haven't implemented it yet :(
+What about on_fail, you ask? Nothing. I haven't implemented it (yet). How often do you fail tasks anyway?
 
 ## Description
 
@@ -825,7 +803,7 @@ Description field is the only eyesore left here. Let's just remove it.
     "requirements": ["$ |squad.squad_id|"],
     "entities": [
         {
-            "CONTROLLER": "igi_target_assault.Assault",
+            "CONTROLLER": "@$ igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
             "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
@@ -833,19 +811,18 @@ Description field is the only eyesore left here. Let's just remove it.
             "link_id": "squad"
         }
     ],
-    "on_complete": "xr_effects.reward_stash(nil, nil, {'true'})",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(nil, nil, {'25','dolg'})",
+    "reward_stash": "on_complete$ xr_effects.reward_stash(nil, nil, {'true'}) or 1",
+    "on_fail": "on_fail$ xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}) or 1",    
     "quest_givers": [
         {"Petrenko": true}
     ],
     "actions": [
     {
-        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
-        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+        "when": "@$ not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})",
+        "run": "@$ task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
     }
     ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
-]
 }
 ```
 
@@ -863,7 +840,7 @@ In fact, in the same way, if you have an entity with `id` of a squad, its factio
     "requirements": ["$ |squad.squad_id|"],
     "entities": [
         {
-            "CONTROLLER": "igi_target_assault.Assault",
+            "CONTROLLER": "@$ igi_target_assault.Assault",
             "smart_ids": "$ igi_finder.get_smarts(0, 1)",
             "squad_ids": "$ igi_assault.get_squads(|this.smart_ids|, {killer = true, bandit = true})",
             "squad_id": "$ #|this.squad_ids| > 0 and |this.squad_ids|[math.random(#|this.squad_ids|)]",
@@ -876,12 +853,12 @@ In fact, in the same way, if you have an entity with `id` of a squad, its factio
             "to_description": true
         }
     ],
-    "on_complete": "xr_effects.reward_stash(nil, nil, {'true'})",
-    "on_fail": "xr_effects.fail_task_dec_goodwill(nil, nil, {'25','dolg'})",
+    "reward_stash": "on_complete$ xr_effects.reward_stash(nil, nil, {'true'}) or 1",
+    "on_fail": "on_fail$ xr_effects.fail_task_dec_goodwill(nil, nil, {'25', 'dolg'}) or 1",   
     "actions": [
     {
-        "when": "$ 'not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})'",
-        "run": "$ 'task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true'"
+        "when": "@$ not xr_conditions.task_giver_alive(nil, nil, {|CACHE.task_id|})",
+        "run": "@$ task_manager.get_task_manager():set_task_failed(|CACHE.task_id|) or true"
     }
     ],
     "description_key": "bar_dolg_general_petrenko_stalker_task_1",
