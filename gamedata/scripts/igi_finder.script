@@ -80,6 +80,10 @@ local function check_location(se_obj, lower_bound, higher_bound)
 	if blacklist[obj_level] then return false end
 
 	local dist = WorldState.distance_by_level[obj_level]
+	if not dist then
+		igi_helper.trace_error("igi_finder: map not connected?", obj_level)
+		return false
+	end
 	return dist >= lower_bound and dist <= higher_bound
 end
 
