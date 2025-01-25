@@ -174,7 +174,7 @@ function resolve_and_link_cache(CACHE, level)
 end
 
 function eval_logic_macro(str, link_context)
-	local level, macro = str_to_macro(str)
-	trace_assert(level == "@", "String is not a @$ macro", str)
-	return resolve_macro(macro, link_context)
+	local resolved = resolve_in_str(str, "@", link_context)
+	trace_assert(resolved ~= str, "@$ macro was not resolved")
+	return resolved
 end
