@@ -123,6 +123,7 @@ local function resolve_in_str(str, level, link_context)
 	if macro and macro_level == level then
 		local without_links = resolve_links_in_str(macro, link_context)
 		if without_links then
+			igi_helper.trace_dbg("Resolving macro " .. macro)
 			return resolve_macro(without_links, link_context)
 		end
 	end
