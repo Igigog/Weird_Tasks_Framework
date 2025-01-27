@@ -5,13 +5,13 @@
 	</string>
 
 	<!-- basic text -->
-	<string id="igi_task_text_title">
+	<string id="igi_task_text_name">
 		<text>WTF: Название не найдено</text>
 	</string>
-	<string id="igi_task_text_descr">
+	<string id="igi_task_text_text">
 		<text>WTF: Описание не найдено</text>
 	</string>
-	<string id="igi_task_text_job_descr">
+	<string id="igi_task_text_about">
 		<text>WTF: Описание задания не найдено</text>
 	</string>
 	<string id="igi_task_text_finish">

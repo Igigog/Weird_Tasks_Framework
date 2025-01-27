@@ -4,13 +4,13 @@
 		<text>Job done. Time to return to task giver.</text>
 	</string>
 	<!-- basic text -->
-	<string id="igi_task_text_title">
+	<string id="igi_task_text_name">
 		<text>WTF: Title not found</text>
 	</string>
-	<string id="igi_task_text_descr">
+	<string id="igi_task_text_text">
 		<text>WTF: Description not found</text>
 	</string>
-	<string id="igi_task_text_job_descr">
+	<string id="igi_task_text_about">
 		<text>WTF: Job description not found</text>
 	</string>
 	<string id="igi_task_text_finish">
