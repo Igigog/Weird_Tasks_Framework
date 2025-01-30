@@ -36,8 +36,8 @@ end
 
 local function send_target_callbacks(callback_name, CACHE, ...)
 	local entity_table = CACHE.entities
-	local target_set = {}
 
+	if callback_name == "on_get_taskdata" then return end
 	for k, entity in pairs(entity_table) do
 		local controller = igi_taskdata.get_controller(entity, CACHE)
 		-- callback for every entity with target
