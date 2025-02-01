@@ -176,6 +176,6 @@ end
 
 function eval_logic_macro(str, link_context)
 	local resolved = resolve_in_str(str, "@", link_context)
-	trace_assert(resolved ~= str, "@$ macro was not resolved", str)
+	trace_assert(resolved ~= str, "Not a @$ macro or not resolved", str)
 	return resolved
 end
